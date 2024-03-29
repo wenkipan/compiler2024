@@ -1,0 +1,38 @@
+# Files
+
+*
+*.*
+!.gitattributes
+!.gitignore
+!*.md
+
+!Makefile
+!*.mk
+
+!*.yaml
+!*.yml
+
+!*.[ly]
+!*.[ch]
+!*.cc
+
+!*.sy
+!*.in
+!*.out
+!*.a
+
+!*.sh
+
+# Directory
+!*/
+test2do/
+build/
+output/
+tmp-src/
+store/
+
+
+# Invisible directory
+.*/
+
+!.github/
