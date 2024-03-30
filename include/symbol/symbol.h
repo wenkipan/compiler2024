@@ -36,6 +36,7 @@ class symbol_init
 
 class symbol_func
 {
+public:
     // type info
     bool is_va;
     basic_type ret_type;
@@ -166,6 +167,7 @@ uint64_t symbol_type_get_size(p_symbol_type p_type);
 uint64_t symbol_type_array_get_size(p_symbol_type_array p_array);
 class symbol_type_array
 {
+public:
     uint64_t size;
     list_head node;
 

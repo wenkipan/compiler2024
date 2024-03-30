@@ -12,6 +12,7 @@ typedef class ast_exp *p_ast_exp;
 
 class ast_block
 {
+public:
     uint64_t length;
     list_head stmt;
 
@@ -28,27 +29,30 @@ class ast_block
 
 class ast_param_list
 {
+public:
     list_head param;
-
-    // init
-    p_ast_param_list ast_param_list_init(void);
-    // pushback
-    p_ast_param_list ast_param_list_add(p_ast_param_list p_head, p_ast_exp p_exp);
-    // delete
-    void ast_param_list_drop(p_ast_param_list p_param_list);
+    ast_param_list();
+    void ast_param_list_add(p_ast_exp p_exp);
+    ~ast_param_list();
+    // p_ast_param_list ast_param_list_init(void);
+    // p_ast_param_list ast_param_list_add(p_ast_param_list p_head, p_ast_exp p_exp);
+    // void ast_param_list_drop(p_ast_param_list p_param_list);
 };
 
 class ast_param
 {
+public:
     bool is_stck_ptr;
     p_ast_exp p_exp;
     list_head node;
+    ast_param(p_ast_exp p_exp);
+    ~ast_param();
 };
 
 class ast_stmt
 {
 public:
-    enum
+    enum stmt_type
     {
         ast_stmt_assign,
         ast_stmt_return,
@@ -67,30 +71,39 @@ public:
         {
             p_ast_exp p_exp;
             p_ast_stmt p_stmt_1, p_stmt_2;
-        };
+        } branch;
         struct
         {
             bool is_stack;
             p_ast_exp p_lval, p_rval;
-        };
+        } array;
         p_ast_block p_block;
         void *null;
     };
 
     list_head node;
 
-    p_ast_stmt ast_stmt_return_gen(basic_type ret_type, p_ast_exp p_exp);
-    p_ast_stmt ast_stmt_exp_gen(p_ast_exp p_exp);
-    p_ast_stmt ast_stmt_break_gen(void);
-    p_ast_stmt ast_stmt_continue_gen(void);
-    p_ast_stmt ast_stmt_if_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
-    p_ast_stmt ast_stmt_if_else_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1, p_ast_stmt p_stmt_2);
-    p_ast_stmt ast_stmt_while_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
-    p_ast_stmt ast_stmt_do_while_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
-    p_ast_stmt ast_stmt_block_gen(p_ast_block p_block);
-    p_ast_stmt ast_stmt_assign_gen(p_ast_exp lval, p_ast_exp rval);
-    void ast_stmt_drop(p_ast_stmt p_stmt);
+    // ast_stmt(stmt_type t, basic_type ret_type, p_ast_exp p_exp);
+    // ast_stmt(p_ast_exp p_exp);
+    // ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
+    // ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1, p_ast_stmt p_stmt_2);
+    // ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
+    // ast_stmt();
+
+    // void ast_stmt_drop(p_ast_stmt p_stmt);
+
+    ~ast_stmt();
 };
+p_ast_stmt ast_stmt_return_gen(basic_type ret_type, p_ast_exp p_exp);
+p_ast_stmt ast_stmt_exp_gen(p_ast_exp p_exp);
+p_ast_stmt ast_stmt_break_gen(void);    // cant  ignore
+p_ast_stmt ast_stmt_continue_gen(void); // cant  ignore
+p_ast_stmt ast_stmt_if_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
+p_ast_stmt ast_stmt_if_else_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1, p_ast_stmt p_stmt_2);
+p_ast_stmt ast_stmt_while_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
+p_ast_stmt ast_stmt_do_while_gen(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
+p_ast_stmt ast_stmt_block_gen(p_ast_block p_block); // special
+p_ast_stmt ast_stmt_assign_gen(p_ast_exp lval, p_ast_exp rval);
 
 class ast_exp
 {
@@ -167,44 +180,46 @@ public:
 
     p_ir_vreg p_des;
 
-    // ast_exp();
-
-    // delete
-    // void ast_exp_drop(p_ast_exp p_exp);
+    ast_exp() {}
+    // p_ast_exp ast_exp_relational_gen(ast_exp_relational_op op, p_ast_exp p_rsrc_1, p_ast_exp p_rsrc_2);
+    ast_exp(ast_exp_relational_op op, p_ast_exp p_rsrc_1, p_ast_exp p_rsrc_2);
+    // p_ast_exp ast_exp_logic_gen(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp p_bool_2);
+    ast_exp(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp p_bool_2);
+    // p_ast_exp ast_exp_ulogic_gen(ast_exp_ulogic_op ul_op, p_ast_exp p_bool);
+    ast_exp(ast_exp_ulogic_op ul_op, p_ast_exp p_bool);
+    // p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list);
+    ast_exp(p_symbol_func p_func, p_ast_param_list p_param_list);
+    // p_ast_exp ast_exp_ptr_gen(p_symbol_var p_var);
+    ast_exp(p_symbol_var p_var);
+    // p_ast_exp ast_exp_gep_gen(p_ast_exp p_val, p_ast_exp p_offset, bool is_element);
+    ast_exp(p_ast_exp p_val, p_ast_exp p_offset, bool is_element);
+    // p_ast_exp ast_exp_load_gen(p_ast_exp p_ptr);
+    ast_exp(p_ast_exp p_ptr);
+    // p_ast_exp ast_exp_int_gen(I32CONST_t num);
+    ast_exp(I32CONST_t num);
+    // p_ast_exp ast_exp_float_gen(F32CONST_t num);
+    ast_exp(F32CONST_t num);
+    // p_ast_exp ast_exp_str_gen(p_symbol_str p_str);
+    ast_exp(p_symbol_str p_str);
+    // support ast_exp_binary_gen
+    ast_exp(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_exp p_src_2);
+    // support ast_exp_unary_gen
+    ast_exp(ast_exp_unary_op u_op, p_ast_exp p_src);
+    // delete void ast_exp_drop(p_ast_exp p_exp);
     ~ast_exp();
-    // 检查是否为某值
-    // void ast_exp_ptr_check_lval(p_ast_exp p_exp);
-    void ast_exp_ptr_check_lval();
-    // p_ast_exp ast_exp_ptr_check_const(p_ast_exp p_exp);
-    p_ast_exp ast_exp_ptr_check_const();
-    // p_ast_exp ast_exp_ptr_to_val_check_basic(p_ast_exp p_exp);
-    p_ast_exp ast_exp_ptr_to_val_check_basic();
 
-    // ？
-    // p_ast_exp ast_exp_ptr_to_val(p_ast_exp p_exp);
-    p_ast_exp ast_exp_ptr_to_val();
-
-    // bool ast_exp_ptr_is_stack(p_ast_exp p_exp);
-    bool ast_exp_ptr_is_stack();
-    // p_ast_exp ast_exp_cov_gen(p_ast_exp p_exp, basic_type b_type);
-    p_ast_exp ast_exp_cov_gen(basic_type b_type);
-    // p_ast_exp ast_exp_to_cond(p_ast_exp p_exp);
-    p_ast_exp ast_exp_to_cond();
-    // p_ast_exp ast_exp_use_gen(p_ast_exp p_used_exp);
     p_ast_exp ast_exp_use_gen();
+    void ast_exp_ptr_check_lval();
+    p_ast_exp ast_exp_ptr_check_const();
+    p_ast_exp ast_exp_ptr_to_val_check_basic();
+    p_ast_exp ast_exp_ptr_to_val();
+    bool ast_exp_ptr_is_stack();
+    p_ast_exp ast_exp_cov_gen(basic_type b_type);
+    p_ast_exp ast_exp_to_cond();
 };
+// hard to change
 p_ast_exp ast_exp_binary_gen(ast_exp_binary_op op, p_ast_exp p_src_1, p_ast_exp p_src_2);
-p_ast_exp ast_exp_relational_gen(ast_exp_relational_op op, p_ast_exp p_rsrc_1, p_ast_exp p_rsrc_2);
 p_ast_exp ast_exp_unary_gen(ast_exp_unary_op op, p_ast_exp p_src);
-p_ast_exp ast_exp_logic_gen(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp p_bool_2);
-p_ast_exp ast_exp_ulogic_gen(ast_exp_ulogic_op ul_op, p_ast_exp p_bool);
-p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list);
-p_ast_exp ast_exp_ptr_gen(p_symbol_var p_var);
-p_ast_exp ast_exp_gep_gen(p_ast_exp p_val, p_ast_exp p_offset, bool is_element);
-p_ast_exp ast_exp_load_gen(p_ast_exp p_ptr);
-p_ast_exp ast_exp_int_gen(I32CONST_t num);
-p_ast_exp ast_exp_float_gen(F32CONST_t num);
-p_ast_exp ast_exp_str_gen(p_symbol_str p_str);
 
 enum ast_exp_logic_op
 {
