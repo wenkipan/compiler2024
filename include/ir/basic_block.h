@@ -12,6 +12,7 @@ enum ir_basic_block_branch_kind
 
 class ir_basic_block_branch
 {
+public:
     ir_basic_block_branch_kind kind;
     p_ir_basic_block_branch_target p_target_1, p_target_2;
     p_ir_operand p_exp;
@@ -42,6 +43,7 @@ class ir_basic_block_branch_target
 
 class ir_basic_block
 {
+public:
     size_t block_id;
     list_head instr_list;
     size_t instr_num;

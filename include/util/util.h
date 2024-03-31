@@ -15,4 +15,5 @@ typedef float F32CONST_t;
 #include <util/list.h>
 
 #include <util/bitmap.h>
+#include <string>
 #endif

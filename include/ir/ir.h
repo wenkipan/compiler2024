@@ -2,6 +2,12 @@
 
 #include <util.h>
 #include <symbol.h>
+#include <ir/basic_block.h>
+#include <ir/bb_param.h>
+#include <ir/instr.h>
+#include <ir/operand.h>
+#include <ir/param.h>
+#include <ir/vreg.h>
 typedef class ir_basic_block_branch *p_ir_basic_block_branch;
 typedef class ir_basic_block *p_ir_basic_block;
 typedef class ir_basic_block_branch_target *p_ir_basic_block_branch_target;

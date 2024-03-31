@@ -3,6 +3,7 @@
 #include <ir.h>
 class ir_vreg
 {
+public:
     p_symbol_type p_type;
     size_t id;
 
