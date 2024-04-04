@@ -1,8 +1,9 @@
 #pragma once
 
-#include <util.h>
-#include <ir.h>
+#include <util.hpp>
+#include <symbol.h>
 
+typedef class symbol_str *p_symbol_str;
 class symbol_str
 {
     char *string;

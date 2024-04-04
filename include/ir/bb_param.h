@@ -1,4 +1,4 @@
-
+#pragma once
 
 #include <ir.h>
 class ir_bb_param

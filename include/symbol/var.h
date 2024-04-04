@@ -1,8 +1,11 @@
 #pragma once
 
-#include <util.h>
-#include <ir.h>
+#include <util.hpp>
+#include <symbol.h>
 
+typedef class symbol_init_val *p_symbol_init_val;
+typedef class symbol_init *p_symbol_init;
+typedef class symbol_var *p_symbol_var;
 class symbol_init_val
 {
 public:
@@ -15,6 +18,7 @@ public:
 
 class symbol_init
 {
+public:
     basic_type basic;
     size_t size;
     p_symbol_init_val memory;

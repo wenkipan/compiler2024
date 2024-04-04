@@ -1,8 +1,8 @@
 #pragma once
 
-#include <util.h>
+#include <util.hpp>
 #include <symbol.h>
-#include <ir.h>
+// #include <ir.h>
 typedef class ast_param *p_ast_param;
 typedef class ast_param_list *p_ast_param_list;
 typedef class ast_func *p_ast_func;

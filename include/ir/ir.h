@@ -1,7 +1,6 @@
 #pragma once
 
-#include <util.h>
-#include <symbol.h>
+#include <util.hpp>
 #include <ir/basic_block.h>
 #include <ir/bb_param.h>
 #include <ir/instr.h>

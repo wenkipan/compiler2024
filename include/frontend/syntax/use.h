@@ -2,7 +2,7 @@
 
 typedef void *yyscan_t;
 
-#include <ast.h>
+#include <ast/ast.h>
 #include <syntax_info.h>
 
 p_ast_exp syntax_val_offset(p_ast_exp p_val, p_ast_exp p_offset);

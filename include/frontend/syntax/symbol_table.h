@@ -40,18 +40,20 @@ class symbol_zone
 
 class symbol_table
 {
+public:
     hlist_hash hash;
     hlist_hash string_hash;
 
     uint16_t level;
     p_symbol_zone p_top_table;
+    // p_symbol_table symbol_table_gen();
+    symbol_table();
+    // hash related
+    void symbol_table_drop(p_symbol_table p_table);
 };
 
 #define hash_P (65537)
 #define hash_MOD (109)
-
-p_symbol_table symbol_table_gen();
-void symbol_table_drop(p_symbol_table p_table);
 
 void symbol_table_zone_push(p_symbol_table p_table);
 void symbol_table_zone_pop(p_symbol_table p_table);

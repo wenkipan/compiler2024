@@ -1,7 +1,9 @@
 #pragma once
 
-#include <util.h>
+#include <util.hpp>
 #include <ir.h>
+
+typedef class symbol_func *p_symbol_func;
 class symbol_func
 {
 public:

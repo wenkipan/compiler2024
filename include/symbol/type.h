@@ -1,24 +1,27 @@
 #pragma once
 
-#include <util.h>
-#include <ir.h>
-
+#include <util.hpp>
+#include <symbol.h>
 uint64_t basic_type_get_size(basic_type b_type);
-uint64_t symbol_type_get_size(p_symbol_type p_type);
+
 uint64_t symbol_type_array_get_size(p_symbol_type_array p_array);
+typedef class symbol_type *p_symbol_type;
+typedef class symbol_type_array *p_symbol_type_array;
 class symbol_type_array
 {
 public:
     uint64_t size;
     list_head node;
 
-    void symbol_type_push_array(p_symbol_type p_type, p_symbol_type_array p_array);
+    // p_symbol_type_array symbol_type_array_gen(size_t size);
+    symbol_type_array(size_t size);
+    // p_symbol_type_array symbol_type_array_copy(p_symbol_type_array p_array);
+    symbol_type_array(p_symbol_type_array p_array);
+    void symbol_type_push_array(p_symbol_type p_type);
 
-    p_symbol_type_array symbol_type_array_copy(p_symbol_type_array p_array);
-
-    p_symbol_type_array symbol_type_array_gen(size_t size);
-
-    void symbol_type_array_drop(p_symbol_type_array p_array);
+    // useless
+    //  void symbol_type_array_drop(p_symbol_type_array p_array);
+    //~symbol_type_array();
 };
 
 class symbol_type
@@ -35,11 +38,14 @@ public:
     void symbol_type_push_ptr();
     void symbol_type_pop_ptr();
 
-    p_symbol_type_array symbol_type_top_array(p_symbol_type p_type);
-    p_symbol_type_array symbol_type_pop_array(p_symbol_type p_type);
+    p_symbol_type_array symbol_type_top_array();
+    p_symbol_type_array symbol_type_pop_array();
 
+    // another new object
     p_symbol_type symbol_type_copy();
 
     // void symbol_type_drop(p_symbol_type p_type);
     ~symbol_type();
+
+    // uint64_t symbol_type_get_size(p_symbol_type p_type);
 };
