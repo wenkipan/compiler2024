@@ -48,4 +48,6 @@ public:
     ~symbol_type();
 
     // uint64_t symbol_type_get_size(p_symbol_type p_type);
+    void symbol_type_print();
 };
+void symbol_basic_type_print(basic_type b_type);

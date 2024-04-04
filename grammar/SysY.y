@@ -8,21 +8,21 @@
 %{
 #include <frontend/lexer.h>
 #include <frontend/log.h>
-#include <frontend/syntax/init/gen.h>
-#include <frontend/syntax/decl_head/gen.h>
-#include <frontend/syntax/decl/gen.h>
+#include <frontend/syntax_init.h>
+#include <frontend/syntax_decl_head.h>
+#include <frontend/syntax_decl.h>
 
 #include <ast_gen.h>
 
 #define extra yyget_extra(yyscanner)
 
-#define find_var(name) syntax_find_var(extra, name)
-#define find_func(name) syntax_find_func(extra, name)
-#define find_str(str) syntax_get_str(extra, str)
+#define find_var(name) extra->syntax_find_var(name)
+#define find_func(name) extra->syntax_find_func(name)
+#define find_str(str) extra->syntax_get_str(str)
 %}
 
 %code requires{
-#include <frontend/syntax/use.h>
+#include <frontend/use.h>
 }
 
 %define api.pure full

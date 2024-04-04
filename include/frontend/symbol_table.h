@@ -8,6 +8,7 @@ typedef class symbol_table *p_symbol_table;
 
 class symbol_item
 {
+public:
     p_symbol_name p_name;
     p_symbol_item p_prev;
 
@@ -24,6 +25,7 @@ class symbol_item
 
 class symbol_name
 {
+public:
     char *name;
     p_symbol_item p_item;
 
@@ -33,6 +35,7 @@ class symbol_name
 
 class symbol_zone
 {
+public:
     p_symbol_item p_item;
 
     p_symbol_zone p_prev;
@@ -49,18 +52,17 @@ public:
     // p_symbol_table symbol_table_gen();
     symbol_table();
     // hash related
-    void symbol_table_drop(p_symbol_table p_table);
+    // void symbol_table_drop(p_symbol_table p_table);
+    ~symbol_table();
+    void symbol_table_zone_pop();
+    void symbol_table_zone_push();
+    p_symbol_item symbol_table_var_add(p_symbol_var p_var);
+    p_symbol_item symbol_table_func_add(p_symbol_func p_func);
+    p_symbol_var symbol_table_var_find(const char *name);
+    p_symbol_func symbol_table_func_find(const char *name);
+    p_symbol_str symbol_table_str_find(const char *string);
+    p_symbol_str symbol_table_str_add(const char *string);
 };
 
 #define hash_P (65537)
 #define hash_MOD (109)
-
-void symbol_table_zone_push(p_symbol_table p_table);
-void symbol_table_zone_pop(p_symbol_table p_table);
-
-p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var);
-p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func);
-p_symbol_var symbol_table_var_find(p_symbol_table p_table, const char *name);
-p_symbol_func symbol_table_func_find(p_symbol_table p_table, const char *name);
-p_symbol_str symbol_table_str_find(p_symbol_table p_table, const char *string);
-p_symbol_str symbol_table_str_add(p_symbol_table p_table, const char *string);

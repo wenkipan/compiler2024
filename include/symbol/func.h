@@ -11,7 +11,7 @@ public:
     bool is_va;
     basic_type ret_type;
 
-    std::string name;
+    char *name;
     uint64_t id;
 
     size_t var_cnt;
@@ -47,7 +47,9 @@ public:
     // gen
 
     // p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va);
-    symbol_func(const std::string name, basic_type b_type, bool is_va);
+    symbol_func(const char *name, basic_type b_type, bool is_va);
+    // void symbol_func_drop(p_symbol_func p_func);
+    ~symbol_func();
 
     void symbol_func_add_variable(p_symbol_var p_var);
     void symbol_func_add_call_param_vmem(p_symbol_var p_vmem);
@@ -59,19 +61,18 @@ public:
 
     void symbol_func_param_reg_add(p_ir_vreg p_vreg);
     void symbol_func_param_reg_del(p_ir_vreg p_vreg);
+
     p_symbol_var symbol_func_param_reg_mem(p_ir_vreg p_vreg);
 
-    void symbol_func_vreg_add(p_symbol_func p_func, p_ir_vreg p_vreg);
-    void symbol_func_vreg_del(p_symbol_func p_func, p_ir_vreg p_vreg);
-    void symbol_func_basic_block_init_visited(p_symbol_func p_func);
-    void symbol_func_set_block_id(p_symbol_func p_func);
+    void symbol_func_vreg_add(p_ir_vreg p_vreg);
+    void symbol_func_vreg_del(p_ir_vreg p_vreg);
+    void symbol_func_basic_block_init_visited();
+    void symbol_func_set_block_id();
 
-    void symbol_func_clear_varible(p_symbol_func p_func);
-    void symbol_func_delete_varible(p_symbol_func p_func, p_symbol_var p_var);
-    void symbol_func_set_varible_id(p_symbol_func p_func);
+    void symbol_func_clear_varible();
+    void symbol_func_delete_varible(p_symbol_var p_var);
+    void symbol_func_set_varible_id();
     // print
     void symbol_func_name_print(p_symbol_func p_func);
-    void symbol_func_init_print(p_symbol_func p_func);
-    // void symbol_func_drop(p_symbol_func p_func);
-    ~symbol_func();
+    void symbol_func_init_print();
 };
