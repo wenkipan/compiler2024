@@ -35,7 +35,7 @@ TEST_DIR = test
 YACCSRC = grammar/SysY.y
 LEXSRC = grammar/SysY.l
 CSRCS = $(shell find $(CSRC_DIR) -name "*.c")
-CXXSRCS = $(shell find $(CSRC_DIR) -name "*.cc")
+CXXSRCS = $(shell find $(CSRC_DIR) -name "*.cpp")
 
 TESTSRC = $(shell find $(TEST_DIR) -name "*.sy")
 

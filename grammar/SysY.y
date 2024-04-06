@@ -6,13 +6,14 @@
 %param { yyscan_t yyscanner }
 
 %{
-#include <frontend/lexer.h>
-#include <frontend/log.h>
-#include <frontend/syntax_init.h>
-#include <frontend/syntax_decl_head.h>
-#include <frontend/syntax_decl.h>
+#include <frontend/lexer.hpp>
+#include <frontend/log.hpp>
 
-#include <ast_gen.h>
+#include <frontend/syntax_init.hpp>
+#include <frontend/syntax_decl_head.hpp>
+#include <frontend/syntax_decl.hpp>
+
+#include <ast/ast.hpp>
 
 #define extra yyget_extra(yyscanner)
 
@@ -22,7 +23,7 @@
 %}
 
 %code requires{
-#include <frontend/use.h>
+#include <frontend/use.hpp>
 }
 
 %define api.pure full
@@ -119,7 +120,7 @@ begin : PUSHZONE CompUnit POPZONE
 CompUnit : CompUnit Declaration
          | CompUnit FuncDeclaration
          | CompUnit error
-         | /* *empty */             { syntax_rtlib_func_init(extra); }
+         | /* *empty */             { extra->syntax_rtlib_func_init(); }
          ;
 
 Type : INT   { $$ = type_i32; }
@@ -130,55 +131,55 @@ Declaration : ConstDeclaration
             | VarDeclaration
             ;
 
-ConstDeclaration : ConstInitDeclaratorList ';' { syntax_decl_head_drop($1); }
+ConstDeclaration : ConstInitDeclaratorList ';' { delete($1); }
                  ;
 
-VarDeclaration : VarInitDeclaratorList ';' { syntax_decl_head_drop($1); }
+VarDeclaration : VarInitDeclaratorList ';' { delete($1); }
                ;
 
-ConstInitDeclaratorList : ConstInitDeclaratorList ',' ConstInitDeclarator { $$ = syntax_declaration(extra, $1, $3); }
-                        | CONST Type ConstInitDeclarator                  { $$ = syntax_declaration(extra, syntax_decl_head_gen($2, true), $3); }
+ConstInitDeclaratorList : ConstInitDeclaratorList ',' ConstInitDeclarator { $$ = extra->syntax_declaration( $1, $3); }
+                        | CONST Type ConstInitDeclarator                  { $$ = extra->syntax_declaration( new syntax_decl_head($2, true), $3); }
                         ;
 
-VarInitDeclaratorList : VarInitDeclaratorList ',' VarInitDeclarator { $$ = syntax_declaration(extra, $1, $3); }
-                      | Type VarInitDeclarator                      { $$ = syntax_declaration(extra, syntax_decl_head_gen($1, false), $2); }
+VarInitDeclaratorList : VarInitDeclaratorList ',' VarInitDeclarator { $$ = extra->syntax_declaration( $1, $3); }
+                      | Type VarInitDeclarator                      { $$ = extra->syntax_declaration( new syntax_decl_head($1, false), $2); }
                       ;
 
-ConstInitDeclarator : Declarator '=' ConstInitializer { $$ = syntax_decl_init($1, $3); }
+ConstInitDeclarator : Declarator '=' ConstInitializer { $$ = $1->syntax_decl_init( $3); }
                     ;
 
-VarInitDeclarator : Declarator '=' VarInitializer { $$ = syntax_decl_init($1, $3); }
-                  | Declarator                    { $$ = syntax_decl_init($1, NULL); }
+VarInitDeclarator : Declarator '=' VarInitializer { $$ = $1->syntax_decl_init( $3); }
+                  | Declarator                    { $$ = $1->syntax_decl_init( NULL); }
                   ;
 
-Declarator : Declarator '[' ConstExp ']' { $$ = syntax_decl_arr($1, $3); }
-           | ID                          { $$ = syntax_decl_gen($1); }
+Declarator : Declarator '[' ConstExp ']' { $$ = $1->syntax_decl_arr( $3); }
+           | ID                          { $$ = new syntax_decl($1); }
            | Declarator error
            ;
 
 ConstInitializer : '{' ConstInitializerList '}'     { $$ = $2; }
-                 | '{' '}'                          { $$ = syntax_init_list_gen(); }
-                 | ConstExp                         { $$ = syntax_init_exp_gen($1); }
+                 | '{' '}'                          { $$ = new syntax_init(); }
+                 | ConstExp                         { $$ = new syntax_init($1); }
                  ;
 
-ConstInitializerList : ConstInitializerList ',' ConstInitializer { $$ = syntax_init_list_add($1, $3); }
-                     | ConstInitializer                          { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
+ConstInitializerList : ConstInitializerList ',' ConstInitializer { $$ = $1->syntax_init_list_add($3); }
+                     | ConstInitializer                          { $$ = new syntax_init();$$->syntax_init_list_add($1); }
                      ;
 
 VarInitializer : '{' VarInitializerList '}'     { $$ = $2; }
-               | '{' '}'                        { $$ = syntax_init_list_gen(); }
-               | Exp                      { $$ = syntax_init_exp_gen($1); }
+               | '{' '}'                        { $$ = new syntax_init(); }
+               | Exp                      { $$ = new syntax_init($1); }
                ;
 
-VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_list_add($1, $3); }
-                   | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
+VarInitializerList : VarInitializerList ',' VarInitializer { $$ = $1->syntax_init_list_add( $3); }
+                   | VarInitializer                        { $$ = new syntax_init();$$->syntax_init_list_add($1); }
                    ;
 
-FuncHead : Type ID { syntax_func_head(extra, $1, $2); }
-         | VOID ID { syntax_func_head(extra, type_void, $2); }
+FuncHead : Type ID { extra->syntax_func_head( $1, $2); }
+         | VOID ID { extra->syntax_func_head( type_void, $2); }
          ;
 
-FuncDeclaration : FuncHead '(' Parameters ')' Block { syntax_func_end(extra, $5); }
+FuncDeclaration : FuncHead '(' Parameters ')' Block { extra->syntax_func_end( $5); }
                 ;
 
 Parameters : ParameterList
@@ -189,34 +190,34 @@ ParameterList : ParameterList ',' ParameterDeclaration
               | ParameterDeclaration
               ;
 
-ParameterDeclaration : Type ArraryParameter { p_syntax_decl_head p_head = syntax_decl_head_gen($1, false); syntax_declaration(extra, p_head, $2); syntax_decl_head_drop(p_head); }
-                     | Type ID              { p_syntax_decl_head p_head = syntax_decl_head_gen($1, false); syntax_declaration(extra, p_head, syntax_decl_gen($2)); syntax_decl_head_drop(p_head); }
+ParameterDeclaration : Type ArraryParameter { p_syntax_decl_head p_head = new syntax_decl_head($1, false); extra->syntax_declaration( p_head, $2); delete(p_head); }
+                     | Type ID              { p_syntax_decl_head p_head = new syntax_decl_head($1, false); extra->syntax_declaration( p_head, new syntax_decl($2)); delete(p_head); }
                      ;
 
-ArraryParameter : ID '[' ']'                  { $$ = syntax_decl_arr(syntax_decl_gen($1), NULL); }
-                | ArraryParameter '[' Exp ']' { $$ = syntax_decl_arr($1, $3); }
+ArraryParameter : ID '[' ']'                  { ;$$ = new syntax_decl($1); $$->syntax_decl_arr( NULL); }
+                | ArraryParameter '[' Exp ']' { $$ = $1->syntax_decl_arr( $3); }
                 ;
 
 Cond : LOrExp
      ;
 
-LOrExp : LOrExp OR LAndExp { $$ = ast_exp_logic_gen(ast_exp_op_bool_or, $1, $3); }
+LOrExp : LOrExp OR LAndExp { $$ = new ast_exp((ast_exp_logic_op)ast_exp_op_bool_or, $1, $3); }
        | LAndExp
        ;
 
-LAndExp : LAndExp AND EqExp { $$ = ast_exp_logic_gen(ast_exp_op_bool_and, $1, $3); }
-        | EqExp             { $$ = ast_exp_to_cond($1); }
+LAndExp : LAndExp AND EqExp { $$ = new ast_exp((ast_exp_logic_op)ast_exp_op_bool_and, $1, $3); }
+        | EqExp             { $$ = $1->ast_exp_to_cond(); }
         ;
 
-EqExp : EqExp EQ RelExp  { $$ = ast_exp_relational_gen(ast_exp_op_eq, $1, $3); }
-      | EqExp NEQ RelExp { $$ = ast_exp_relational_gen(ast_exp_op_neq, $1, $3); }
+EqExp : EqExp EQ RelExp  { $$ = new ast_exp((ast_exp_relational_op)ast_exp_op_eq, $1, $3); }
+      | EqExp NEQ RelExp { $$ = new ast_exp((ast_exp_relational_op)ast_exp_op_neq, $1, $3); }
       | RelExp
       ;
 
-RelExp : RelExp '<' AddExp { $$ = ast_exp_relational_gen(ast_exp_op_l, $1, $3); }
-       | RelExp '>' AddExp { $$ = ast_exp_relational_gen(ast_exp_op_g, $1, $3); }
-       | RelExp LE AddExp  { $$ = ast_exp_relational_gen(ast_exp_op_leq, $1, $3); }
-       | RelExp GE AddExp  { $$ = ast_exp_relational_gen(ast_exp_op_geq, $1, $3); }
+RelExp : RelExp '<' AddExp { $$ = new ast_exp((ast_exp_relational_op)ast_exp_op_l, $1, $3); }
+       | RelExp '>' AddExp { $$ = new ast_exp((ast_exp_relational_op)ast_exp_op_g, $1, $3); }
+       | RelExp LE AddExp  { $$ = new ast_exp((ast_exp_relational_op)ast_exp_op_leq, $1, $3); }
+       | RelExp GE AddExp  { $$ = new ast_exp((ast_exp_relational_op)ast_exp_op_geq, $1, $3); }
        | AddExp
        ;
 
@@ -239,42 +240,42 @@ MulExp : MulExp '*' UnaryExp { $$ = ast_exp_binary_gen(ast_exp_op_mul, $1, $3); 
 
 UnaryExp : '-' UnaryExp     { $$ = ast_exp_unary_gen(ast_exp_op_minus, $2); }
          | '+' UnaryExp     { $$ = $2; }
-         | '!' UnaryExp     { $$ = ast_exp_ulogic_gen(ast_exp_op_bool_not, $2); }
+         | '!' UnaryExp     { $$ = new ast_exp((ast_exp_ulogic_op)ast_exp_op_bool_not, $2); }
          | PrimaryExp
          ;
 
 PrimaryExp : '(' Exp ')' { $$ = $2; }
-           | I32CONST    { $$ = ast_exp_int_gen($1); }
-           | F32CONST    { $$ = ast_exp_float_gen($1); }
+           | I32CONST    { $$ = new ast_exp((I32CONST_t)$1); }
+           | F32CONST    { $$ = new ast_exp((F32CONST_t)$1); }
            | Val         { $$ = $1; }
            | Call        { $$ = $1; }
            | Str         { $$ = $1; }
            ;
 
-Call : ID '(' FuncRParams ')' { $$ = ast_exp_call_gen(find_func($1), $3); free($1); }
+Call : ID '(' FuncRParams ')' { $$ = new ast_exp(find_func($1), $3); free($1); }
      ;
 
-Val : ID                 { $$ = ast_exp_ptr_gen(find_var($1)); free($1); }
+Val : ID                 { $$ = new ast_exp(find_var($1)); free($1); }
     | Val '[' Exp ']'    { $$ = syntax_val_offset($1, $3); }
     ;
 
-Str : STRING { $$ = ast_exp_str_gen(find_str($1)); free($1); }
+Str : STRING { $$ = new ast_exp(find_str($1)); free($1); }
     ;
 
 FuncRParams : FuncRParamList { $$ = $1; }
-            | /* *empty */   { $$ = ast_param_list_init(); }
+            | /* *empty */   { $$ = new ast_param_list(); }
             ;
 
-FuncRParamList : FuncRParamList ',' Exp { $$ = ast_param_list_add($1, $3); }
-               | Exp                    { $$ = ast_param_list_add(ast_param_list_init(), $1); }
+FuncRParamList : FuncRParamList ',' Exp { $$ = $1->ast_param_list_add( $3); }
+               | Exp                    { $$ = new ast_param_list();$$->ast_param_list_add( $1); }
                ;
 
-Block : '{' BlockItems '}' { $$ = $2; syntax_set_block(extra, NULL); }
+Block : '{' BlockItems '}' { $$ = $2; extra->syntax_set_block( NULL); }
       ;
 
 BlockItems : BlockItems Declaration
-           | BlockItems Stmt           { $$ = ast_block_add($1, $2); syntax_set_block(extra, $$); }
-           | /* *empty */              { $$ = ast_block_gen(); syntax_set_block(extra, $$); }
+           | BlockItems Stmt           { $$ = $1->ast_block_add( $2); extra->syntax_set_block( $$); }
+           | /* *empty */              { $$ = new ast_block(); extra->syntax_set_block( $$); }
            ;
 
 StmtExp : /* *empty */ { $$ = NULL; }
@@ -284,7 +285,7 @@ StmtExp : /* *empty */ { $$ = NULL; }
 Stmt : PUSHZONE Block POPZONE             { $$ = ast_stmt_block_gen($2); }
      | Val '=' Exp ';'                    { $$ = ast_stmt_assign_gen($1, $3); }
      | StmtExp ';'                        { $$ = ast_stmt_exp_gen($1); }
-     | RETURN StmtExp ';'                 { $$ = syntax_return(extra, $2); }
+     | RETURN StmtExp ';'                 { $$ = extra->syntax_return($2); } 
      | BREAK ';'                          { $$ = ast_stmt_break_gen(); }
      | CONTINUE ';'                       { $$ = ast_stmt_continue_gen(); }
      | IF '(' Cond ')' Stmt ELSE Stmt     { $$ = ast_stmt_if_else_gen($3, $5, $7); }
@@ -293,9 +294,9 @@ Stmt : PUSHZONE Block POPZONE             { $$ = ast_stmt_block_gen($2); }
      | error                              { $$ = ast_stmt_exp_gen(NULL); }
      ;
 
-PUSHZONE : /* *empty */ { syntax_zone_push(extra); }
+PUSHZONE : /* *empty */ { extra->syntax_zone_push(); }
          ;
 
-POPZONE : /* *empty */ { syntax_zone_pop(extra); }
+POPZONE : /* *empty */ { extra->syntax_zone_pop(); }
         ;
 %%

@@ -3,11 +3,11 @@
  */
 
 %{
-#include <frontend/parser.h>
-#include <frontend/log.h>
+#include <frontend/parser.hpp>
+#include <frontend/log.hpp>
 
 #include <limits.h>
-
+#include <string.h>
 I32CONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
 F32CONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
 YY_BUFFER_STATE yy_create_buffer_string (const char * yystr , yyscan_t yyscanner);
@@ -113,7 +113,7 @@ MACRO_LINE      "__LINE__"
 }
 
 {ID} {
-    char *node = malloc(sizeof(*node) * (strlen(yytext) + 1));
+    char *node = new char[(strlen(yytext) + 1)] ;
     strcpy(node, yytext);
     yylval->ID = node;
     return ID;
@@ -151,7 +151,7 @@ MACRO_LINE      "__LINE__"
 
 {STRING} {
     size_t length = strlen(yytext) - 2;
-    char *str = malloc(sizeof(*str) * length + 1);
+    char *str = new char[length+1];
     strncpy(str, yytext + 1, length);
     str[length] = '\0';
     yylval->STRING = str;

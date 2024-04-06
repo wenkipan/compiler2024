@@ -6,10 +6,10 @@ TMP_DIR = tmp-src
 CLEAN += $(TMP_DIR)/
 
 OBJ_DIR = $(BUILD_DIR)/obj-$(NAME)-$(VERSION)
-OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRCS:%.cc=$(OBJ_DIR)/%.o)
+OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRCS:%.cpp=$(OBJ_DIR)/%.o)
 
 TMP_OBJ_DIR = $(OBJ_DIR)/obj-$(NAME)-$(VERSION)_tmp
-OBJS += $(TMPCSRCS:$(TMP_DIR)/%.c=$(TMP_OBJ_DIR)/%.o)
+OBJS += $(TMPCSRCS:$(TMP_DIR)/%.cpp=$(TMP_OBJ_DIR)/%.o)
 
 BINARY = $(BUILD_DIR)/$(NAME)-$(VERSION)
 
@@ -41,7 +41,7 @@ CXXSTD   = --std=c++17
 
 CCFLAGS      = $(LDSETS) $(C_SETS) $(INCLUDES) $(CC_STD) $(NOTMP_C_SETS)
 CXXFLAGS     = $(LDSETS) $(C_SETS) $(INCLUDES) $(CXXSTD) $(NOTMP_C_SETS)
-CCFLAGS_TMP  = $(LDSETS) $(C_SETS) $(INCLUDES) $(CC_STD)
+CCFLAGS_TMP  = $(LDSETS) $(C_SETS) $(INCLUDES) $(CXX_STD)
 LDFLAGS      = $(LDSETS) $(LDLIBS)
 
 -include $(OBJS:%.o=%.d)
@@ -51,15 +51,15 @@ $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@$(CC) $(CCFLAGS) -o $@ $<
 
-$(OBJ_DIR)/%.o: %.cc
+$(OBJ_DIR)/%.o: %.cpp
 	@echo '+ CXX $<'
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(TMP_OBJ_DIR)/%.o: $(TMP_DIR)/%.c
+$(TMP_OBJ_DIR)/%.o: $(TMP_DIR)/%.cpp
 	@echo '+ CC_TMP $<'
 	@mkdir -p $(dir $@)
-	@$(CC) $(CCFLAGS_TMP) -o $@ $<
+	@$(CXX) $(CCFLAGS_TMP) -o $@ $<
 
 # Link rules
 $(OBJS): | $(CSRCS) $(CXXSRCS) $(TMPCSRCS)

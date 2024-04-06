@@ -1,7 +1,7 @@
 #pragma once
-#include <ir.h>
-#include <program.h>
-#include <ast.h>
+#include <ir.hpp>
+#include <program.hpp>
+#include <ast.hpp>
 typedef struct ast2ir_info *p_ast2ir_info;
 class ast2ir_info
 {
