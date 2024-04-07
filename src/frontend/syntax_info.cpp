@@ -289,6 +289,7 @@ void syntax_info::syntax_func_end(p_ast_block p_block)
         break;
     }
     // ast2ir_symbol_func_gen(p_block, p_func, p_info->_p_program);
+    syntax_info_print_block(p_block);
     delete (p_block);
 }
 static inline p_symbol_func syntax_rtlib_decl(p_syntax_info p_info, basic_type type, std::string name1, p_symbol_type p_param1, p_symbol_type p_param2, p_symbol_type p_param3, bool is_va)
@@ -354,4 +355,114 @@ void syntax_info::syntax_rtlib_func_init()
     p_type = new symbol_type(type_void);
     p_type->symbol_type_push_ptr();
     p_info->p_mem_set = syntax_rtlib_decl(p_info, type_void, "memset", p_type, new symbol_type(type_i32), new symbol_type(type_i32), false);
+}
+
+// print
+void ast_exp_print(p_ast_exp p_exp)
+{
+    switch (p_exp->kind)
+    {
+    case ast_exp::ast_exp_binary:
+        printf("ast_exp_binary\n");
+        break;
+    case ast_exp::ast_exp_relational:
+        printf("ast_exp_relational\n");
+        break;
+    case ast_exp::ast_exp_unary:
+        printf("ast_exp_unary\n");
+        break;
+    case ast_exp::ast_exp_logic:
+        printf("ast_exp_logic\n");
+        break;
+    case ast_exp::ast_exp_ulogic:
+        printf("ast_exp_ulogic\n");
+        break;
+    case ast_exp::ast_exp_use:
+        printf("ast_exp_use\n");
+        break;
+    case ast_exp::ast_exp_call:
+        printf("ast_exp_call\n");
+        break;
+    case ast_exp::ast_exp_ptr:
+        printf("ast_exp_ptr\n");
+        break;
+    case ast_exp::ast_exp_gep:
+        printf("ast_exp_gep\n");
+        break;
+    case ast_exp::ast_exp_load:
+        printf("ast_exp_load\n");
+        break;
+    case ast_exp::ast_exp_num:
+        printf("ast_exp_num\n");
+        break;
+    default:
+        assert(0);
+    }
+}
+void ast_block_print(p_ast_block p_block)
+{
+    p_list_head p_node;
+    list_for_each(p_node, &p_block->stmt)
+    {
+        p_ast_stmt p_stmt = list_entry(p_node, ast_stmt, node);
+        ast_stmt_print(p_stmt);
+    }
+}
+void ast_stmt_print(p_ast_stmt p_stmt)
+{
+    switch (p_stmt->type)
+    {
+    case ast_stmt::ast_stmt_assign:
+        printf("ast_stmt_assign\n");
+        ast_exp_print(p_stmt->array.p_lval);
+        ast_exp_print(p_stmt->array.p_rval);
+        break;
+    case ast_stmt::ast_stmt_return:
+        printf("ast_stmt_return\n");
+        ast_exp_print(p_stmt->branch.p_exp);
+        break;
+    case ast_stmt::ast_stmt_exp:
+        printf("ast_stmt_exp\n");
+        ast_exp_print(p_stmt->branch.p_exp);
+        break;
+    case ast_stmt::ast_stmt_block:
+        printf("ast_stmt_block\n");
+        ast_block_print(p_stmt->p_block);
+        break;
+    case ast_stmt::ast_stmt_if_else:
+        printf("ast_stmt_if_else\n");
+        ast_exp_print(p_stmt->branch.p_exp);
+        ast_stmt_print(p_stmt->branch.p_stmt_1);
+        ast_stmt_print(p_stmt->branch.p_stmt_2);
+        break;
+    case ast_stmt::ast_stmt_if:
+        printf("ast_stmt_if\n");
+        ast_exp_print(p_stmt->branch.p_exp);
+        ast_stmt_print(p_stmt->branch.p_stmt_1);
+        break;
+    case ast_stmt::ast_stmt_while:
+        printf("ast_stmt_while\n");
+        ast_exp_print(p_stmt->branch.p_exp);
+        ast_stmt_print(p_stmt->branch.p_stmt_1);
+        break;
+    case ast_stmt::ast_stmt_break:
+        printf("ast_stmt_break\n");
+        break;
+    case ast_stmt::ast_stmt_continue:
+        printf("ast_stmt_continue\n");
+        break;
+    default:
+        assert(0);
+    }
+}
+void syntax_info_print_block(p_ast_block p_block)
+{
+    printf("=== program block start ===\n");
+    p_list_head p_node;
+    list_for_each(p_node, &p_block->stmt)
+    {
+        p_ast_stmt p_stmt = list_entry(p_node, ast_stmt, node);
+        ast_stmt_print(p_stmt);
+    }
+    printf("=== program block end ===\n");
 }

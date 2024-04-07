@@ -69,6 +69,11 @@ void symbol_func::symbol_func_name_print()
     printf("%s", this->name);
 }
 
+// void symbol_func::symbol_func_add_block(p_ast_block p_block)
+// {
+//     this->block = p_block->stmt;
+// }
+
 // relative to ir dont do now
 // symbol_func::~symbol_func()
 // {

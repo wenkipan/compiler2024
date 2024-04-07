@@ -1,4 +1,6 @@
 #pragma once
+#ifndef __AST_BLOCK__
+#define __AST_BLOCK__
 
 #include <util/util.hpp>
 #include <symbol/symbol.hpp>
@@ -55,10 +57,7 @@ public:
     // initialize
     // p_ast_block ast_block_gen(void);
     ast_block();
-    // add to list
-    // p_ast_block ast_block_add(p_ast_block p_block, p_ast_stmt p_stmt);
     p_ast_block ast_block_add(p_ast_stmt p_stmt);
-    // delete
     // void ast_block_drop(p_ast_block p_block);
     ~ast_block();
 };
@@ -118,16 +117,14 @@ public:
     };
 
     list_head node;
-
-    // ast_stmt(stmt_type t, basic_type ret_type, p_ast_exp p_exp);
-    // ast_stmt(p_ast_exp p_exp);
-    // ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
-    // ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1, p_ast_stmt p_stmt_2);
-    // ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
-    // ast_stmt();
-
+    ast_stmt(basic_type ret_type, p_ast_exp p_exp);
+    ast_stmt(p_ast_exp p_exp);
+    ast_stmt();
+    ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1);
+    ast_stmt(p_ast_exp p_exp, p_ast_stmt p_stmt_1, p_ast_stmt p_stmt_2);
+    ast_stmt(p_ast_block p_block);
+    ast_stmt(p_ast_exp lval, p_ast_exp rval);
     // void ast_stmt_drop(p_ast_stmt p_stmt);
-
     ~ast_stmt();
 };
 p_ast_stmt ast_stmt_return_gen(basic_type ret_type, p_ast_exp p_exp);
@@ -231,6 +228,7 @@ public:
     ast_exp(p_ast_exp p_val, p_ast_exp p_offset, bool is_element);
     // p_ast_exp ast_exp_load_gen(p_ast_exp p_ptr);
     ast_exp(p_ast_exp p_ptr);
+    p_ast_exp ast_exp_load_gen();
     // p_ast_exp ast_exp_int_gen(I32CONST_t num);
     ast_exp(I32CONST_t num);
     // p_ast_exp ast_exp_float_gen(F32CONST_t num);
@@ -241,10 +239,11 @@ public:
     ast_exp(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_exp p_src_2);
     // support ast_exp_unary_gen
     ast_exp(ast_exp_unary_op u_op, p_ast_exp p_src);
+
+    p_ast_exp ast_exp_use_gen();
     // delete void ast_exp_drop(p_ast_exp p_exp);
     ~ast_exp();
 
-    p_ast_exp ast_exp_use_gen();
     void ast_exp_ptr_check_lval();
     // p_ast_exp ast_exp_ptr_check_const();
     p_ast_exp ast_exp_ptr_to_val_check_basic();
@@ -256,5 +255,8 @@ public:
 // hard to change
 p_ast_exp ast_exp_ptr_check_const(p_ast_exp p_exp);
 p_ast_exp syntax_val_offset(p_ast_exp p_val, p_ast_exp p_offset);
+
 p_ast_exp ast_exp_binary_gen(ast_exp_binary_op op, p_ast_exp p_src_1, p_ast_exp p_src_2);
 p_ast_exp ast_exp_unary_gen(ast_exp_unary_op op, p_ast_exp p_src);
+
+#endif

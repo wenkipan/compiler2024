@@ -44,4 +44,10 @@ public:
     void syntax_func_end(p_ast_block p_block);
 
     void syntax_rtlib_func_init();
+    // print
 };
+
+void syntax_info_print_block(p_ast_block p_block);
+void ast_exp_print(p_ast_exp p_exp);
+void ast_stmt_print(p_ast_stmt p_stmt);
+void ast_block_print(p_ast_block p_block);

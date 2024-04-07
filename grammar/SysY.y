@@ -255,7 +255,7 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
 Call : ID '(' FuncRParams ')' { $$ = new ast_exp(find_func($1), $3); free($1); }
      ;
 
-Val : ID                 { $$ = new ast_exp(find_var($1)); free($1); }
+Val : ID                 { $$ = new ast_exp(find_var($1)); delete[] ($1); }
     | Val '[' Exp ']'    { $$ = syntax_val_offset($1, $3); }
     ;
 

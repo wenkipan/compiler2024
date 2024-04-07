@@ -1,8 +1,11 @@
 #pragma once
+#ifndef __SYMBOL_GEN_FUNC__
+#define __SYMBOL_GEN_FUNC__
 
 #include <util/util.hpp>
 #include <symbol/symbol.hpp>
 #include <symbol/var.hpp>
+// #include <ast/ast.hpp>
 typedef class symbol_func *p_symbol_func;
 class symbol_func
 {
@@ -55,6 +58,7 @@ public:
     void symbol_func_add_variable(p_symbol_var p_var);
     void symbol_func_add_call_param_vmem(p_symbol_var p_vmem);
     void symbol_func_add_param(p_symbol_var p_var);
+    // void symbol_func_add_block(p_ast_block p_block);
 
     // void symbol_func_bb_add_head(p_ir_basic_block p_basic_block);
     // void symbol_func_bb_add_tail(p_ir_basic_block p_basic_block);
@@ -77,3 +81,5 @@ public:
     void symbol_func_name_print();
     void symbol_func_init_print();
 };
+
+#endif
