@@ -60,6 +60,7 @@ public:
     p_ast_block ast_block_add(p_ast_stmt p_stmt);
     // void ast_block_drop(p_ast_block p_block);
     ~ast_block();
+    void ast_block_drop();
 };
 
 class ast_param_list

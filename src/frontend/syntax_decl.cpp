@@ -11,6 +11,7 @@ syntax_decl::syntax_decl(char *name)
 //??? problem
 p_syntax_decl syntax_decl::syntax_decl_arr(p_ast_exp p_exp)
 {
+
     size_t size = 0;
     if (p_exp)
     { // TODO
@@ -20,6 +21,7 @@ p_syntax_decl syntax_decl::syntax_decl_arr(p_ast_exp p_exp)
         size = p_exp->i32const;
         delete (p_exp);
     }
+    printf("syntax_decl_arr::%lu\n", size);
     p_syntax_type_array p_arrary = new syntax_type_array(size);
     this->p_array = this->p_array->syntax_type_add_array(p_arrary);
 
@@ -28,5 +30,7 @@ p_syntax_decl syntax_decl::syntax_decl_arr(p_ast_exp p_exp)
 p_syntax_decl syntax_decl::syntax_decl_init(p_syntax_init p_init)
 {
     this->p_init = p_init;
+    // printf("%s", this->name, this->p_init->);
+    //  printf("syntax_decl_init%u\n", this->);
     return this;
 }

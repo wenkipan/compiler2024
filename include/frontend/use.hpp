@@ -15,5 +15,3 @@ typedef void *yyscan_t;
 #include <ast/ast.hpp>
 
 p_program frontend_trans(const char *input, const char *output);
-
-// p_ast_exp syntax_val_offset(p_ast_exp p_val, p_ast_exp p_offset);

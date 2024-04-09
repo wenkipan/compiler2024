@@ -138,11 +138,11 @@ VarDeclaration : VarInitDeclaratorList ';' { delete($1); }
                ;
 
 ConstInitDeclaratorList : ConstInitDeclaratorList ',' ConstInitDeclarator { $$ = extra->syntax_declaration( $1, $3); }
-                        | CONST Type ConstInitDeclarator                  { $$ = extra->syntax_declaration( new syntax_decl_head($2, true), $3); }
+                        | CONST Type ConstInitDeclarator                  { $$ = extra->syntax_declaration( (new syntax_decl_head($2, true)), $3); }
                         ;
 
 VarInitDeclaratorList : VarInitDeclaratorList ',' VarInitDeclarator { $$ = extra->syntax_declaration( $1, $3); }
-                      | Type VarInitDeclarator                      { $$ = extra->syntax_declaration( new syntax_decl_head($1, false), $2); }
+                      | Type VarInitDeclarator                      { $$ = extra->syntax_declaration( (new syntax_decl_head($1, false)), $2); }
                       ;
 
 ConstInitDeclarator : Declarator '=' ConstInitializer { $$ = $1->syntax_decl_init( $3); }
@@ -252,10 +252,10 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
            | Str         { $$ = $1; }
            ;
 
-Call : ID '(' FuncRParams ')' { $$ = new ast_exp(find_func($1), $3); free($1); }
+Call : ID '(' FuncRParams ')' {$$ = new ast_exp(find_func($1), $3); delete[] ($1); }
      ;
 
-Val : ID                 { $$ = new ast_exp(find_var($1)); delete[] ($1); }
+Val : ID                 { $$ = new ast_exp(find_var($1));  delete[] ($1); }
     | Val '[' Exp ']'    { $$ = syntax_val_offset($1, $3); }
     ;
 
@@ -265,9 +265,9 @@ Str : STRING { $$ = new ast_exp(find_str($1)); free($1); }
 FuncRParams : FuncRParamList { $$ = $1; }
             | /* *empty */   { $$ = new ast_param_list(); }
             ;
-
-FuncRParamList : FuncRParamList ',' Exp { $$ = $1->ast_param_list_add( $3); }
-               | Exp                    { $$ = new ast_param_list();$$->ast_param_list_add( $1); }
+              
+FuncRParamList : FuncRParamList ',' Exp { $$ = $1->ast_param_list_add($3); }
+               | Exp                    { $$ = new ast_param_list(); $$->ast_param_list_add($1);}
                ;
 
 Block : '{' BlockItems '}' { $$ = $2; extra->syntax_set_block( NULL); }

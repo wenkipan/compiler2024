@@ -78,13 +78,15 @@ symbol_type_array::symbol_type_array(size_t size)
 {
 }
 symbol_type_array::symbol_type_array(p_symbol_type_array p_array)
-    : size(p_array->size)
+    : size(p_array->size),
+      node(list_init_head(&this->node))
 {
+    // this = symbol_type_array(p_array->size);
 }
-void symbol_type_array::symbol_type_push_array(p_symbol_type p_type)
+void symbol_type_array::symbol_type_push_array(p_symbol_type p_type_arr)
 {
-    list_add_next(&this->node, &p_type->array);
-    p_type->size *= this->size;
+    list_add_next(&this->node, &p_type_arr->array);
+    p_type_arr->size *= this->size;
 }
 void symbol_type::symbol_type_print()
 {

@@ -290,7 +290,8 @@ void syntax_info::syntax_func_end(p_ast_block p_block)
     }
     // ast2ir_symbol_func_gen(p_block, p_func, p_info->_p_program);
     syntax_info_print_block(p_block);
-    delete (p_block);
+    // drop
+    p_block->ast_block_drop();
 }
 static inline p_symbol_func syntax_rtlib_decl(p_syntax_info p_info, basic_type type, std::string name1, p_symbol_type p_param1, p_symbol_type p_param2, p_symbol_type p_param3, bool is_va)
 {

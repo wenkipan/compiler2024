@@ -16,6 +16,7 @@ p_symbol_type syntax_type_array::syntax_type_trans(basic_type b_type)
         p_array = p_array->p_prev;
         if (p_del->size)
         {
+            // printf("%lu\n", p_del->size);
             p_symbol_type_array p_add = new symbol_type_array(p_del->size);
             p_add->symbol_type_push_array(p_type);
         }
@@ -23,7 +24,7 @@ p_symbol_type syntax_type_array::syntax_type_trans(basic_type b_type)
         {
             p_type->symbol_type_push_ptr();
         }
-        free(p_del);
+        delete (p_del);
     }
     return p_type;
 }

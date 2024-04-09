@@ -14,7 +14,7 @@ public:
     symbol_type_array(size_t size);
     // p_symbol_type_array symbol_type_array_copy(p_symbol_type_array p_array);
     symbol_type_array(p_symbol_type_array p_array);
-    void symbol_type_push_array(p_symbol_type p_type);
+    void symbol_type_push_array(p_symbol_type p_type_arr);
     // useless
     //  void symbol_type_array_drop(p_symbol_type_array p_array);
     ~symbol_type_array() {}

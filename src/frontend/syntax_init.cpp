@@ -10,7 +10,7 @@ syntax_init::syntax_init()
 }
 syntax_init::syntax_init(p_ast_exp p_exp)
     : is_exp(true),
-      syntax_const(true),
+      syntax_const(p_exp->kind == ast_exp::ast_exp_num),
       p_exp(p_exp),
       node(list_head_init(&this->node))
 {
