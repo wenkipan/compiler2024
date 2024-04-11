@@ -438,6 +438,7 @@ ast_exp::ast_exp(p_symbol_var p_var)
     this->p_type->symbol_type_push_ptr();
     // printf("when gen::%lu\n", this->p_type->ref_level);
 }
+// gep
 ast_exp::ast_exp(p_ast_exp p_val, p_ast_exp p_offset, bool is_element)
 {
     assert(p_val->p_type->ref_level == 1);
