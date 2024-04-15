@@ -3,9 +3,11 @@
 class BasicBlock;
 class Param : public Value
 {
+public:
+    Param(Type *type);
 };
 
-class Functon : public GlobalValue
+class Function : public GlobalValue
 {
     int currentbblabel;
     std::vector<Param *> *params;
@@ -14,5 +16,6 @@ class Functon : public GlobalValue
     std::vector<BasicBlock *> *blocks;
 
 public:
-    Functon();
+    Function();
+    void params_push_back(Param *p) { params->push_back(p); }
 };
