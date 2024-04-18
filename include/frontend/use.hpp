@@ -13,5 +13,6 @@ typedef void *yyscan_t;
 
 #include <program/program.hpp>
 #include <ast/ast.hpp>
+#include <ir/Module.hpp>
 
-p_program frontend_trans(const char *input, const char *output);
+p_program frontend_trans(const char *input, const char *output, Module *module);

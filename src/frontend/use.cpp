@@ -2,10 +2,11 @@
 #include <frontend/lexer.hpp>
 #include <frontend/parser.hpp>
 
-p_program frontend_trans(const char *input, const char *output)
+p_program frontend_trans(const char *input, const char *output, Module *module)
 {
     yyscan_t scanner;
     p_syntax_info p_info = new syntax_info(input, output);
+    p_info->module = module;
     yylex_init_extra(p_info, &scanner);
     if (input)
     {

@@ -289,6 +289,8 @@ void syntax_info::syntax_func_end(p_ast_block p_block)
         break;
     }
     // ast2ir_symbol_func_gen(p_block, p_func, p_info->_p_program);
+    Function *_p_func = new Function(p_block, p_func);
+    this->module->func_push_back(_p_func);
     syntax_info_print_block(p_block);
     // drop
     p_block->ast_block_drop();

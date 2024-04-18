@@ -1,24 +1,25 @@
 #pragma once
 #include <ir/Value.hpp>
 #include <ir/Instrution.hpp>
-#include <ir/Function.hpp>
-#include <list>
 
+class Function;
 class BasicBlock : public Value
 {
-    Functon *parent;
-    int label;
+    Function *parent;
     std::vector<BasicBlock *> *prevBBs;
     std::vector<PHINode *> *phinodes;
+
     std::vector<Instrution *> *instrutions;
     // successor in there
 
 public:
     BasicBlock();
+    BasicBlock(Function *p_func);
     BasicBlock(std::vector<Instrution *> *instrs);
-    void push_front_instr();
-    void insert_instr(Instrution *instr, int pos);
-    void push_back_instr();
+
+    void Ins_pushFront(Instrution *p_instr);
+    void Ins_insert(Instrution *instr, int pos);
+    void Ins_pushBack(Instrution *p_instr);
 };
 
 class BasicBlockEdge

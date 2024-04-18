@@ -4,6 +4,7 @@
 #include <frontend/syntax_decl.hpp>
 #include <program/program.hpp>
 #include <ast/ast.hpp>
+#include <ir/Module.hpp>
 
 typedef class syntax_info *p_syntax_info;
 class syntax_info
@@ -14,6 +15,7 @@ public:
     p_symbol_func p_func;
     p_ast_block p_block;
     p_symbol_func p_mem_set;
+    Module *module;
 
     // p_syntax_info syntax_info_gen(const char *input, const char *output);
     syntax_info(const char *input, const char *output);

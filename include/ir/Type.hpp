@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include <vector>
+
+#include <symbol/type.hpp>
 
 enum class TypeEnum
 {
@@ -17,6 +20,8 @@ class Type
 
 public:
     Type(TypeEnum type_enum);
+    Type(Type *p_type);
+    Type(basic_type mtype);
 
     bool isVoid();
     bool isStr();
@@ -28,4 +33,15 @@ public:
     {
         return "!type!";
     }
+};
+
+class ArrayType : public Type
+{
+    TypeEnum base_type;
+
+    int size;
+    std::vector<int> dims;
+
+public:
+    ArrayType(p_symbol_type p_type);
 };

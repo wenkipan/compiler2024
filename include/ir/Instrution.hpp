@@ -13,6 +13,7 @@ enum class InstrutionEnum
     Return,
     Load,
     Store,
+    Alloc,
     CmpBegin,
     IEQ,
     INEQ,
@@ -58,6 +59,7 @@ class Instrution : public User
     InstrutionEnum instr_type;
 
 public:
+    Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type);
     Instrution(/* args */);
     ~Instrution();
     bool isCall() { return instr_type == InstrutionEnum::Call; }
@@ -87,6 +89,9 @@ class Return : public Instrution
 class Jmp : public Instrution
 {
     BasicBlock *nextBB;
+
+public:
+    Jmp();
 };
 class Branch : public Instrution
 {
@@ -102,8 +107,15 @@ class Load : public Instrution
 };
 class Store : public Instrution
 {
-};
+    Value *p_addr;
+    Value *p_src;
 
+public:
+    Store(Value *_addr, Value *_src, BasicBlock *_BB);
+};
+class Alloc : public Instrution
+{
+};
 class Cmp : public Instrution
 {
 };

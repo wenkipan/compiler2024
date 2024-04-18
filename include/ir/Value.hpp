@@ -3,13 +3,27 @@
 #include <ir/Type.hpp>
 #include <ir/Edge.hpp>
 
-class Value : public Type
+#include <symbol/var.hpp>
+#include <symbol/func.hpp>
+
+class Value
 {
-    int ID;
-    EdgeList *value_list;
-    EdgeList *user_list;
+
+    int ID = CurID++;
+    std::vector<Edge *> *value_list;
+    std::vector<Edge *> *user_list;
+    Type *type;
 
 public:
+    static int CurID;
+
     Value();
-    Value(Type type);
+    Value(TypeEnum basic_type);
+    Value(Type *type);
+    Value(p_symbol_var p_var);
+    Value(p_symbol_func p_func);
+
+    Type *get_type();
+
+    void value_list_push_back(Edge *edge);
 };
