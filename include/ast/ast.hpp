@@ -7,6 +7,9 @@
 #include <symbol/var.hpp>
 #include <symbol/func.hpp>
 #include <symbol/str.hpp>
+
+class Value;
+
 // #include <ir.hpp>
 typedef class ast_param *p_ast_param;
 typedef class ast_param_list *p_ast_param_list;
@@ -213,6 +216,7 @@ public:
     p_symbol_type p_type;
 
     // p_ir_vreg p_des;
+    Value *p_val = nullptr;
 
     ast_exp() {}
     // p_ast_exp ast_exp_relational_gen(ast_exp_relational_op op, p_ast_exp p_rsrc_1, p_ast_exp p_rsrc_2);

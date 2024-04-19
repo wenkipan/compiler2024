@@ -10,6 +10,8 @@ enum class TypeEnum
     Str,
     I32,
     F32,
+    PtrI32,
+    PtrF32,
     Array,
 
 };
@@ -19,7 +21,7 @@ class Type
     TypeEnum type;
 
 public:
-    Type(TypeEnum type_enum);
+    Type(TypeEnum _type);
     Type(Type *p_type);
     Type(basic_type mtype);
 
@@ -28,8 +30,12 @@ public:
     bool isI32();
     bool isF32();
 
+    TypeEnum get_type();
+    void reset(TypeEnum _type);
+
     // cout<<Type(specific)
-    virtual explicit operator std::string() const
+    virtual explicit
+    operator std::string() const
     {
         return "!type!";
     }

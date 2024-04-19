@@ -10,5 +10,6 @@ public:
     User();
     User(TypeEnum basic_type);
     User(p_symbol_var p_var);
+    User(p_symbol_var p_var, basic_type basic);
     User(p_symbol_func p_func);
 };

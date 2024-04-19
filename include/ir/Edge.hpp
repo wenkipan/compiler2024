@@ -8,4 +8,7 @@ class Edge
 
 public:
     Edge(Value *_user, Value *_val);
+
+    Value *get_val() { return value; }
+    Value *get_user() { return user; }
 };

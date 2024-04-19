@@ -1,5 +1,10 @@
 #include <ir/Type.hpp>
 
+Type::Type(TypeEnum _type)
+    : type(_type)
+{
+}
+
 Type::Type(Type *p_type)
     : type(p_type->type)
 {
@@ -24,6 +29,16 @@ Type::Type(basic_type mtype)
     }
 }
 
+TypeEnum Type::get_type()
+{
+    return type;
+}
+
+void Type::reset(TypeEnum _type)
+{
+    type = _type;
+}
+
 ArrayType::ArrayType(p_symbol_type p_type)
     : Type(TypeEnum::Array)
 {
@@ -31,7 +46,7 @@ ArrayType::ArrayType(p_symbol_type p_type)
     switch (mtype)
     {
     case type_void:
-        base_type = TypeEnum::Void;
+        assert(0);
         break;
     case type_f32:
         base_type = TypeEnum::F32;

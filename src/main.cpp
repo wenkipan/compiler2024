@@ -39,8 +39,6 @@ int main(int argc, char *argv[])
     p_program p_program = frontend_trans(in_file, out_file, module);
     p_program->program_variable_print();
 
-    Value::CurID = 0;
-
     // // into ssa
     // ir_simplify_cfg_pass(p_program);
     // mem2reg_program_pass(p_program);

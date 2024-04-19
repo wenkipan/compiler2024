@@ -12,7 +12,6 @@
 
 class Module
 {
-
     std::vector<GlobalVariable *> *global_variables;
     std::vector<Function *> *functions;
     std::string infile;
@@ -24,4 +23,6 @@ public:
            p_program p_program);
 
     void func_push_back(Function *p_func);
+
+    std::vector<Function *> *get_funcs();
 };

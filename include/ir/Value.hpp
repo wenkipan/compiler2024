@@ -17,13 +17,17 @@ class Value
 public:
     static int CurID;
 
+    static void clear_CurID() { CurID = 0; }
+
     Value();
     Value(TypeEnum basic_type);
     Value(Type *type);
     Value(p_symbol_var p_var);
+    Value(p_symbol_var p_var, basic_type basic);
     Value(p_symbol_func p_func);
 
     Type *get_type();
 
     void value_list_push_back(Edge *edge);
+    void user_list_push_back(Edge *edge);
 };

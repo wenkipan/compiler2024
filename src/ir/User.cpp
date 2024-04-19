@@ -10,6 +10,11 @@ User::User(p_symbol_var p_var)
 {
 }
 
+User::User(p_symbol_var p_var, basic_type basic)
+    : Value(p_var, basic)
+{
+}
+
 User::User(p_symbol_func p_func)
     : Value(p_func)
 {

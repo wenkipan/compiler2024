@@ -1,10 +1,11 @@
 #pragma once
 
 #include <ir/GlobalValue.hpp>
-#include <ir/BasicBlock.hpp>
 
 #include <ast/ast.hpp>
 
+class BasicBlock;
+class Instrution;
 class Param : public Value
 {
     int ID = CurID++;
@@ -13,6 +14,8 @@ class Param : public Value
 public:
     static int CurID;
     Param(p_symbol_var p_var);
+
+    std::vector<Instrution *> *get_loads() { return loads; }
 };
 
 class Function : public GlobalValue
@@ -30,9 +33,12 @@ public:
     Function(p_symbol_func p_func);
     Function(p_ast_block _p_ast_block, p_symbol_func _p_func);
 
-    void Val_pushBack(Value *p_val);
+    void value_pushBack(Value *p_val);
+    void Param_pushBack(Param *p_param);
 
-    void BB_addTail(BasicBlock *p_block);
+    void block_pushBack(BasicBlock *p_block);
 
     BasicBlock *get_entryBB();
+    int get_curBBlabel() { return currentbblabel; }
+    bool get_isExternal() { return isExternal; }
 };
