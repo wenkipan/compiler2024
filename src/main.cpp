@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     module->GenerSet();
     p_program p_program = frontend_trans(in_file, out_file, module);
     p_program->program_variable_print();
+    delete p_program;
     module->print();
     delete module;
 

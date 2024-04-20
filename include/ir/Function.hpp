@@ -48,5 +48,7 @@ public:
     int get_curBBlabel() { return currentbblabel; }
     bool get_isExternal() { return isExternal; }
 
+    void set_isExternal() { isExternal = true; }
+
     void print() override;
 };

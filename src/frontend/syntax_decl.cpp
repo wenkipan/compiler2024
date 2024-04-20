@@ -7,6 +7,10 @@ syntax_decl::syntax_decl(char *name)
 {
     strcpy(this->name, name);
 }
+syntax_decl::~syntax_decl()
+{
+    delete[] name;
+}
 // maybe memory leak
 //??? problem
 p_syntax_decl syntax_decl::syntax_decl_arr(p_ast_exp p_exp)

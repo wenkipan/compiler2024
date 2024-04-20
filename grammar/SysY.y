@@ -153,7 +153,7 @@ VarInitDeclarator : Declarator '=' VarInitializer { $$ = $1->syntax_decl_init( $
                   ;
 
 Declarator : Declarator '[' ConstExp ']' { $$ = $1->syntax_decl_arr( $3); }
-           | ID                          { $$ = new syntax_decl($1); }
+           | ID                          { $$ = new syntax_decl($1); delete[] ($1); }
            | Declarator error
            ;
 
@@ -194,7 +194,7 @@ ParameterDeclaration : Type ArraryParameter { p_syntax_decl_head p_head = new sy
                      | Type ID              { p_syntax_decl_head p_head = new syntax_decl_head($1, false); extra->syntax_declaration( p_head, new syntax_decl($2)); delete(p_head); }
                      ;
 
-ArraryParameter : ID '[' ']'                  { ;$$ = new syntax_decl($1); $$->syntax_decl_arr( NULL); }
+ArraryParameter : ID '[' ']'                  { ;$$ = new syntax_decl($1); $$->syntax_decl_arr( NULL); delete[]($1);}
                 | ArraryParameter '[' Exp ']' { $$ = $1->syntax_decl_arr( $3); }
                 ;
 

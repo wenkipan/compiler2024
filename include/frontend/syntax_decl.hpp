@@ -13,6 +13,7 @@ public:
 
     // p_syntax_decl syntax_decl_gen(char *name);
     syntax_decl(char *name);
+    ~syntax_decl();
     // nothing to do
     // void syntax_decl_drop(p_syntax_decl p_decl);
 

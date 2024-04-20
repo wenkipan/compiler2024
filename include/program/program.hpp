@@ -19,6 +19,7 @@ public:
     char *output;
     // p_program program_gen(const char *input, const char *output);
     program(const char *input, const char *output);
+    ~program();
     bool program_add_str(p_symbol_str p_str);
     bool program_add_global(p_symbol_var p_var);
     bool program_add_function(p_symbol_func p_func);

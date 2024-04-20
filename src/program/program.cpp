@@ -49,6 +49,30 @@ bool program::program_add_function(p_symbol_func p_func)
     return list_add_prev(&p_func->node, &this->function);
 }
 
+program::~program()
+{
+    p_program p_program = this;
+    while (!list_head_alone(&p_program->function))
+    {
+        p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
+        delete (p_del);
+    }
+
+    while (!list_head_alone(&p_program->variable))
+    {
+        p_symbol_var p_del = list_entry(p_program->variable.p_next, symbol_var, node);
+        delete (p_del);
+    }
+
+    while (!list_head_alone(&p_program->string))
+    {
+        p_symbol_str p_del = list_entry(p_program->string.p_next, symbol_str, node);
+        delete (p_del);
+    }
+
+    delete[] (p_program->input);
+    delete[] (p_program->output);
+}
 void program::program_variable_print()
 {
     p_program p_program = this;

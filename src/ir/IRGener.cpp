@@ -8,6 +8,7 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
     if (func->get_type()->get_type() != TypeEnum::Void)
         p_ret = new Alloca(curBB, func->get_type()->get_type());
     retBB = func->block_addnewBB();
+    // param
     p_list_head p_node;
     list_for_each(p_node, &_p_func->param)
     {
@@ -20,6 +21,7 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
         new Store(p_alloc, p_param, true, curBB);
     }
 
+    // variable
     list_for_each(p_node, &_p_func->variable)
     {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);

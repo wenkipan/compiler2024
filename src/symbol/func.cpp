@@ -75,48 +75,28 @@ void symbol_func::symbol_func_name_print()
 // }
 
 // relative to ir dont do now
-// symbol_func::~symbol_func()
-// {
-//     p_symbol_func p_func = this;
-//     if (!list_head_alone(&p_func->block))
-//         assert(p_func->p_ret_block->p_branch->kind == ir_ret_branch);
-//     p_func->p_entry_block = NULL;
-//     p_func->p_ret_block = NULL;
-//     list_del(&p_func->node);
-//     while (!list_head_alone(&p_func->param))
-//     {
-//         p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
-//         delete (p_del);
-//     }
-//     while (!list_head_alone(&p_func->variable))
-//     {
-//         p_symbol_var p_del = list_entry(p_func->variable.p_next, symbol_var, node);
-//         delete (p_del);
-//     }
-//     while (!list_head_alone(&p_func->call_param_vmem_list))
-//     {
-//         p_symbol_var p_del = list_entry(p_func->call_param_vmem_list.p_next, symbol_var, node);
-//         delete (p_del);
-//     }
-//     while (!list_head_alone(&p_func->block))
-//     {
-//         p_ir_basic_block p_del = list_entry(p_func->block.p_next, ir_basic_block, node);
-//         symbol_func_bb_del(p_func, p_del);
-//     }
-//     while (!list_head_alone(&p_func->param_reg_list))
-//     {
-//         p_ir_vreg p_vreg = list_entry(p_func->param_reg_list.p_next, ir_vreg, node);
-//         assert(p_vreg->def_type == func_param_def);
-//         symbol_func_param_reg_del(p_func, p_vreg);
-//     }
-//     while (!list_head_alone(&p_func->vreg_list))
-//     {
-//         p_ir_vreg p_vreg = list_entry(p_func->vreg_list.p_next, ir_vreg, node);
-//         symbol_func_vreg_del(p_func, p_vreg);
-//     }
-//     assert(p_func->block_cnt == 0);
-//     assert(p_func->instr_num == 0);
-//     assert(p_func->vreg_cnt == 0);
-//     assert(p_func->param_reg_cnt == 0);
-//     delete[] this->name;
-// }
+symbol_func::~symbol_func()
+{
+    p_symbol_func p_func = this;
+    list_del(&p_func->node);
+    while (!list_head_alone(&p_func->param))
+    {
+        p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
+        delete (p_del);
+    }
+    while (!list_head_alone(&p_func->variable))
+    {
+        p_symbol_var p_del = list_entry(p_func->variable.p_next, symbol_var, node);
+        delete (p_del);
+    }
+    while (!list_head_alone(&p_func->call_param_vmem_list))
+    {
+        p_symbol_var p_del = list_entry(p_func->call_param_vmem_list.p_next, symbol_var, node);
+        delete (p_del);
+    }
+    assert(p_func->block_cnt == 0);
+    assert(p_func->instr_num == 0);
+    assert(p_func->vreg_cnt == 0);
+    assert(p_func->param_reg_cnt == 0);
+    delete[] this->name;
+}

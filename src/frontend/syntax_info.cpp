@@ -266,6 +266,7 @@ void syntax_info::syntax_func_head(basic_type type, char *name)
     p_info->p_func = p_func;
     // maybe problem
     // free(name);
+    delete[] name;
 
     p_info->syntax_zone_push();
 }
@@ -303,7 +304,12 @@ static inline p_symbol_func syntax_rtlib_decl(p_syntax_info p_info, basic_type t
     strcpy(name, name1.c_str());
     // leak
     p_symbol_func p_func = new symbol_func(name, type, is_va);
+    delete[] name;
     p_info->syntax_program_add_function(p_func); // true
+    Function *_p_func = new Function(p_func);
+    _p_func->set_isExternal();
+    p_info->module->func_push_back(_p_func);
+
     p_info->p_func = p_func;
 
     p_info->syntax_zone_push();
