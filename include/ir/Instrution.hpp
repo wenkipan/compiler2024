@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ir/User.hpp>
+#include <unordered_map>
 
 class BasicBlock;
 
@@ -12,10 +13,10 @@ enum class InstrutionEnum
     Jmp,
     Branch,
     PHINode,
-    Return,
+    Ret,
     Load,
     Store,
-    Alloc,
+    Alloca,
     CmpBegin,
     IEQ,
     INEQ,
@@ -62,8 +63,14 @@ class Instrution : public User
     InstrutionEnum instr_type;
 
 public:
+    static std::unordered_map<InstrutionEnum, std::string> *_symbol_map;
+
     Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type);
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
+    Instrution(BasicBlock *_BB, InstrutionEnum type, ArrayType *p_array);
+    ~Instrution() override;
+
+    InstrutionEnum get_Instrtype() { return instr_type; }
 
     BasicBlock *get_BB() { return parent; }
 
@@ -72,12 +79,14 @@ public:
     bool isJmp() { return instr_type == InstrutionEnum::Jmp; }
     bool isBranch() { return instr_type == InstrutionEnum::Branch; }
     bool isPHINode() { return instr_type == InstrutionEnum::PHINode; }
-    bool isReturn() { return instr_type == InstrutionEnum::Return; }
+    bool isReturn() { return instr_type == InstrutionEnum::Ret; }
     bool isLoad() { return instr_type == InstrutionEnum::Load; }
     bool isStore() { return instr_type == InstrutionEnum::Store; }
     bool isCmp() { return instr_type >= InstrutionEnum::CmpBegin && instr_type < InstrutionEnum::CmpEnd; }
     bool isBinary() { return instr_type >= InstrutionEnum::BinaryBegin && instr_type < InstrutionEnum::BinaryEnd; }
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
+
+    virtual void print() override { assert(0); }
 };
 class Call : public Instrution
 {
@@ -92,6 +101,8 @@ public:
     Value *get_first() { return p_first_store; }
 
     void params_pushback(Value *_param);
+
+    void print();
 };
 class GEP : public Instrution
 {
@@ -102,21 +113,33 @@ public:
 
     Value *get_addr() { return p_addr; }
     Value *get_offset() { return p_offset; }
+
+    void print();
 };
 class PHINode : public Instrution
 {
+
+public:
+    void print();
 };
-class Return : public Instrution
+class Ret : public Instrution
 {
+    Value *p_val;
+
+public:
+    Ret(Value *_val, BasicBlock *_parent);
+    void print();
 };
 class Jmp : public Instrution
 {
     BasicBlock *nextBB;
 
 public:
-    Jmp(BasicBlock *_parent, BasicBlock *_next);
+    Jmp(BasicBlock *_next, BasicBlock *_parent);
 
     BasicBlock *get_nextBB() { return nextBB; }
+
+    void print();
 };
 class Branch : public Instrution
 {
@@ -130,6 +153,8 @@ public:
     Value *get_cond() { return cond; }
     BasicBlock *get_trueBB() { return trueBB; }
     BasicBlock *get_falseBB() { return falseBB; }
+
+    void print();
 };
 class Load : public Instrution
 {
@@ -138,6 +163,8 @@ class Load : public Instrution
 
 public:
     Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent);
+
+    void print();
 };
 class Store : public Instrution
 {
@@ -151,13 +178,17 @@ public:
     Value *get_addr() { return p_addr; }
     Value *get_src() { return p_src; }
     bool get_isptr() { return is_stack_ptr; }
+
+    void print();
 };
-class Alloc : public Instrution
+class Alloca : public Instrution
 {
 
 public:
-    Alloc(BasicBlock *_perant, p_symbol_var p_var);
-    Alloc(BasicBlock *_parent, TypeEnum type);
+    Alloca(BasicBlock *_perant, p_symbol_var p_var);
+    Alloca(BasicBlock *_parent, TypeEnum type);
+
+    void print();
 };
 class Cmp : public Instrution
 {
@@ -168,6 +199,8 @@ public:
 
     Value *get_src1() { return p_src1; }
     Value *get_src2() { return p_src2; }
+
+    void print();
 };
 class Binary : public Instrution
 {
@@ -178,6 +211,8 @@ public:
 
     Value *get_src1() { return p_src1; }
     Value *get_src2() { return p_src2; }
+
+    void print();
 };
 class Unary : public Instrution
 {
@@ -187,4 +222,6 @@ public:
     Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent);
 
     Value *get_src() { return p_src; }
+
+    void print();
 };

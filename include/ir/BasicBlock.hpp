@@ -17,6 +17,7 @@ public:
     BasicBlock();
     BasicBlock(Function *p_func);
     BasicBlock(std::vector<Instrution *> *instrs);
+    ~BasicBlock() override;
 
     Function *get_func() { return parent; }
 
@@ -28,6 +29,8 @@ public:
     void Ins_pushFront(Instrution *p_instr);
     void Ins_insert(Instrution *instr, int pos);
     void Ins_pushBack(Instrution *p_instr);
+
+    void print() override;
 };
 
 class BasicBlockEdge

@@ -17,3 +17,7 @@ std::string GlobalValue::get_name()
 {
     return name;
 }
+
+GlobalValue::~GlobalValue()
+{
+}

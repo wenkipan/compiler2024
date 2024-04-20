@@ -21,6 +21,7 @@ public:
 
 public:
     GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p_func);
+    ~GenFunction();
 
     void new_curBB();
     void set_curBB(BasicBlock *_BB) { curBB = _BB; };

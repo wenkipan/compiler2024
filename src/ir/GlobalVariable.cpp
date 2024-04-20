@@ -1,13 +1,13 @@
 #include <ir/GlobalVariable.hpp>
+#include <iostream>
 
 GlobalVariable::GlobalVariable(p_symbol_var p_var)
-    : GlobalValue(p_var)
+    : GlobalValue(p_var),
+      is_init(true), is_const(p_var->is_const), init(nullptr)
 {
-    is_const = p_var->is_const;
     if (p_var->p_init == nullptr)
     {
         is_init = false;
-        init = nullptr;
         return;
     }
 
@@ -23,4 +23,19 @@ GlobalVariable::GlobalVariable(p_symbol_var p_var)
         assert(0);
         break;
     }
+}
+
+void GlobalVariable::print()
+{
+
+    this->get_type()->print();
+    putchar(' ');
+    std::cout << this->get_name();
+    putchar('\n');
+}
+
+GlobalVariable::~GlobalVariable()
+{
+    if (init)
+        delete init;
 }

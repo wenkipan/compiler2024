@@ -35,3 +35,37 @@ ConstantStr::ConstantStr(const char *_str)
     : Constant(TypeEnum::Str), str(_str, strlen(_str))
 {
 }
+
+void ConstantI32::print_ID()
+{
+    if (i32.size() == 1)
+        printf("i32 %d", i32[0]);
+    else
+        printf("%%%d", this->get_ID());
+}
+
+void ConstantF32::print_ID()
+{
+    if (f32.size() == 1)
+        printf("i32 %f", f32[0]);
+    else
+        printf("%%%d", this->get_ID());
+}
+
+// drop
+
+Constant::~Constant()
+{
+}
+
+ConstantI32::~ConstantI32()
+{
+}
+
+ConstantF32::~ConstantF32()
+{
+}
+
+ConstantStr::~ConstantStr()
+{
+}

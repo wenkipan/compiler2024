@@ -8,15 +8,17 @@
 int main(int argc, char *argv[])
 {
     char *in_file = NULL, *out_file = NULL;
+    std::string Infile, Outfile;
     bool is_opt = false;
     for (int i = 1; i < argc; ++i)
     {
         if (argv[i] && !strcmp(argv[i], "-o"))
         {
-            assert(!out_file);
+            assert(Outfile.empty());
             assert(++i < argc);
             assert(argv[i][0] != '-');
             out_file = argv[i];
+            Outfile = std::string(argv[i], strlen(argv[i]));
             continue;
         }
         if (argv[i] && !strcmp(argv[i], "-O1"))
@@ -29,15 +31,19 @@ int main(int argc, char *argv[])
         {
             continue;
         }
-        assert(!in_file);
+        assert(Infile.empty());
         assert(argv[i][0] != '-');
         in_file = argv[i];
+        Infile = std::string(argv[i], strlen(argv[i]));
     }
 
     // gen ir
-    Module *module = new Module(in_file, out_file);
+    Module *module = new Module(Infile, Outfile);
+    module->GenerSet();
     p_program p_program = frontend_trans(in_file, out_file, module);
     p_program->program_variable_print();
+    module->print();
+    delete module;
 
     // // into ssa
     // ir_simplify_cfg_pass(p_program);

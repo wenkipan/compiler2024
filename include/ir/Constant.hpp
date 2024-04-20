@@ -6,6 +6,7 @@ class Constant : public User
 {
 public:
     Constant(TypeEnum type);
+    virtual ~Constant() override;
 };
 
 class ConstantI32 : public Constant
@@ -15,6 +16,9 @@ class ConstantI32 : public Constant
 public:
     ConstantI32(p_symbol_init p_init);
     ConstantI32(I32CONST_t _I32);
+    ~ConstantI32() override;
+
+    void print_ID() override;
 };
 
 class ConstantF32 : public Constant
@@ -24,6 +28,9 @@ class ConstantF32 : public Constant
 public:
     ConstantF32(p_symbol_init p_init);
     ConstantF32(F32CONST_t _F32);
+    ~ConstantF32() override;
+
+    void print_ID() override;
 };
 
 class ConstantStr : public Constant
@@ -32,4 +39,5 @@ class ConstantStr : public Constant
 
 public:
     ConstantStr(const char *_str);
+    ~ConstantStr() override;
 };

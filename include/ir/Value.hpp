@@ -22,11 +22,17 @@ public:
     Value();
     Value(TypeEnum basic_type);
     Value(Type *type);
+    Value(ArrayType *p_array);
     Value(p_symbol_var p_var);
     Value(p_symbol_var p_var, basic_type basic);
     Value(p_symbol_func p_func);
+    virtual ~Value();
 
+    int get_ID() { return ID; }
+    virtual void print_ID() { printf("%%%d", ID); };
     Type *get_type();
+
+    virtual void print() { printf("%%%d\n", ID); }
 
     void value_list_push_back(Edge *edge);
     void user_list_push_back(Edge *edge);

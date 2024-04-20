@@ -11,4 +11,9 @@ class GlobalVariable : public GlobalValue
 
 public:
     GlobalVariable(p_symbol_var p_var);
+    ~GlobalVariable() override;
+
+    bool check_const() { return is_const; }
+
+    void print() override;
 };

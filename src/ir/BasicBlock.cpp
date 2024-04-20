@@ -1,24 +1,29 @@
 #include <ir/BasicBlock.hpp>
 
 BasicBlock::BasicBlock(Function *p_func)
-    : Value(), parent(p_func)
+    : Value(), parent(p_func),
+      prevBBs(new std::vector<BasicBlock *>),
+      phinodes(new std::vector<PHINode *>),
+      p_branch(nullptr),
+      instrutions(new std::vector<Instrution *>)
 {
-    parent->block_pushBack(this);
 }
 
 BasicBlock::BasicBlock()
-    : Value(){};
+    : Value(),
+      prevBBs(new std::vector<BasicBlock *>),
+      phinodes(new std::vector<PHINode *>),
+      p_branch(nullptr),
+      instrutions(new std::vector<Instrution *>){};
 
 void BasicBlock::Set_jmp(BasicBlock *p_next)
 {
-    p_branch = new Jmp(this, p_next);
-    parent->value_pushBack(p_branch);
+    p_branch = new Jmp(p_next, this);
 }
 
 void BasicBlock::Set_branch(Value *cond, BasicBlock *p_true, BasicBlock *p_false)
 {
     p_branch = new Branch(cond, p_true, p_false, this);
-    parent->value_pushBack(p_branch);
 }
 
 void BasicBlock::prevBB_add(BasicBlock *_prev)
@@ -39,4 +44,18 @@ void BasicBlock::Ins_pushFront(Instrution *p_instr)
 void BasicBlock::Ins_pushBack(Instrution *p_instr)
 {
     instrutions->emplace_back(p_instr);
+}
+
+void BasicBlock::print()
+{
+    printf("%%%d:\n", this->get_ID());
+    for (Instrution *p_instr : (*instrutions))
+        p_instr->print();
+}
+
+BasicBlock::~BasicBlock()
+{
+    delete prevBBs;
+    delete phinodes;
+    delete instrutions;
 }

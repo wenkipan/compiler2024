@@ -19,3 +19,12 @@ User::User(p_symbol_func p_func)
     : Value(p_func)
 {
 }
+
+User::User(ArrayType *p_array)
+    : Value(p_array)
+{
+}
+
+User::~User()
+{
+}

@@ -59,6 +59,7 @@ void syntax_info::syntax_program_add_variable(p_symbol_var p_var)
 {
     this->p_table->symbol_table_var_add(p_var);
     this->_p_program->program_add_global(p_var);
+    this->module->Gvar_add(p_var);
 }
 void syntax_info::syntax_program_add_function(p_symbol_func p_func)
 {
@@ -289,7 +290,8 @@ void syntax_info::syntax_func_end(p_ast_block p_block)
         break;
     }
     // ast2ir_symbol_func_gen(p_block, p_func, p_info->_p_program);
-    Function *_p_func = new Function(p_block, p_func);
+    Function *_p_func = new Function(p_func);
+    _p_func->CallGen(p_block, p_func);
     this->module->func_push_back(_p_func);
     syntax_info_print_block(p_block);
     // drop

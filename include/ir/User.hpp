@@ -12,4 +12,8 @@ public:
     User(p_symbol_var p_var);
     User(p_symbol_var p_var, basic_type basic);
     User(p_symbol_func p_func);
+    User(ArrayType *p_array);
+    virtual ~User();
+
+    virtual void print() { assert(0); }
 };

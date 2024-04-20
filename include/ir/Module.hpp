@@ -12,17 +12,21 @@
 
 class Module
 {
-    std::vector<GlobalVariable *> *global_variables;
-    std::vector<Function *> *functions;
     std::string infile;
     std::string outfile;
+    std::vector<GlobalVariable *> *global_variables;
+    std::vector<Function *> *functions;
 
 public:
     Module(const std::string &input, const std::string &output);
-    Module(const std::string &input, const std::string &output,
-           p_program p_program);
+    ~Module();
 
     void func_push_back(Function *p_func);
+    void Gvar_add(p_symbol_var p_var);
 
     std::vector<Function *> *get_funcs();
+
+    void GenerSet();
+
+    void print();
 };

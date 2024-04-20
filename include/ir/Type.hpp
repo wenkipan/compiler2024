@@ -10,10 +10,8 @@ enum class TypeEnum
     Str,
     I32,
     F32,
-    PtrI32,
-    PtrF32,
+    Ptr,
     Array,
-
 };
 
 class Type
@@ -25,14 +23,19 @@ public:
     Type(Type *p_type);
     Type(basic_type mtype);
 
+    virtual ~Type();
+
     bool isVoid();
     bool isStr();
     bool isI32();
     bool isF32();
 
     TypeEnum get_type();
+
     void reset(TypeEnum _type);
 
+    virtual TypeEnum get_basic_type() { return type; };
+    virtual void print();
     // cout<<Type(specific)
     virtual explicit
     operator std::string() const
@@ -43,11 +46,33 @@ public:
 
 class ArrayType : public Type
 {
-    TypeEnum base_type;
+    TypeEnum b_type;
 
     int size;
-    std::vector<int> dims;
+    std::vector<int> *dims;
 
 public:
     ArrayType(p_symbol_type p_type);
+    ArrayType(ArrayType *p_array);
+    ~ArrayType() override;
+
+    TypeEnum get_basic_type() override { return b_type; };
+
+    TypeEnum get_basictype() { return b_type; }
+    std::vector<int> *get_dims() { return dims; }
+    int get_size() { return size; }
+    void print() override;
+};
+class Ptr : public Type
+{
+    Type *b_type;
+
+public:
+    Ptr(TypeEnum _type);
+    Ptr(ArrayType *_type);
+    Ptr(p_symbol_type p_var);
+    ~Ptr() override;
+
+    TypeEnum get_basic_type() override { return b_type->get_basic_type(); };
+    void print() override;
 };

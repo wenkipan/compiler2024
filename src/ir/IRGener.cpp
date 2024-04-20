@@ -6,9 +6,8 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
     : func(p_func), curBB(p_block), p_ret(nullptr)
 {
     if (func->get_type()->get_type() != TypeEnum::Void)
-        p_ret = new Alloc(curBB, func->get_type()->get_type());
-    retBB = new BasicBlock(func);
-
+        p_ret = new Alloca(curBB, func->get_type()->get_type());
+    retBB = func->block_addnewBB();
     p_list_head p_node;
     list_for_each(p_node, &_p_func->param)
     {
@@ -16,7 +15,7 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
         Param *p_param = new Param(p_var);
         p_func->Param_pushBack(p_param);
         p_func->value_pushBack(p_param);
-        Value *p_alloc = new Alloc(curBB, p_param->get_type()->get_type());
+        Value *p_alloc = new Alloca(curBB, p_param->get_type()->get_type());
         _map[p_var] = p_alloc;
         new Store(p_alloc, p_param, true, curBB);
     }
@@ -24,15 +23,21 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
     list_for_each(p_node, &_p_func->variable)
     {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        Value *p_alloc = new Alloc(curBB, p_var);
+        Value *p_alloc = new Alloca(curBB, p_var);
         _map[p_var] = p_alloc;
         _map.insert(std::pair<p_symbol_var, Value *>(p_var, p_alloc));
     }
 }
 
+GenFunction::~GenFunction()
+{
+    if (_global_map != nullptr)
+        delete _global_map;
+}
+
 void GenFunction::new_curBB()
 {
-    curBB = new BasicBlock(func);
+    curBB = func->block_addnewBB();
 }
 
 void GenFunction::Func_add_BB(BasicBlock *p_BB)
@@ -49,23 +54,29 @@ void GenFunction::stmt2ir(p_ast_block p_block)
         p_ast_stmt p_stmt = list_entry(p_node, ast_stmt, node);
         ast2ir_stmt_gen(nullptr, nullptr, p_stmt);
     }
+    Value *_val = new Load(p_ret, true, retBB);
+    new Ret(_val, retBB);
 }
 
 Value *GenFunction::ast2ir_exp_num_gen(p_ast_exp p_exp)
 {
     if (p_exp->p_type->basic == type_i32)
     {
-        return new ConstantI32(p_exp->i32const);
+        Value *_ret = new ConstantI32(p_exp->i32const);
+        func->value_pushBack(_ret);
+        return _ret;
     }
     if (p_exp->p_type->basic == type_f32)
     {
-        return new ConstantF32(p_exp->f32const);
+        Value *_ret = new ConstantF32(p_exp->f32const);
+        func->value_pushBack(_ret);
+        return _ret;
     }
+    assert(0);
     if (p_exp->p_type->basic == type_str)
     {
         return new ConstantStr(p_exp->p_str->string);
     }
-    assert(0);
 }
 
 Value *GenFunction::get_addr(p_symbol_var p_var, p_symbol_type p_type, I32CONST_t offset)
@@ -204,8 +215,7 @@ Value *GenFunction::ast2ir_exp_logic_gen(p_ast_exp p_exp)
 
 Value *GenFunction::ast2ir_exp_ulogic_gen(p_ast_exp p_exp)
 {
-    assert(0);
-    /*
+
     assert(p_exp->ul.p_bool);
 
     Value *p_instr = nullptr;
@@ -213,9 +223,44 @@ Value *GenFunction::ast2ir_exp_ulogic_gen(p_ast_exp p_exp)
     while (p_new->kind == ast_exp::ast_exp_ulogic && p_new->ul.ul_op == ast_exp_op_bool_not)
     {
         p_ast_exp p_inner = p_new->ul.p_bool;
-        if (p_inner->kind == ast_exp::ast_exp_ulogic &&)
+        if (p_inner->kind == ast_exp::ast_exp_ulogic && p_inner->ul.ul_op == ast_exp_op_bool_not)
+            p_new = p_inner->ul.p_bool;
+        else
+            p_new = p_inner;
     }
-    */
+    if (p_new->kind == ast_exp::ast_exp_logic)
+    {
+        p_instr = ast2ir_exp_logic_gen(p_new);
+        p_exp->p_val = p_new->p_val;
+    }
+
+    assert(p_new->kind == ast_exp::ast_exp_relational);
+    switch (p_new->r.r_op)
+    {
+    case ast_exp_op_neq:
+        p_new->r.r_op = ast_exp_op_eq;
+        break;
+    case ast_exp_op_eq:
+        p_new->r.r_op = ast_exp_op_neq;
+        break;
+    case ast_exp_op_g:
+        p_new->r.r_op = ast_exp_op_leq;
+        break;
+    case ast_exp_op_geq:
+        p_new->r.r_op = ast_exp_op_l;
+        break;
+    case ast_exp_op_l:
+        p_new->r.r_op = ast_exp_op_geq;
+        break;
+    case ast_exp_op_leq:
+        p_new->r.r_op = ast_exp_op_g;
+        break;
+    default:
+        assert(0);
+    }
+    p_instr = ast2ir_exp_relational_gen(p_new);
+    p_exp->p_val = p_new->p_val;
+    return p_instr;
 }
 
 Value *GenFunction::ast2ir_exp_call_gen(p_ast_exp p_exp)
@@ -337,14 +382,14 @@ void GenFunction::ast2ir_stmt_gen(BasicBlock *p_start, BasicBlock *p_next, p_ast
 void GenFunction::ast2ir_stmt_break_gen(BasicBlock *p_while_end_next)
 {
     curBB->Set_jmp(p_while_end_next);
-    BasicBlock *p_next = new BasicBlock(func);
+    BasicBlock *p_next = func->block_addnewBB();
     set_curBB(p_next);
 }
 
 void GenFunction::ast2ir_stmt_continue_gen(BasicBlock *p_while_cond)
 {
     curBB->Set_jmp(p_while_cond);
-    BasicBlock *p_next = new BasicBlock(func);
+    BasicBlock *p_next = func->block_addnewBB();
     set_curBB(p_next);
 }
 
@@ -391,14 +436,14 @@ void GenFunction::ast2ir_exp_cond_gen(BasicBlock *p_trueblock, BasicBlock *p_fal
     assert(p_exp);
     if (p_exp->kind == ast_exp::ast_exp_logic && p_exp->l.l_op == ast_exp_op_bool_or)
     {
-        BasicBlock *p_new_false = new BasicBlock(func);
+        BasicBlock *p_new_false = func->block_addnewBB();
         ast2ir_exp_cond_gen(p_trueblock, p_new_false, p_exp->l.p_bool_1);
         set_curBB(p_new_false);
         ast2ir_exp_cond_gen(p_trueblock, p_falseblock, p_exp->l.p_bool_2);
     }
     else if (p_exp->kind == ast_exp::ast_exp_logic && p_exp->l.l_op == ast_exp_op_bool_and)
     {
-        BasicBlock *p_new_true = new BasicBlock(func);
+        BasicBlock *p_new_true = func->block_addnewBB();
         ast2ir_exp_cond_gen(p_new_true, p_falseblock, p_exp->l.p_bool_1);
         set_curBB(p_new_true);
         ast2ir_exp_cond_gen(p_trueblock, p_falseblock, p_exp->l.p_bool_2);
@@ -416,22 +461,22 @@ void GenFunction::ast2ir_exp_cond_gen(BasicBlock *p_trueblock, BasicBlock *p_fal
 
 void GenFunction::ast2ir_stmt_if_gen(BasicBlock *p_cond, BasicBlock *p_next, p_ast_exp p_exp, p_ast_stmt p_stmt)
 {
-    BasicBlock *p_trueblock = new BasicBlock(func);
-    BasicBlock *p_falseblock = new BasicBlock(func);
+    BasicBlock *p_trueblock = func->block_addnewBB();
+    BasicBlock *p_falseblock = func->block_addnewBB();
 
     ast2ir_exp_cond_gen(p_trueblock, p_falseblock, p_exp);
     set_curBB(p_trueblock);
     ast2ir_stmt_gen(p_cond, p_next, p_stmt);
 
-    p_trueblock->Set_jmp(p_next);
-    set_curBB(p_next);
+    p_trueblock->Set_jmp(p_falseblock);
+    set_curBB(p_falseblock);
 }
 
 void GenFunction::ast2ir_stmt_if_else_gen(BasicBlock *p_while_cond, BasicBlock *p_while_end_next, p_ast_exp p_exp, p_ast_stmt p_stmt1, p_ast_stmt p_stmt2)
 {
-    BasicBlock *p_trueblock = new BasicBlock(func);
-    BasicBlock *p_falseblock = new BasicBlock(func);
-    BasicBlock *p_nextblock = new BasicBlock(func);
+    BasicBlock *p_trueblock = func->block_addnewBB();
+    BasicBlock *p_falseblock = func->block_addnewBB();
+    BasicBlock *p_nextblock = func->block_addnewBB();
 
     ast2ir_exp_cond_gen(p_trueblock, p_falseblock, p_exp);
 
@@ -448,9 +493,9 @@ void GenFunction::ast2ir_stmt_if_else_gen(BasicBlock *p_while_cond, BasicBlock *
 
 void GenFunction::ast2ir_stmt_while_gen(p_ast_exp p_exp, p_ast_stmt p_stmt1)
 {
-    BasicBlock *p_trueblock = new BasicBlock(func);
-    BasicBlock *p_nextblock = new BasicBlock(func);
-    BasicBlock *p_condblock = new BasicBlock(func);
+    BasicBlock *p_trueblock = func->block_addnewBB();
+    BasicBlock *p_nextblock = func->block_addnewBB();
+    BasicBlock *p_condblock = func->block_addnewBB();
 
     ast2ir_exp_cond_gen(p_trueblock, p_nextblock, p_exp);
 
