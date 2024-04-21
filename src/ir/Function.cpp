@@ -9,6 +9,11 @@ Param::Param(p_symbol_var p_var)
       loads(new std::vector<Instrution *>)
 {
 }
+
+Param::~Param()
+{
+    delete loads;
+}
 /*
 Function::Function(p_symbol_func p_func)
     : GlobalValue(p_func), currentbblabel(0)
@@ -128,7 +133,6 @@ Function::~Function()
         delete _var;
     for (BasicBlock *BB : (*blocks))
         delete BB;
-
     delete params;
     delete values;
     delete blocks;

@@ -14,6 +14,7 @@ class Param : public Value
 public:
     static int CurID;
     Param(p_symbol_var p_var);
+    ~Param();
 
     std::vector<Instrution *> *get_loads() { return loads; }
 

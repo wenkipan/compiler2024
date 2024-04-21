@@ -33,8 +33,6 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
 
 GenFunction::~GenFunction()
 {
-    if (_global_map != nullptr)
-        delete _global_map;
 }
 
 void GenFunction::new_curBB()
@@ -56,8 +54,13 @@ void GenFunction::stmt2ir(p_ast_block p_block)
         p_ast_stmt p_stmt = list_entry(p_node, ast_stmt, node);
         ast2ir_stmt_gen(nullptr, nullptr, p_stmt);
     }
-    Value *_val = new Load(p_ret, true, retBB);
-    new Ret(_val, retBB);
+    if (func->get_type()->get_type() != TypeEnum::Void)
+    {
+        Value *_val = new Load(p_ret, true, retBB);
+        new Ret(_val, retBB);
+    }
+    else
+        new Ret(retBB);
 }
 
 Value *GenFunction::ast2ir_exp_num_gen(p_ast_exp p_exp)

@@ -127,7 +127,9 @@ class Ret : public Instrution
     Value *p_val;
 
 public:
+    Ret(BasicBlock *_parent);
     Ret(Value *_val, BasicBlock *_parent);
+
     void print();
 };
 class Jmp : public Instrution

@@ -84,6 +84,11 @@ GEP::GEP(Value *_addr, Value *_offset, BasicBlock *_parent)
     _offset->user_list_push_back(p_in2);
 }
 
+Ret::Ret(BasicBlock *_parent)
+    : Instrution(_parent, InstrutionEnum::Ret, TypeEnum::Void), p_val(nullptr)
+{
+}
+
 Ret::Ret(Value *_val, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Ret, _val->get_type()->get_type()), p_val(_val)
 {
@@ -234,7 +239,8 @@ void GEP::print()
 void Ret::print()
 {
     printf("    ret ");
-    p_val->print_ID();
+    if (p_val)
+        p_val->print_ID();
     putchar('\n');
 }
 
