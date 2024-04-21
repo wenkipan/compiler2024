@@ -191,7 +191,7 @@ ParameterList : ParameterList ',' ParameterDeclaration
               ;
 
 ParameterDeclaration : Type ArraryParameter { p_syntax_decl_head p_head = new syntax_decl_head($1, false); extra->syntax_declaration( p_head, $2); delete(p_head); }
-                     | Type ID              { p_syntax_decl_head p_head = new syntax_decl_head($1, false); extra->syntax_declaration( p_head, new syntax_decl($2)); delete(p_head); }
+                     | Type ID              { p_syntax_decl_head p_head = new syntax_decl_head($1, false); extra->syntax_declaration( p_head, new syntax_decl($2)); delete(p_head); delete[] ($2);}
                      ;
 
 ArraryParameter : ID '[' ']'                  { ;$$ = new syntax_decl($1); $$->syntax_decl_arr( NULL); delete[]($1);}

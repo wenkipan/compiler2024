@@ -430,7 +430,8 @@ void ast_stmt_print(p_ast_stmt p_stmt)
         break;
     case ast_stmt::ast_stmt_return:
         printf("ast_stmt_return\n");
-        ast_exp_print(p_stmt->branch.p_exp);
+        if (p_stmt->branch.p_exp != nullptr)
+            ast_exp_print(p_stmt->branch.p_exp);
         break;
     case ast_stmt::ast_stmt_exp:
         printf("ast_stmt_exp\n");
