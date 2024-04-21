@@ -24,7 +24,7 @@ public:
     Value(Type *type);
     Value(ArrayType *p_array);
     Value(p_symbol_var p_var);
-    Value(p_symbol_var p_var, basic_type basic);
+    // Value(p_symbol_var p_var, basic_type basic);
     Value(p_symbol_func p_func);
     virtual ~Value();
 

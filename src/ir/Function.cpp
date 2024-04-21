@@ -5,7 +5,7 @@
 int Param::CurID = 0;
 
 Param::Param(p_symbol_var p_var)
-    : Value(p_var, p_var->p_type->basic),
+    : Value(p_var),
       loads(new std::vector<Instrution *>)
 {
 }

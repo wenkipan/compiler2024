@@ -54,7 +54,10 @@ Ptr::Ptr(ArrayType *_type)
 Ptr::Ptr(p_symbol_type p_var)
     : Type(TypeEnum::Ptr)
 {
-    b_type = new ArrayType(p_var);
+    if (list_head_alone(&p_var->array))
+        b_type = new Type(p_var->basic);
+    else
+        b_type = new ArrayType(p_var);
 }
 
 ArrayType::ArrayType(ArrayType *p_array)

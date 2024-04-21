@@ -20,25 +20,13 @@ Value::Value(Type *_type) // gep
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-    assert(_type->get_type() == TypeEnum::Array || _type->get_type() == TypeEnum::Ptr);
-    if (_type->get_type() == TypeEnum::Array)
-    {
-        ArrayType *_array = (ArrayType *)_type;
-        if (_array->get_dims()->size() > 1)
-            type = new Ptr(_array);
-        else
-            type = new Ptr(_array->get_basic_type());
-    }
-
+    assert(_type->get_type() == TypeEnum::Ptr);
+    assert(((Ptr *)_type)->get_btype()->get_type() == TypeEnum::Array);
+    ArrayType *_array = (ArrayType *)((Ptr *)_type)->get_btype();
+    if (_array->get_dims()->size() > 1)
+        type = new Ptr(_array);
     else
-    {
-        assert(((Ptr *)_type)->get_btype()->get_type() == TypeEnum::Array);
-        ArrayType *_array = (ArrayType *)((Ptr *)_type)->get_btype();
-        if (_array->get_dims()->size() > 1)
-            type = new Ptr(_array);
-        else
-            type = new Ptr(_array->get_basic_type());
-    }
+        type = new Ptr(_array->get_basic_type());
 }
 
 Value::Value(ArrayType *p_array)
@@ -52,20 +40,9 @@ Value::Value(p_symbol_var p_var) // variable
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-    if (list_head_alone(&(p_var->p_type)->array))
-        type = new Type(p_var->p_type->basic);
-    /*
-    {
-        if (p_var->p_type->basic == basic_type::type_i32)
-            type = new Type(TypeEnum::PtrI32);
-        else
-            type = new Type(TypeEnum::PtrF32);
-    }
-    */
-    else
-        type = new ArrayType(p_var->p_type);
+    type = new Ptr(p_var->p_type);
 }
-
+/*
 Value::Value(p_symbol_var p_var, basic_type basic) // param
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
@@ -75,7 +52,7 @@ Value::Value(p_symbol_var p_var, basic_type basic) // param
     else
         type = new Ptr(p_var->p_type);
 }
-
+*/
 Value::Value(p_symbol_func p_func)
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)

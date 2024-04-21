@@ -6,7 +6,13 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
     : func(p_func), curBB(p_block), p_ret(nullptr)
 {
     if (func->get_type()->get_type() != TypeEnum::Void)
-        p_ret = new Alloca(curBB, func->get_type()->get_type());
+    {
+        p_symbol_type _ret_type = new symbol_type((func->get_type()->get_type() == TypeEnum::I32) ? type_i32 : type_f32);
+        p_symbol_var _ret_var = new symbol_var("ret", _ret_type, false, false, nullptr);
+        p_ret = new Alloca(curBB, _ret_var);
+        delete _ret_var;
+    }
+
     retBB = func->block_addnewBB();
     // param
     p_list_head p_node;
@@ -16,7 +22,7 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
         Param *p_param = new Param(p_var);
         p_func->Param_pushBack(p_param);
         p_func->value_pushBack(p_param);
-        Value *p_alloc = new Alloca(curBB, p_param->get_type()->get_type());
+        Value *p_alloc = new Alloca(curBB, p_var);
         _map[p_var] = p_alloc;
         new Store(p_alloc, p_param, true, curBB);
     }
@@ -25,9 +31,10 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
     list_for_each(p_node, &_p_func->variable)
     {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        printf("\n   find %s\n", p_var->name);
         Value *p_alloc = new Alloca(curBB, p_var);
+        assert(p_alloc);
         _map[p_var] = p_alloc;
-        _map.insert(std::pair<p_symbol_var, Value *>(p_var, p_alloc));
     }
 }
 
@@ -87,7 +94,9 @@ Value *GenFunction::ast2ir_exp_num_gen(p_ast_exp p_exp)
 Value *GenFunction::get_addr(p_symbol_var p_var, p_symbol_type p_type, I32CONST_t offset)
 {
     if (_map.find(p_var) != _map.end())
+    {
         return _map[p_var];
+    }
     else
     {
         assert(_global_map->find(p_var) != _global_map->end());
@@ -97,8 +106,12 @@ Value *GenFunction::get_addr(p_symbol_var p_var, p_symbol_type p_type, I32CONST_
 
 Value *GenFunction::ast2ir_exp_gep_gen(p_ast_exp p_exp)
 {
+    assert(p_exp->gep.p_addr);
     Value *p_addr = ast2ir_exp_gen(p_exp->gep.p_addr);
     Value *p_offset = ast2ir_exp_gen(p_exp->gep.p_offset);
+    assert(get_addr(p_exp->gep.p_addr->p_var, nullptr, 0));
+    assert(p_addr);
+    assert(p_addr->get_type()->get_type() == TypeEnum::Ptr);
     Value *p_gep = new GEP(p_addr, p_offset, curBB);
     p_exp->p_val = p_gep;
     return p_gep;

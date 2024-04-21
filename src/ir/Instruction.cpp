@@ -113,10 +113,11 @@ Branch::Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlo
 }
 
 Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Load, p_val->get_type()->get_basic_type())
+    : Instrution(_parent, InstrutionEnum::Load, p_val->get_type()->get_basic_type()), p_addr(p_val)
 {
+    assert(p_val->get_type()->get_type() == TypeEnum::Ptr);
+    assert(p_val->get_type()->get_basic_type() == TypeEnum::I32 || p_val->get_type()->get_basic_type() == TypeEnum::F32);
     is_stack_ptr = _is_stack_ptr;
-    p_addr = p_val;
     Edge *p_in = new Edge(this, p_val);
     value_list_push_back(p_in);
     p_val->user_list_push_back(p_in);
