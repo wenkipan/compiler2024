@@ -221,7 +221,8 @@ void Call::print()
         params[i]->print_ID();
         printf(", ");
     }
-    params[n - 1]->print_ID();
+    if (n)
+        params[n - 1]->print_ID();
     printf(")\n");
 }
 
@@ -282,10 +283,14 @@ void Load::print()
 
 void Store::print()
 {
-    printf("    store ");
-    p_src->print_ID();
+    printf("    ");
+    p_addr->get_type()->print();
     putchar(' ');
     p_addr->print_ID();
+    printf(" = store ");
+    p_src->get_type()->print();
+    putchar(' ');
+    p_src->print_ID();
     putchar('\n');
 }
 

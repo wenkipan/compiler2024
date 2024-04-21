@@ -22,7 +22,14 @@ Value::Value(Type *_type) // gep
 {
     assert(_type->get_type() == TypeEnum::Array || _type->get_type() == TypeEnum::Ptr);
     if (_type->get_type() == TypeEnum::Array)
-        type = new Ptr((ArrayType *)_type);
+    {
+        ArrayType *_array = (ArrayType *)_type;
+        if (_array->get_dims()->size() > 1)
+            type = new Ptr(_array);
+        else
+            type = new Ptr(_array->get_basic_type());
+    }
+
     else
     {
         assert(((Ptr *)_type)->get_btype()->get_type() == TypeEnum::Array);
