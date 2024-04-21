@@ -100,6 +100,7 @@ Value *GenFunction::ast2ir_exp_gep_gen(p_ast_exp p_exp)
     Value *p_addr = ast2ir_exp_gen(p_exp->gep.p_addr);
     Value *p_offset = ast2ir_exp_gen(p_exp->gep.p_offset);
     Value *p_gep = new GEP(p_addr, p_offset, curBB);
+    p_exp->p_val = p_gep;
     return p_gep;
 }
 
@@ -107,6 +108,7 @@ Value *GenFunction::ast2ir_exp_load_gen(p_ast_exp p_exp)
 {
     Value *p_ptr = ast2ir_exp_gen(p_exp->load.p_ptr);
     Value *p_load = new Load(p_ptr, p_exp->load.is_stack, curBB);
+    p_exp->p_val = p_load;
     return p_load;
 }
 
@@ -151,6 +153,7 @@ Value *GenFunction::ast2ir_exp_relational_gen(p_ast_exp p_exp)
         break;
     }
     assert(p_instr != nullptr);
+    p_exp->p_val = p_instr;
     return p_instr;
 }
 
@@ -189,6 +192,7 @@ Value *GenFunction::ast2ir_exp_binary_gen(p_ast_exp p_exp)
         break;
     }
     assert(p_instr);
+    p_exp->p_val = p_instr;
     return p_instr;
 }
 
@@ -210,6 +214,7 @@ Value *GenFunction::ast2ir_exp_unary_gen(p_ast_exp p_exp)
         break;
     }
     assert(p_instr);
+    p_exp->p_val = p_instr;
     return p_instr;
 }
 
@@ -291,6 +296,7 @@ Value *GenFunction::ast2ir_exp_call_gen(p_ast_exp p_exp)
         }
         ((Call *)p_instr)->params_pushback(p_op);
     }
+    p_exp->p_val = p_instr;
     return p_instr;
 }
 
