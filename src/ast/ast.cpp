@@ -12,7 +12,7 @@ p_ast_block ast_block::ast_block_add(p_ast_stmt p_stmt)
     {
         if (p_stmt->type == ast_stmt::ast_stmt_exp && p_stmt->branch.p_exp == NULL)
         {
-            free(p_stmt);
+            delete (p_stmt);
         }
         else
         {
@@ -25,27 +25,20 @@ p_ast_block ast_block::ast_block_add(p_ast_stmt p_stmt)
         p_block->length += p_stmt->p_block->length;
         if (!list_blk_add_prev(&p_stmt->p_block->stmt, &p_block->stmt))
             list_replace(&p_block->stmt, &p_stmt->p_block->stmt);
-        free(p_stmt->p_block);
-        free(p_stmt);
+        delete (p_stmt->p_block);
+        delete (p_stmt);
     }
     return p_block;
 }
 ast_block::~ast_block()
 {
-    // assert(this);
-    // while (!list_head_alone(&this->stmt))
-    // {
-    //     p_ast_stmt p_stmt = list_entry(this->stmt.p_next, ast_stmt, node);
-    //     delete (p_stmt);
-    // }
-    // free(p_block);
 }
 void ast_block::ast_block_drop()
 {
     while (!list_head_alone(&this->stmt))
     {
         p_ast_stmt p_stmt = list_entry(this->stmt.p_next, ast_stmt, node);
-        delete (p_stmt);
+        ast_stmt_drop(p_stmt);
     }
     delete (this);
 }
@@ -87,7 +80,7 @@ ast_param::~ast_param()
 {
     assert(this);
     list_del(&this->node);
-    delete (this->p_exp);
+    ast_exp_drop(this->p_exp);
     // free(p_param);
 }
 // ast_stmt
@@ -209,46 +202,48 @@ p_ast_stmt ast_stmt_assign_gen(p_ast_exp lval, p_ast_exp rval)
     rval = rval->ast_exp_cov_gen(lval->p_type->basic);
     return new ast_stmt(lval, rval);
 }
-ast_stmt::~ast_stmt()
+void ast_stmt_drop(p_ast_stmt p_stmt)
 {
-    p_ast_stmt p_stmt = this;
     assert(p_stmt);
     list_del(&p_stmt->node);
     switch (p_stmt->type)
     {
-    case ast_stmt_assign:
-        delete (p_stmt->array.p_lval);
-        delete (p_stmt->array.p_rval);
+    case ast_stmt::ast_stmt_assign:
+        ast_exp_drop(p_stmt->array.p_lval);
+        ast_exp_drop(p_stmt->array.p_rval);
         break;
-    case ast_stmt_block:
+    case ast_stmt::ast_stmt_block:
         p_stmt->p_block->ast_block_drop();
         break;
-    case ast_stmt_exp:
+    case ast_stmt::ast_stmt_exp:
         if (p_stmt->branch.p_exp)
-            delete (p_stmt->branch.p_exp);
+            ast_exp_drop(p_stmt->branch.p_exp);
         break;
-    case ast_stmt_return:
+    case ast_stmt::ast_stmt_return:
         if (p_stmt->branch.p_exp)
-            delete (p_stmt->branch.p_exp);
+            ast_exp_drop(p_stmt->branch.p_exp);
         break;
-    case ast_stmt_if_else:
-        delete (p_stmt->branch.p_exp);
-        delete (p_stmt->branch.p_stmt_1);
-        delete (p_stmt->branch.p_stmt_2);
+    case ast_stmt::ast_stmt_if_else:
+        ast_exp_drop(p_stmt->branch.p_exp);
+        ast_stmt_drop(p_stmt->branch.p_stmt_1);
+        ast_stmt_drop(p_stmt->branch.p_stmt_2);
         break;
-    case ast_stmt_while:
-        delete (p_stmt->branch.p_exp);
-        delete (p_stmt->branch.p_stmt_1);
+    case ast_stmt::ast_stmt_while:
+        ast_exp_drop(p_stmt->branch.p_exp);
+        ast_stmt_drop(p_stmt->branch.p_stmt_1);
         break;
-    case ast_stmt_if:
-        delete (p_stmt->branch.p_exp);
-        delete (p_stmt->branch.p_stmt_1);
+    case ast_stmt::ast_stmt_if:
+        ast_exp_drop(p_stmt->branch.p_exp);
+        ast_stmt_drop(p_stmt->branch.p_stmt_1);
         break;
-    case ast_stmt_break:
-    case ast_stmt_continue:
+    case ast_stmt::ast_stmt_break:
+    case ast_stmt::ast_stmt_continue:
         break;
     }
-    // free(p_stmt);
+    delete (p_stmt);
+}
+ast_stmt::~ast_stmt()
+{
 }
 // ast_exp
 static inline p_ast_exp exp_ptr_to_val(p_ast_exp p_exp)
@@ -323,7 +318,7 @@ static inline p_ast_exp exp_val_const(p_ast_exp p_exp)
             assert(p_exp->p_var->p_init);
             p_val = new ast_exp((F32CONST_t)p_exp->p_var->p_init->memory[offset].f);
         }
-        delete (p_back);
+        ast_exp_drop(p_back);
 
         return p_val;
     }
@@ -567,7 +562,7 @@ p_ast_exp ast_exp_binary_gen(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_ex
         default:
             assert(1);
         }
-        delete (p_src_2);
+        ast_exp_drop(p_src_2);
         return p_src_1;
     }
 
@@ -603,46 +598,49 @@ p_ast_exp ast_exp_unary_gen(ast_exp_unary_op u_op, p_ast_exp p_src)
     }
     return new ast_exp((ast_exp_unary_op)u_op, p_src);
 }
-ast_exp::~ast_exp()
+void ast_exp_drop(p_ast_exp p_exp)
 {
-    p_ast_exp p_exp = this;
     assert(p_exp);
     switch (p_exp->kind)
     {
-    case ast_exp_binary:
-        delete (p_exp->b.p_src_1);
-        delete (p_exp->b.p_src_2);
+    case ast_exp::ast_exp_binary:
+        ast_exp_drop(p_exp->b.p_src_1);
+        ast_exp_drop(p_exp->b.p_src_2);
         break;
-    case ast_exp_relational:
-        delete (p_exp->r.p_rsrc_1);
-        delete (p_exp->r.p_rsrc_2);
+    case ast_exp::ast_exp_relational:
+        ast_exp_drop(p_exp->r.p_rsrc_1);
+        ast_exp_drop(p_exp->r.p_rsrc_2);
         break;
-    case ast_exp_unary:
-        delete (p_exp->u.p_src);
+    case ast_exp::ast_exp_unary:
+        ast_exp_drop(p_exp->u.p_src);
         break;
-    case ast_exp_logic:
-        delete (p_exp->l.p_bool_1);
-        delete (p_exp->l.p_bool_2);
+    case ast_exp::ast_exp_logic:
+        ast_exp_drop(p_exp->l.p_bool_1);
+        ast_exp_drop(p_exp->l.p_bool_2);
         break;
-    case ast_exp_ulogic:
-        delete (p_exp->ul.p_bool);
+    case ast_exp::ast_exp_ulogic:
+        ast_exp_drop(p_exp->ul.p_bool);
         break;
-    case ast_exp_call:
+    case ast_exp::ast_exp_call:
         delete (p_exp->call.p_param_list);
         break;
-    case ast_exp_gep:
-        delete (p_exp->gep.p_addr);
-        delete (p_exp->gep.p_offset);
+    case ast_exp::ast_exp_gep:
+        ast_exp_drop(p_exp->gep.p_addr);
+        ast_exp_drop(p_exp->gep.p_offset);
         break;
-    case ast_exp_load:
-        delete (p_exp->load.p_ptr);
+    case ast_exp::ast_exp_load:
+        ast_exp_drop(p_exp->load.p_ptr);
         break;
-    case ast_exp_ptr:
-    case ast_exp_num:
-    case ast_exp_use:
+    case ast_exp::ast_exp_ptr:
+    case ast_exp::ast_exp_num:
+    case ast_exp::ast_exp_use:
         break;
     }
     delete (p_exp->p_type);
+    delete (p_exp);
+}
+ast_exp::~ast_exp()
+{
 }
 
 p_ast_exp ast_exp::ast_exp_use_gen()

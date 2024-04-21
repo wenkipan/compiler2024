@@ -23,7 +23,7 @@ p_syntax_decl syntax_decl::syntax_decl_arr(p_ast_exp p_exp)
         assert(p_exp->p_type->basic == type_i32);
         assert(p_exp->i32const > 0);
         size = p_exp->i32const;
-        delete (p_exp);
+        ast_exp_drop(p_exp);
     }
     // printf("syntax_decl_arr::%lu\n", size);
     p_syntax_type_array p_arrary = new syntax_type_array(size);

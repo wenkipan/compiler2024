@@ -76,7 +76,7 @@ static inline bool syntax_init_by_assign_gen_no_zero(p_symbol_type p_type, p_syn
         assert(p_rval);
         if (p_rval->kind == ast_exp::ast_exp_num && p_rval->i32const == 0)
         {
-            delete (p_rval);
+            ast_exp_drop(p_rval);
             return false;
         }
         p_ast_stmt p_assign = ast_stmt_assign_gen(p_addr, p_rval);
@@ -110,7 +110,7 @@ static inline bool syntax_init_by_assign_gen_no_zero(p_symbol_type p_type, p_syn
             // maybe problem
             p_first_addr->gep.p_addr = p_addr->ast_exp_use_gen();
         }
-        delete (p_element_addr);
+        ast_exp_drop(p_element_addr);
     }
 
     p_arr->symbol_type_push_array(p_type);
@@ -168,7 +168,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
                 {
                     init_val.f = p_rval->f32const;
                 }
-                delete (p_rval);
+                ast_exp_drop(p_rval);
                 p_init->symbol_init_add(i, init_val);
             }
             p_var = new symbol_var(name, p_type, is_const, true, p_init);
@@ -205,7 +205,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
             {
                 init_val.f = p_rval->f32const;
             }
-            delete (p_rval);
+            ast_exp_drop(p_rval);
             p_init->symbol_init_add(i, init_val);
         }
         p_symbol_var p_var = new symbol_var(name, p_type, true, false, p_init);
@@ -238,7 +238,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
                 p_ast_exp p_lval = new ast_exp(p_var);
                 bool have_assign = syntax_init_by_assign_gen_no_zero(p_type, p_s_init, p_lval, p_info->p_block);
                 if (!have_assign)
-                    delete (p_lval);
+                    ast_exp_drop(p_lval);
             }
             else
             {

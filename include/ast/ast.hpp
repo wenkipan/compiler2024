@@ -131,6 +131,7 @@ public:
     // void ast_stmt_drop(p_ast_stmt p_stmt);
     ~ast_stmt();
 };
+void ast_stmt_drop(p_ast_stmt p_stmt);
 p_ast_stmt ast_stmt_return_gen(basic_type ret_type, p_ast_exp p_exp);
 p_ast_stmt ast_stmt_exp_gen(p_ast_exp p_exp);
 p_ast_stmt ast_stmt_break_gen(void);    // cant  ignore
@@ -257,6 +258,7 @@ public:
     p_ast_exp ast_exp_cov_gen(basic_type b_type);
     p_ast_exp ast_exp_to_cond();
 };
+void ast_exp_drop(p_ast_exp p_exp);
 // hard to change
 p_ast_exp ast_exp_ptr_check_const(p_ast_exp p_exp);
 p_ast_exp syntax_val_offset(p_ast_exp p_val, p_ast_exp p_offset);
