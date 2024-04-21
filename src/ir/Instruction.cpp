@@ -54,7 +54,7 @@ Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var)
     p_func->value_pushBack((Value *)this);
 }
 
-Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, ArrayType *p_array)
+Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array)
     : User(p_array), parent(_BB), instr_type(type)
 {
     _BB->Ins_pushBack(this);
@@ -74,7 +74,7 @@ Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
 }
 
 GEP::GEP(Value *_addr, Value *_offset, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::GEP, (ArrayType *)_addr->get_type()), p_addr(_addr), p_offset(_offset)
+    : Instrution(_parent, InstrutionEnum::GEP, _addr->get_type()), p_addr(_addr), p_offset(_offset)
 {
     Edge *p_in1 = new Edge(this, _addr);
     Edge *p_in2 = new Edge(this, _offset);
@@ -200,10 +200,13 @@ Instrution::~Instrution()
 
 void Call::print()
 {
+    printf("    ");
     if (p_func->get_type()->get_type() != TypeEnum::Void)
-        printf("    %%%d = ", this->get_ID());
-    else
-        printf("   ");
+    {
+
+        this->get_type()->print();
+        printf(" %%%d = ", this->get_ID());
+    }
     printf("call @");
     std::cout << ((GlobalValue *)p_func)->get_name();
     putchar('(');
@@ -219,7 +222,13 @@ void Call::print()
 
 void GEP::print()
 {
-    printf("    %%%d = getelementptr inbounds ", this->get_ID());
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = getelementptr inbounds ", this->get_ID());
+    p_addr->get_type()->print();
+    printf(" i32 0 ");
+    p_offset->print_ID();
+    putchar('\n');
 }
 
 void Ret::print()
@@ -244,7 +253,9 @@ void Branch::print()
 void Load::print()
 {
 
-    printf("    %%%d = load ", this->get_ID());
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = load ", this->get_ID());
     switch (this->get_type()->get_type())
     {
     case TypeEnum::I32:
@@ -274,7 +285,9 @@ void Store::print()
 
 void Alloca::print()
 {
-    printf("    %%%d = alloca ", this->get_ID());
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = alloca ", this->get_ID());
     Type *_mtype = this->get_type();
     _mtype->print();
     printf(", align ");
@@ -286,7 +299,9 @@ void Alloca::print()
 
 void Cmp::print()
 {
-    printf("    %%%d = ", this->get_ID());
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = ", this->get_ID());
     p_src1->print_ID();
     putchar(' ');
     std::cout << (*_symbol_map)[this->get_Instrtype()];
@@ -297,7 +312,9 @@ void Cmp::print()
 
 void Binary::print()
 {
-    printf("    %%%d = ", this->get_ID());
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = ", this->get_ID());
     p_src1->print_ID();
     putchar(' ');
     std::cout << (*_symbol_map)[this->get_Instrtype()];
@@ -308,7 +325,9 @@ void Binary::print()
 
 void Unary::print()
 {
-    printf("    %%%d = ", this->get_ID());
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = ", this->get_ID());
     std::cout << (*_symbol_map)[this->get_Instrtype()];
     putchar(' ');
     p_src->print_ID();

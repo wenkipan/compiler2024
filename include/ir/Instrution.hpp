@@ -67,7 +67,7 @@ public:
 
     Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type);
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
-    Instrution(BasicBlock *_BB, InstrutionEnum type, ArrayType *p_array);
+    Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array);
     ~Instrution() override;
 
     InstrutionEnum get_Instrtype() { return instr_type; }

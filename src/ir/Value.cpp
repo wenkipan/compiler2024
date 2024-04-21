@@ -16,11 +16,22 @@ Value::Value(TypeEnum basic_type)
     type = new Type(basic_type);
 }
 
-Value::Value(Type *type)
+Value::Value(Type *_type) // gep
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-    type = new Type(type);
+    assert(_type->get_type() == TypeEnum::Array || _type->get_type() == TypeEnum::Ptr);
+    if (_type->get_type() == TypeEnum::Array)
+        type = new Ptr((ArrayType *)_type);
+    else
+    {
+        assert(((Ptr *)_type)->get_btype()->get_type() == TypeEnum::Array);
+        ArrayType *_array = (ArrayType *)((Ptr *)_type)->get_btype();
+        if (_array->get_dims()->size() > 1)
+            type = new Ptr(_array);
+        else
+            type = new Ptr(_array->get_basic_type());
+    }
 }
 
 Value::Value(ArrayType *p_array)

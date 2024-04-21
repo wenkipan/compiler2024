@@ -108,10 +108,12 @@ void Function::print()
     this->get_type()->print();
     std::cout << " @" << this->get_name();
     _params_print((*params));
-    printf("{\n");
+    if (blocks->size())
+        printf("{\n");
     for (BasicBlock *p_BB : (*blocks))
         p_BB->print();
-    printf("}\n");
+    if (blocks->size())
+        printf("}\n");
 }
 
 void Param::print()

@@ -20,7 +20,7 @@ User::User(p_symbol_func p_func)
 {
 }
 
-User::User(ArrayType *p_array)
+User::User(Type *p_array)
     : Value(p_array)
 {
 }

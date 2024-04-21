@@ -126,7 +126,8 @@ void Type::print()
 
 void Ptr::print()
 {
-    printf("ptr");
+    b_type->print();
+    putchar('*');
 }
 
 void ArrayType::print()

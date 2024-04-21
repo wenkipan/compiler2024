@@ -74,5 +74,6 @@ public:
     ~Ptr() override;
 
     TypeEnum get_basic_type() override { return b_type->get_basic_type(); };
+    Type *get_btype() { return b_type; }
     void print() override;
 };

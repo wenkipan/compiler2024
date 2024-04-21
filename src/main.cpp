@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     p_program->program_variable_print();
     delete p_program;
     module->print();
+
     delete module;
 
     // // into ssa
