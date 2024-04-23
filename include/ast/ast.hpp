@@ -245,6 +245,8 @@ public:
     ast_exp(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_exp p_src_2);
     // support ast_exp_unary_gen
     ast_exp(ast_exp_unary_op u_op, p_ast_exp p_src);
+    // f2i,i2f
+    ast_exp(ast_exp_unary_op u_op, p_ast_exp p_src, basic_type typefi);
 
     p_ast_exp ast_exp_use_gen();
     // delete void ast_exp_drop(p_ast_exp p_exp);

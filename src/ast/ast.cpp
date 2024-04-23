@@ -1,3 +1,4 @@
+#include "symbol/symbol.hpp"
 #include <ast/ast.hpp>
 // ast_block
 ast_block::ast_block()
@@ -574,6 +575,12 @@ ast_exp::ast_exp(ast_exp_unary_op u_op, p_ast_exp p_src)
     this->kind = ast_exp_unary;
     this->p_type = new symbol_type(p_src->p_type->basic);
 }
+ast_exp::ast_exp(ast_exp_unary_op u_op, p_ast_exp p_src, basic_type typefi)
+{
+    this->u = {p_src, u_op};
+    this->kind = ast_exp_unary;
+    this->p_type = new symbol_type(typefi);
+}
 p_ast_exp ast_exp_unary_gen(ast_exp_unary_op u_op, p_ast_exp p_src)
 {
     assert(p_src);
@@ -700,7 +707,7 @@ static inline p_ast_exp ast_exp_i2f_gen(p_ast_exp p_i32)
         return p_i32;
     }
 
-    return new ast_exp((ast_exp_unary_op)ast_exp_op_i2f, p_i32);
+    return new ast_exp((ast_exp_unary_op)ast_exp_op_i2f, p_i32, type_f32);
 }
 
 static inline p_ast_exp ast_exp_f2i_gen(p_ast_exp p_f32)
@@ -716,7 +723,7 @@ static inline p_ast_exp ast_exp_f2i_gen(p_ast_exp p_f32)
         return p_f32;
     }
 
-    return new ast_exp((ast_exp_unary_op)ast_exp_op_f2i, p_f32);
+    return new ast_exp((ast_exp_unary_op)ast_exp_op_f2i, p_f32, type_i32);
 }
 p_ast_exp ast_exp::ast_exp_cov_gen(basic_type b_type)
 {
