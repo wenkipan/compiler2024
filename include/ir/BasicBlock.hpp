@@ -29,6 +29,7 @@ public:
     void Ins_pushFront(Instrution *p_instr);
     void Ins_insert(Instrution *instr, int pos);
     void Ins_pushBack(Instrution *p_instr);
+    void Ins_popBack();
 
     void print() override;
 };

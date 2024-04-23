@@ -34,7 +34,7 @@ std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
         {InstrutionEnum::FLE, "<="},
         {InstrutionEnum::FGT, ">"},
         {InstrutionEnum::FGE, ">="},
-    };
+        {InstrutionEnum::AddSP, "SP +"}};
 
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type)
     : User(basic_type), parent(_BB), instr_type(type)
@@ -158,7 +158,7 @@ Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_par
     _src2->user_list_push_back(p_in2);
 }
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
-    : Instrution(_parent, type, _src1->get_type()->get_type()),
+    : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type())),
       p_src(_src1)
 {
     TypeEnum src_type = _src1->get_type()->get_type();
@@ -235,6 +235,8 @@ void GEP::print()
     this->get_type()->print();
     printf(" %%%d = getelementptr ", this->get_ID());
     p_addr->get_type()->print();
+    putchar(' ');
+    p_addr->print_ID();
     if (is_element)
         printf(" i32 0 ");
     putchar(' ');

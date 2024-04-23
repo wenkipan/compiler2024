@@ -46,6 +46,11 @@ void BasicBlock::Ins_pushBack(Instrution *p_instr)
     instrutions->emplace_back(p_instr);
 }
 
+void BasicBlock::Ins_popBack()
+{
+    instrutions->pop_back();
+}
+
 void BasicBlock::print()
 {
     printf("%%%d:\n", this->get_ID());

@@ -216,10 +216,10 @@ Value *GenFunction::ast2ir_exp_unary_gen(p_ast_exp p_exp)
     case ast_exp_op_minus:
         p_instr = new Unary(InstrutionEnum::MINUS, p_src1, curBB);
         break;
-    case ast_exp_op_i2f:
+    case ast_exp_op_f2i:
         p_instr = new Unary(InstrutionEnum::F2I, p_src1, curBB);
         break;
-    case ast_exp_op_f2i:
+    case ast_exp_op_i2f:
         p_instr = new Unary(InstrutionEnum::I2F, p_src1, curBB);
         break;
     }
@@ -294,7 +294,7 @@ Value *GenFunction::ast2ir_exp_call_gen(p_ast_exp p_exp)
     }
     assert(p_func);
     Value *p_instr = new Call(p_func, curBB);
-
+    curBB->Ins_popBack();
     p_list_head p_node;
     list_for_each(p_node, &p_exp->call.p_param_list->param)
     {
@@ -306,6 +306,7 @@ Value *GenFunction::ast2ir_exp_call_gen(p_ast_exp p_exp)
         }
         ((Call *)p_instr)->params_pushback(p_op);
     }
+    curBB->Ins_pushBack((Instrution *)p_instr);
     p_exp->p_val = p_instr;
     return p_instr;
 }
