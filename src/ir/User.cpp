@@ -20,8 +20,8 @@ User::User(p_symbol_func p_func)
 {
 }
 
-User::User(Type *p_array)
-    : Value(p_array)
+User::User(Type *p_array, bool _ele)
+    : Value(p_array, _ele)
 {
 }
 

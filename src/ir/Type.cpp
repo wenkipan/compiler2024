@@ -39,6 +39,52 @@ void Type::reset(TypeEnum _type)
     type = _type;
 }
 
+Ptr::Ptr(Type *_ptr) // 复制指针
+    : Type(TypeEnum::Ptr)
+{
+    switch (_ptr->get_type())
+    {
+    case TypeEnum::Array:
+        b_type = new ArrayType(_ptr);
+        break;
+    case TypeEnum::Ptr:
+        b_type = new Ptr(((Ptr *)_ptr)->b_type);
+        break;
+    case TypeEnum::I32:
+        b_type = new Type(TypeEnum::I32);
+        break;
+    case TypeEnum::F32:
+        b_type = new Type(TypeEnum::F32);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
+
+Ptr::Ptr(Ptr *_ptr) //
+    : Type(TypeEnum::Ptr)
+{
+    Type *_bt = _ptr->get_btype();
+    switch (_bt->get_type())
+    {
+    case TypeEnum::Array:
+        b_type = new ArrayType(_bt);
+        break;
+    case TypeEnum::Ptr:
+        b_type = new Ptr(_bt);
+    case TypeEnum::I32:
+        b_type = new Type(TypeEnum::I32);
+        break;
+    case TypeEnum::F32:
+        b_type = new Type(TypeEnum::F32);
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
+
 Ptr::Ptr(TypeEnum _type)
     : Type(TypeEnum::Ptr)
 {
@@ -54,12 +100,27 @@ Ptr::Ptr(ArrayType *_type)
 Ptr::Ptr(p_symbol_type p_var)
     : Type(TypeEnum::Ptr)
 {
+    if (p_var->ref_level > 0)
+    {
+        p_var->ref_level--;
+        b_type = new Ptr(p_var);
+        p_var->ref_level++;
+        return;
+    }
     if (list_head_alone(&p_var->array))
         b_type = new Type(p_var->basic);
     else
         b_type = new ArrayType(p_var);
 }
 
+ArrayType::ArrayType(Type *_type)
+    : Type(TypeEnum::Array)
+{
+    ArrayType *_ptr = (ArrayType *)_type;
+    b_type = _ptr->b_type;
+    size = _ptr->size;
+    dims = new std::vector<int>((*_ptr->get_dims()));
+}
 ArrayType::ArrayType(ArrayType *p_array)
     : Type(TypeEnum::Array),
       dims(new std::vector<int>)

@@ -54,6 +54,7 @@ class ArrayType : public Type
 public:
     ArrayType(p_symbol_type p_type);
     ArrayType(ArrayType *p_array);
+    ArrayType(Type *_type);
     ~ArrayType() override;
 
     TypeEnum get_basic_type() override { return b_type; };
@@ -69,8 +70,10 @@ class Ptr : public Type
 
 public:
     Ptr(TypeEnum _type);
+    Ptr(Type *_type);
     Ptr(ArrayType *_type);
     Ptr(p_symbol_type p_var);
+    Ptr(Ptr *_ptr);
     ~Ptr() override;
 
     TypeEnum get_basic_type() override { return b_type->get_basic_type(); };

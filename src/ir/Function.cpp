@@ -4,8 +4,8 @@
 
 int Param::CurID = 0;
 
-Param::Param(p_symbol_var p_var)
-    : Value(p_var),
+Param::Param(Type *_type)
+    : Value(_type, true),
       loads(new std::vector<Instrution *>)
 {
 }

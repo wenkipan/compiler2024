@@ -54,8 +54,8 @@ Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var)
     p_func->value_pushBack((Value *)this);
 }
 
-Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array)
-    : User(p_array), parent(_BB), instr_type(type)
+Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array, bool _ele)
+    : User(p_array, _ele), parent(_BB), instr_type(type)
 {
     _BB->Ins_pushBack(this);
     Function *p_func = _BB->get_func();
@@ -73,8 +73,8 @@ Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
 {
 }
 
-GEP::GEP(Value *_addr, Value *_offset, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::GEP, _addr->get_type()), p_addr(_addr), p_offset(_offset)
+GEP::GEP(Value *_addr, Value *_offset, bool _element, BasicBlock *_parent)
+    : Instrution(_parent, InstrutionEnum::GEP, _addr->get_type(), _element), p_addr(_addr), p_offset(_offset), is_element(_element)
 {
     Edge *p_in1 = new Edge(this, _addr);
     Edge *p_in2 = new Edge(this, _offset);
@@ -113,10 +113,10 @@ Branch::Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlo
 }
 
 Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Load, p_val->get_type()->get_basic_type()), p_addr(p_val)
+    : Instrution(_parent, InstrutionEnum::Load, p_val->get_type(), true), p_addr(p_val)
 {
     assert(p_val->get_type()->get_type() == TypeEnum::Ptr);
-    assert(p_val->get_type()->get_basic_type() == TypeEnum::I32 || p_val->get_type()->get_basic_type() == TypeEnum::F32);
+    // assert(p_val->get_type()->get_basic_type() == TypeEnum::I32 || p_val->get_type()->get_basic_type() == TypeEnum::F32);
     is_stack_ptr = _is_stack_ptr;
     Edge *p_in = new Edge(this, p_val);
     value_list_push_back(p_in);
@@ -172,6 +172,8 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
         break;
     case InstrutionEnum::I2F:
         this->get_type()->reset(TypeEnum::F32);
+        break;
+    case InstrutionEnum::AddSP:
         break;
     default:
         assert(0);
@@ -231,9 +233,11 @@ void GEP::print()
 {
     printf("    ");
     this->get_type()->print();
-    printf(" %%%d = getelementptr inbounds ", this->get_ID());
+    printf(" %%%d = getelementptr ", this->get_ID());
     p_addr->get_type()->print();
-    printf(" i32 0 ");
+    if (is_element)
+        printf(" i32 0 ");
+    putchar(' ');
     p_offset->print_ID();
     putchar('\n');
 }

@@ -67,7 +67,7 @@ public:
 
     Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type);
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
-    Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array);
+    Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array, bool _ele);
     ~Instrution() override;
 
     InstrutionEnum get_Instrtype() { return instr_type; }
@@ -107,9 +107,10 @@ public:
 class GEP : public Instrution
 {
     Value *p_addr, *p_offset;
+    bool is_element;
 
 public:
-    GEP(Value *_addr, Value *_offset, BasicBlock *_parent);
+    GEP(Value *_addr, Value *_offset, bool _elemet, BasicBlock *_parent);
 
     Value *get_addr() { return p_addr; }
     Value *get_offset() { return p_offset; }

@@ -16,17 +16,33 @@ Value::Value(TypeEnum basic_type)
     type = new Type(basic_type);
 }
 
-Value::Value(Type *_type) // gep
+Value::Value(Type *_type, bool _ele) // gep and load
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
     assert(_type->get_type() == TypeEnum::Ptr);
-    assert(((Ptr *)_type)->get_btype()->get_type() == TypeEnum::Array);
-    ArrayType *_array = (ArrayType *)((Ptr *)_type)->get_btype();
-    if (_array->get_dims()->size() > 1)
-        type = new Ptr(_array);
+    Ptr *_ptr = (Ptr *)_type;
+    if (!_ele)
+    {
+        type = new Ptr(_ptr->get_btype());
+        return;
+    }
+    if (_ptr->get_btype()->get_type() == TypeEnum::Array)
+    {
+        ArrayType *_array = (ArrayType *)((Ptr *)_type)->get_btype();
+        if (_array->get_dims()->size() > 1)
+            type = new Ptr(_array);
+        else
+            type = new Ptr(_array->get_basic_type());
+    }
+    else if (_ptr->get_btype()->get_type() == TypeEnum::Ptr)
+    {
+        type = new Ptr(((Ptr *)_ptr->get_btype())->get_btype());
+    }
     else
-        type = new Ptr(_array->get_basic_type());
+    {
+        type = new Type(_ptr->get_btype()->get_type());
+    }
 }
 
 Value::Value(ArrayType *p_array)
@@ -36,7 +52,7 @@ Value::Value(ArrayType *p_array)
     type = new Ptr(p_array);
 }
 
-Value::Value(p_symbol_var p_var) // variable
+Value::Value(p_symbol_var p_var) // Alloc
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {

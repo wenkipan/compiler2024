@@ -21,7 +21,7 @@ public:
 
     Value();
     Value(TypeEnum basic_type);
-    Value(Type *type);
+    Value(Type *type, bool _ele);
     Value(ArrayType *p_array);
     Value(p_symbol_var p_var);
     // Value(p_symbol_var p_var, basic_type basic);
