@@ -58,12 +58,17 @@ program::~program()
         delete (p_del);
     }
 
+    int i = 0;
+
     while (!list_head_alone(&p_program->variable))
     {
+        ++i;
         p_symbol_var p_del = list_entry(p_program->variable.p_next, symbol_var, node);
+        printf("%s\n", p_del->name);
         delete (p_del);
     }
 
+    printf("%d\n", i);
     while (!list_head_alone(&p_program->string))
     {
         p_symbol_str p_del = list_entry(p_program->string.p_next, symbol_str, node);

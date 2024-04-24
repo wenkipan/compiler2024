@@ -280,7 +280,6 @@ static inline p_ast_exp exp_ptr_to_val_check_basic(p_ast_exp p_exp)
 {
     // printf("exp_ptr_to_val_check_basic begin\n");
     p_exp = exp_ptr_to_val(p_exp);
-
     // printf("exp_ptr_to_val_check_basic %lu\n", p_exp->p_type->ref_level);
     exp_check_basic(p_exp);
     return p_exp;
