@@ -46,7 +46,7 @@ void BasicBlock::Ins_popBack()
 
 void BasicBlock::print()
 {
-    printf("%%%d:                       ;", this->get_ID());
+    printf("b%d:                       ;", this->get_ID());
     std::vector<Edge *> *_prev = this->get_value_list();
     int n = _prev->size() - 1;
     for (int i = 0; i < n; ++i)

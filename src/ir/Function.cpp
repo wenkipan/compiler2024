@@ -59,6 +59,18 @@ Function::Function(p_symbol_func _p_func)
 
 {
 }
+void Function::ResetID()
+{
+    int curlable = 0, curID = 0;
+    for (Param *_ptr : (*params))
+        _ptr->reset_ID(curID++);
+    for (BasicBlock *_BB : (*blocks))
+    {
+        _BB->reset_ID(curlable++);
+        for (Instrution *p_instr : (*_BB->get_instrs()))
+            p_instr->reset_ID(curID++);
+    }
+}
 
 void Function::CallGen(p_ast_block p_ast_block, p_symbol_func _p_func)
 {
@@ -89,11 +101,6 @@ void Function::block_pushBack(BasicBlock *p_block)
     blocks->emplace_back(p_block);
 }
 
-BasicBlock *Function::get_entryBB()
-{
-    return entry_block;
-}
-
 static inline void _params_print(std::vector<Param *> &params)
 {
     putchar('(');
@@ -110,6 +117,7 @@ static inline void _params_print(std::vector<Param *> &params)
 
 void Function::print()
 {
+    this->ResetID();
     this->get_type()->print();
     std::cout << " @" << this->get_name();
     _params_print((*params));

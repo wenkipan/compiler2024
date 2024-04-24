@@ -35,7 +35,9 @@ public:
     virtual ~Value();
 
     int get_ID() { return ID; }
+    void reset_ID(int nw) { ID = nw; }
     virtual void print_ID() { printf("%%%d", ID); };
+
     Type *get_type();
     std::vector<Edge *> *get_value_list() { return value_list; }
     std::vector<Edge *> *get_user_list() { return user_list; }

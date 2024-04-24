@@ -13,7 +13,7 @@ GenFunction::GenFunction(Function *p_func, BasicBlock *p_block, p_symbol_func _p
         delete _ret_var;
     }
 
-    retBB = func->block_addnewBB();
+    retBB = new BasicBlock;
     // param
     p_list_head p_node;
     list_for_each(p_node, &_p_func->param)
@@ -60,6 +60,9 @@ void GenFunction::stmt2ir(p_ast_block p_block)
         p_ast_stmt p_stmt = list_entry(p_node, ast_stmt, node);
         ast2ir_stmt_gen(nullptr, nullptr, p_stmt);
     }
+    retBB->Set_parent(func);
+    func->block_pushBack(retBB);
+    func->set_retBB(retBB);
     if (func->get_type()->get_type() != TypeEnum::Void)
     {
         Value *_val = new Load(p_ret, true, retBB);

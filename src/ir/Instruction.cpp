@@ -267,14 +267,14 @@ void Ret::print()
 
 void Jmp::print()
 {
-    printf("    br lable %%%d\n", nextBB->get_ID());
+    printf("    br lable b%d\n", nextBB->get_ID());
 }
 
 void Branch::print()
 {
     printf("    br ");
     cond->print_ID();
-    printf(" , lable %%%d, lable %%%d\n", trueBB->get_ID(), falseBB->get_ID());
+    printf(" , lable b%d, lable b%d\n", trueBB->get_ID(), falseBB->get_ID());
 }
 
 void Load::print()
@@ -293,13 +293,14 @@ void Load::print()
 void Store::print()
 {
     printf("    ");
+    printf("store ");
     p_addr->get_type()->print();
     putchar(' ');
     if (is_a<GlobalValue>(p_addr))
         std::cout << ((GlobalValue *)p_addr)->get_name();
     else
         printf("%%%d", p_addr->get_ID());
-    printf(" = store ");
+    putchar(' ');
     p_src->get_type()->print();
     putchar(' ');
     p_src->print_ID();
