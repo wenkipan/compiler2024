@@ -101,15 +101,24 @@ Jmp::Jmp(BasicBlock *_next, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Jmp, TypeEnum::Void),
       nextBB(_next)
 {
-    _next->prevBB_add(_parent);
+    Edge *p_in1 = new Edge(_next, _parent);
+    _parent->user_list_push_back(p_in1);
+    _next->value_list_push_back(p_in1);
 }
 
 Branch::Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Branch, TypeEnum::Void),
       cond(_cond), trueBB(_trueBB), falseBB(_falseBB)
 {
-    _trueBB->prevBB_add(_parent);
-    _falseBB->prevBB_add(_parent);
+    Edge *p_in0 = new Edge(this, _cond);
+    this->value_list_push_back(p_in0);
+    _cond->user_list_push_back(p_in0);
+    Edge *p_in1 = new Edge(_trueBB, _parent);
+    Edge *p_in2 = new Edge(_falseBB, _parent);
+    _parent->user_list_push_back(p_in1);
+    _parent->user_list_push_back(p_in2);
+    _trueBB->value_list_push_back(p_in1);
+    _falseBB->value_list_push_back(p_in2);
 }
 
 Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
@@ -171,6 +180,7 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
         this->get_type()->reset(TypeEnum::I32);
         break;
     case InstrutionEnum::I2F:
+        assert(src_type == TypeEnum::I32);
         this->get_type()->reset(TypeEnum::F32);
         break;
     case InstrutionEnum::AddSP:

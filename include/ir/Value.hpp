@@ -31,6 +31,8 @@ public:
     int get_ID() { return ID; }
     virtual void print_ID() { printf("%%%d", ID); };
     Type *get_type();
+    std::vector<Edge *> *get_value_list() { return value_list; }
+    std::vector<Edge *> *get_user_list() { return user_list; }
 
     virtual void print() { printf("%%%d\n", ID); }
 

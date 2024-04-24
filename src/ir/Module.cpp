@@ -11,7 +11,7 @@ Module::Module(const std::string &input, const std::string &output)
 
 Module::~Module()
 {
-    std::cout << global_variables->size() << std::endl;
+    // std::cout << global_variables->size() << std::endl;
     for (GlobalValue *p_Gvar : (*global_variables))
         delete p_Gvar;
     for (GlobalValue *p_func : (*functions))

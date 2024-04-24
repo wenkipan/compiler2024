@@ -2,7 +2,6 @@
 
 BasicBlock::BasicBlock(Function *p_func)
     : Value(), parent(p_func),
-      prevBBs(new std::vector<BasicBlock *>),
       phinodes(new std::vector<PHINode *>),
       p_branch(nullptr),
       instrutions(new std::vector<Instrution *>)
@@ -11,7 +10,6 @@ BasicBlock::BasicBlock(Function *p_func)
 
 BasicBlock::BasicBlock()
     : Value(),
-      prevBBs(new std::vector<BasicBlock *>),
       phinodes(new std::vector<PHINode *>),
       p_branch(nullptr),
       instrutions(new std::vector<Instrution *>){};
@@ -24,11 +22,6 @@ void BasicBlock::Set_jmp(BasicBlock *p_next)
 void BasicBlock::Set_branch(Value *cond, BasicBlock *p_true, BasicBlock *p_false)
 {
     p_branch = new Branch(cond, p_true, p_false, this);
-}
-
-void BasicBlock::prevBB_add(BasicBlock *_prev)
-{
-    prevBBs->emplace_back(_prev);
 }
 
 void BasicBlock::Ins_insert(Instrution *p_instr, int pos)
@@ -53,14 +46,26 @@ void BasicBlock::Ins_popBack()
 
 void BasicBlock::print()
 {
-    printf("%%%d:\n", this->get_ID());
+    printf("%%%d:                       ;", this->get_ID());
+    std::vector<Edge *> *_prev = this->get_value_list();
+    int n = _prev->size() - 1;
+    for (int i = 0; i < n; ++i)
+    {
+        (*_prev)[i]->get_val()->print_ID();
+        printf(", ");
+    }
+
+    if (n >= 0)
+        (*_prev)[n]->get_val()->print_ID();
+    putchar('\n');
+
     for (Instrution *p_instr : (*instrutions))
         p_instr->print();
 }
 
 BasicBlock::~BasicBlock()
 {
-    delete prevBBs;
+
     delete phinodes;
     delete instrutions;
 }
