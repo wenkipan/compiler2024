@@ -246,7 +246,10 @@ void GEP::print()
     printf(" %%%d = getelementptr ", this->get_ID());
     p_addr->get_type()->print();
     putchar(' ');
-    p_addr->print_ID();
+    if (is_a<GlobalValue>(p_addr))
+        std::cout << ((GlobalValue *)p_addr)->get_name();
+    else
+        printf("%%%d", p_addr->get_ID());
     if (is_element)
         printf(" i32 0 ");
     putchar(' ');
@@ -276,26 +279,15 @@ void Branch::print()
 
 void Load::print()
 {
-
     printf("    ");
     this->get_type()->print();
     printf(" %%%d = load ", this->get_ID());
-    switch (this->get_type()->get_type())
-    {
-    case TypeEnum::I32:
-        printf("i32");
-        break;
-    case TypeEnum::F32:
-        printf("f32");
-        break;
-    case TypeEnum::Ptr:
-        printf("ptr");
-        break;
-    default:
-        assert(0);
-        break;
-    }
-    printf(", ptr %%%d\n", p_addr->get_ID());
+    p_addr->get_type()->print();
+    putchar(' ');
+    if (is_a<GlobalValue>(p_addr))
+        std::cout << ((GlobalValue *)p_addr)->get_name() << std::endl;
+    else
+        printf("%%%d\n", p_addr->get_ID());
 }
 
 void Store::print()
@@ -303,7 +295,10 @@ void Store::print()
     printf("    ");
     p_addr->get_type()->print();
     putchar(' ');
-    p_addr->print_ID();
+    if (is_a<GlobalValue>(p_addr))
+        std::cout << ((GlobalValue *)p_addr)->get_name();
+    else
+        printf("%%%d", p_addr->get_ID());
     printf(" = store ");
     p_src->get_type()->print();
     putchar(' ');

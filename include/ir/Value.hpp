@@ -6,6 +6,12 @@
 #include <symbol/var.hpp>
 #include <symbol/func.hpp>
 
+template <typename T>
+bool is_a(Value *p_val)
+{
+    return dynamic_cast<T *>(p_val) != nullptr;
+}
+
 class Value
 {
 
