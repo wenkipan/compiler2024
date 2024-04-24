@@ -490,7 +490,7 @@ void GenFunction::ast2ir_stmt_if_gen(BasicBlock *p_cond, BasicBlock *p_next, p_a
     set_curBB(p_trueblock);
     ast2ir_stmt_gen(p_cond, p_next, p_stmt);
 
-    p_trueblock->Set_jmp(p_falseblock);
+    curBB->Set_jmp(p_falseblock);
     set_curBB(p_falseblock);
 }
 
