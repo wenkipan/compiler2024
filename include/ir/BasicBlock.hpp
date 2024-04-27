@@ -31,4 +31,8 @@ public:
     void Ins_popBack();
 
     void print() override;
+
+    Instrution *get_last_instrution() { return instrutions->back(); }
+    std::vector<PHINode *> *get_phinodes() { return phinodes; }
+    std::vector<Instrution *> *get_instrutions() { return instrutions; }
 };

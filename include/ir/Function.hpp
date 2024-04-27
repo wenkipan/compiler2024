@@ -56,4 +56,8 @@ public:
     void set_isExternal() { isExternal = true; }
 
     void print() override;
+
+    std::vector<Param *> *get_params();
+    std::vector<Value *> *get_Values();
+    std::vector<BasicBlock *> *get_blocks() { return blocks; }
 };

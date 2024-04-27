@@ -145,3 +145,12 @@ Function::~Function()
     delete values;
     delete blocks;
 }
+std::vector<Param *> *Function::get_params()
+{
+    return params;
+}
+
+std::vector<Value *> *Function::get_Values()
+{
+    return values;
+}

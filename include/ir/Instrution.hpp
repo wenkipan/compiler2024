@@ -86,6 +86,8 @@ public:
     bool isBinary() { return instr_type >= InstrutionEnum::BinaryBegin && instr_type < InstrutionEnum::BinaryEnd; }
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
 
+    BasicBlock *get_parent() { return parent; }
+
     virtual void print() override { assert(0); }
 };
 class Call : public Instrution

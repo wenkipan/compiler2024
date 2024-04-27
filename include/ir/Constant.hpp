@@ -19,6 +19,8 @@ public:
     ~ConstantI32() override;
 
     void print_ID() override;
+
+    std::vector<int> get_i32() { return i32; }
 };
 
 class ConstantF32 : public Constant
@@ -31,6 +33,8 @@ public:
     ~ConstantF32() override;
 
     void print_ID() override;
+
+    std::vector<float> get_f32() { return f32; }
 };
 
 class ConstantStr : public Constant

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ir/Instrution.hpp"
+#include "ir/Value.hpp"
 #include <ir/ir.hpp>
 #include <queue>
 #include <map>
@@ -11,19 +13,57 @@ public:
         UNDEF, // T
         CONST, // C
         NAC    // _1_
-    } lattice;
-    int const_value;
+    } lat;
+    union
+    {
+        int i;
+        float f;
+    };
+    bool is_i;
+    Lattice(Lat l) { lat = l; }
+    Lattice(Lat l, int _is_i)
+    {
+        lat = l;
+        is_i = _is_i;
+    }
+    Lattice(Lat _lat, int _is_i, int _i)
+    {
+        lat = _lat;
+        assert(_is_i);
+        is_i = 1;
+        i = _i;
+    }
+    Lattice(Lat _lat, int _is_i, float f)
+    {
+        lat = _lat;
+        assert(!_is_i);
+        is_i = 0;
+        i = f;
+    }
+    // Lattice &operator=(const Lattice &a)
+    // {
+    //     this->lat = a.lat;
+    //     this->is_i = a.is_i;
+    // }
+    Lattice operator==(const Lattice &b);
+    Lattice operator!=(const Lattice &b);
+    Lattice operator>(const Lattice &b);
+    Lattice operator>=(const Lattice &b);
+    Lattice operator<(const Lattice &b);
+    Lattice operator<=(const Lattice &b);
 
-    Lattice() { lattice = Lat::UNDEF; }
-    Lattice(Lat lat) { lattice = lat; }
-    bool set_nac_lattice();
-    bool set_val_lattice();
+    Lattice operator+(const Lattice &b);
+    Lattice operator-(const Lattice &b);
+    Lattice operator*(const Lattice &b);
+    Lattice operator/(const Lattice &b);
+    Lattice operator%(const Lattice &b);
+    Lattice operator&(const Lattice &b);
+    Lattice operator|(const Lattice &b);
+    Lattice operator^(const Lattice &b);
+    bool exp_insersect(Lattice, Lattice, InstrutionEnum itype);
+    bool phi_insersect(Lattice, Lattice &);
+    Lattice constfold(Lattice lat1, Lattice lat2, InstrutionEnum itype);
 };
-// struct BBedge
-// {
-//     BasicBlock *value;
-//     BasicBlock *user;
-// };
 class SCCP
 {
 public:
@@ -31,6 +71,7 @@ public:
     std::unordered_map<Value *, Lattice> latticemap;
     std::unordered_map<BasicBlock *, bool> executed_block_map;
     std::unordered_map<Edge *, bool> executed_edge_map;
+    // std::unordered_map<Value *, BasicBlock *> value2BB_map;
 
     std::queue<Edge *> cfg_worklist;
     std::queue<Edge *> ssa_worklist;
@@ -38,12 +79,13 @@ public:
     // SCCP();
     void run();
     void init();
-    void visit_phi();
-    void visit_exp();
-    void add_cfg_edge_to_worklist(BasicBlock *);
-    void pop_cfg_edge_from_worklist();
-    void add_ssa_edge_to_worklist();
-    void pop_ssa_edge_from_worklist();
+    void visit_exp(Instrution *);
+    void visit_phi(Value *);
+    bool visit_binary(Instrution *instr);
+    bool visit_cmp(Instrution *instr);
+    bool visit_unary(Instrution *instr);
+    bool visit_GEP(Instrution *instr);
+    void do_sccp();
 };
 
 // (1) Initialize the FlowWorkList to contain the edges exiting the start node of
