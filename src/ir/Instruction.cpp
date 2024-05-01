@@ -74,7 +74,7 @@ Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
 }
 
 GEP::GEP(Value *_addr, Value *_offset, bool _element, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::GEP, _addr->get_type(), _element), p_addr(_addr), p_offset(_offset), is_element(_element)
+    : Instrution(_parent, InstrutionEnum::GEP, _addr->get_type(), _element), is_element(_element)
 {
     Edge *p_in1 = new Edge(this, _addr);
     Edge *p_in2 = new Edge(this, _offset);
@@ -85,30 +85,43 @@ GEP::GEP(Value *_addr, Value *_offset, bool _element, BasicBlock *_parent)
 }
 
 Ret::Ret(BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Ret, TypeEnum::Void), p_val(nullptr)
+    : Instrution(_parent, InstrutionEnum::Ret, TypeEnum::Void)
 {
 }
 
 Ret::Ret(Value *_val, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Ret, _val->get_type()->get_type()), p_val(_val)
+    : Instrution(_parent, InstrutionEnum::Ret, _val->get_type()->get_type())
 {
     Edge *p_in1 = new Edge(this, _val);
     value_list_push_back(p_in1);
     _val->user_list_push_back(p_in1);
 }
 
+BasicBlock *Jmp::get_nextBB()
+{
+    return (BasicBlock *)((*(this->get_parent()->get_user_list()))[0]->get_user());
+}
+
 Jmp::Jmp(BasicBlock *_next, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Jmp, TypeEnum::Void),
-      nextBB(_next)
+    : Instrution(_parent, InstrutionEnum::Jmp, TypeEnum::Void)
 {
     Edge *p_in1 = new Edge(_next, _parent);
     _parent->user_list_push_back(p_in1);
     _next->value_list_push_back(p_in1);
 }
 
+BasicBlock *Branch::get_trueBB()
+{
+    return (BasicBlock *)((*(this->get_parent()->get_user_list()))[0]->get_user());
+}
+
+BasicBlock *Branch::get_falseBB()
+{
+    return (BasicBlock *)((*(this->get_parent()->get_user_list()))[1]->get_user());
+}
+
 Branch::Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Branch, TypeEnum::Void),
-      cond(_cond), trueBB(_trueBB), falseBB(_falseBB)
+    : Instrution(_parent, InstrutionEnum::Branch, TypeEnum::Void)
 {
     Edge *p_in0 = new Edge(this, _cond);
     this->value_list_push_back(p_in0);
@@ -122,7 +135,7 @@ Branch::Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlo
 }
 
 Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Load, p_val->get_type(), true), p_addr(p_val)
+    : Instrution(_parent, InstrutionEnum::Load, p_val->get_type(), true)
 {
     assert(p_val->get_type()->get_type() == TypeEnum::Ptr);
     // assert(p_val->get_type()->get_basic_type() == TypeEnum::I32 || p_val->get_type()->get_basic_type() == TypeEnum::F32);
@@ -133,7 +146,7 @@ Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
 }
 
 Store::Store(Value *_addr, Value *_src, bool _stack, BasicBlock *_BB)
-    : Instrution(_BB, InstrutionEnum::Store, TypeEnum::Void), p_addr(_addr), p_src(_src), is_stack_ptr(_stack)
+    : Instrution(_BB, InstrutionEnum::Store, TypeEnum::Void), is_stack_ptr(_stack)
 {
     Edge *p_in1 = new Edge(this, _addr);
     Edge *p_in2 = new Edge(this, _src);
@@ -144,7 +157,7 @@ Store::Store(Value *_addr, Value *_src, bool _stack, BasicBlock *_BB)
 }
 
 Cmp::Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
-    : Instrution(_parent, type, TypeEnum::I32), p_src1(_src1), p_src2(_src2)
+    : Instrution(_parent, type, TypeEnum::I32)
 {
     Edge *p_in1 = new Edge(this, _src1);
     Edge *p_in2 = new Edge(this, _src2);
@@ -155,9 +168,7 @@ Cmp::Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
 }
 
 Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
-    : Instrution(_parent, type, (type <= InstrutionEnum::IMOD ? TypeEnum::I32 : TypeEnum::F32)),
-      p_src1(_src1),
-      p_src2(_src2)
+    : Instrution(_parent, type, (type <= InstrutionEnum::IMOD ? TypeEnum::I32 : TypeEnum::F32))
 {
     Edge *p_in1 = new Edge(this, _src1);
     Edge *p_in2 = new Edge(this, _src2);
@@ -167,8 +178,7 @@ Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_par
     _src2->user_list_push_back(p_in2);
 }
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
-    : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type())),
-      p_src(_src1)
+    : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type()))
 {
     TypeEnum src_type = _src1->get_type()->get_type();
     switch (type)
@@ -195,8 +205,7 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
 }
 
 Call::Call(Value *_func, BasicBlock *_parent)
-    : Instrution(_parent, InstrutionEnum::Call, _func->get_type()->get_type()),
-      p_func(_func)
+    : Instrution(_parent, InstrutionEnum::Call, _func->get_type()->get_type())
 {
     Edge *p_in = new Edge(this, _func);
     value_list_push_back(p_in);
@@ -219,6 +228,7 @@ Instrution::~Instrution()
 void Call::print()
 {
     printf("    ");
+    Value *p_func = (*this->get_value_list())[0]->get_val();
     if (p_func->get_type()->get_type() != TypeEnum::Void)
     {
 
@@ -231,11 +241,18 @@ void Call::print()
     int n = params.size();
     for (int i = 0; i < n - 1; ++i)
     {
+        params[i]->get_type()->print();
+        putchar(' ');
         params[i]->print_ID();
         printf(", ");
     }
     if (n)
+    {
+        params[n - 1]->get_type()->print();
+        putchar(' ');
         params[n - 1]->print_ID();
+    }
+
     printf(")\n");
 }
 
@@ -243,6 +260,8 @@ void GEP::print()
 {
     printf("    ");
     this->get_type()->print();
+    Value *p_addr = (*this->get_value_list())[0]->get_val();
+    Value *p_offset = (*this->get_value_list())[1]->get_val();
     printf(" %%%d = getelementptr ", this->get_ID());
     p_addr->get_type()->print();
     putchar(' ');
@@ -253,6 +272,8 @@ void GEP::print()
     if (is_element)
         printf(" i32 0 ");
     putchar(' ');
+    p_offset->get_type()->print();
+    putchar(' ');
     p_offset->print_ID();
     putchar('\n');
 }
@@ -260,21 +281,26 @@ void GEP::print()
 void Ret::print()
 {
     printf("    ret ");
-    if (p_val)
-        p_val->print_ID();
+    std::vector<Edge *> *p_in = this->get_value_list();
+    if (!p_in->empty())
+        (*p_in)[0]->get_val()->print_ID();
     putchar('\n');
 }
 
 void Jmp::print()
 {
-    printf("    br lable b%d\n", nextBB->get_ID());
+    printf("    br lable b%d\n", (*(this->get_parent()->get_user_list()))[0]->get_user()->get_ID());
 }
 
 void Branch::print()
 {
     printf("    br ");
-    cond->print_ID();
-    printf(" , lable b%d, lable b%d\n", trueBB->get_ID(), falseBB->get_ID());
+    std::vector<Edge *> *_list = this->get_value_list();
+    (*_list)[0]->get_val()->print_ID();
+    _list = this->get_parent()->get_user_list();
+    assert(_list->size() == 2);
+    Value *trueBB = (*_list)[0]->get_user(), *falseBB = (*_list)[1]->get_user();
+    printf(", lable b%d, lable b%d\n", trueBB->get_ID(), falseBB->get_ID());
 }
 
 void Load::print()
@@ -282,6 +308,7 @@ void Load::print()
     printf("    ");
     this->get_type()->print();
     printf(" %%%d = load ", this->get_ID());
+    Value *p_addr = get_addr();
     p_addr->get_type()->print();
     putchar(' ');
     if (is_a<GlobalValue>(p_addr))
@@ -294,6 +321,8 @@ void Store::print()
 {
     printf("    ");
     printf("store ");
+    Value *p_addr = get_addr();
+    Value *p_src = get_src();
     p_addr->get_type()->print();
     putchar(' ');
     if (is_a<GlobalValue>(p_addr))
@@ -326,9 +355,14 @@ void Cmp::print()
     printf("    ");
     this->get_type()->print();
     printf(" %%%d = ", this->get_ID());
+    Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    p_src1->get_type()->print();
+    putchar(' ');
     p_src1->print_ID();
     putchar(' ');
     std::cout << (*_symbol_map)[this->get_Instrtype()];
+    putchar(' ');
+    p_src2->get_type()->print();
     putchar(' ');
     p_src2->print_ID();
     putchar('\n');
@@ -339,9 +373,14 @@ void Binary::print()
     printf("    ");
     this->get_type()->print();
     printf(" %%%d = ", this->get_ID());
+    Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    p_src1->get_type()->print();
+    putchar(' ');
     p_src1->print_ID();
     putchar(' ');
     std::cout << (*_symbol_map)[this->get_Instrtype()];
+    putchar(' ');
+    p_src1->get_type()->print();
     putchar(' ');
     p_src2->print_ID();
     putchar('\n');
@@ -353,6 +392,9 @@ void Unary::print()
     this->get_type()->print();
     printf(" %%%d = ", this->get_ID());
     std::cout << (*_symbol_map)[this->get_Instrtype()];
+    putchar(' ');
+    Value *p_src = get_src();
+    p_src->get_type()->print();
     putchar(' ');
     p_src->print_ID();
     putchar('\n');

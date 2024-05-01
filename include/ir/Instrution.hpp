@@ -54,7 +54,7 @@ enum class InstrutionEnum
     F2I,
     I2F,
     AddSP,
-    UnaryEnd
+    UnaryEnd,
 };
 
 class Instrution : public User
@@ -90,32 +90,30 @@ public:
 
     virtual void print() override { assert(0); }
 };
-class Call : public Instrution
+class Call : public Instrution // p_func
 {
-    Value *p_func;
     Value *p_first_store; // Instr
     std::vector<Value *> params;
 
 public:
     Call(Value *_func, BasicBlock *_parent);
 
-    Value *get_func() { return p_func; }
+    Value *get_func() { return (*this->get_value_list())[0]->get_val(); }
     Value *get_first() { return p_first_store; }
 
     void params_pushback(Value *_param);
 
     void print();
 };
-class GEP : public Instrution
+class GEP : public Instrution // p_addr p_offset
 {
-    Value *p_addr, *p_offset;
     bool is_element;
 
 public:
     GEP(Value *_addr, Value *_offset, bool _elemet, BasicBlock *_parent);
 
-    Value *get_addr() { return p_addr; }
-    Value *get_offset() { return p_offset; }
+    Value *get_addr() { return (*this->get_value_list())[0]->get_val(); }
+    Value *get_offset() { return (*this->get_value_list())[1]->get_val(); }
 
     void print();
 };
@@ -125,63 +123,59 @@ class PHINode : public Instrution
 public:
     void print();
 };
-class Ret : public Instrution
+class Ret : public Instrution // p_val
 {
-    Value *p_val;
 
 public:
     Ret(BasicBlock *_parent);
     Ret(Value *_val, BasicBlock *_parent);
 
+    Value *get_val() { return this->get_value_list()->empty() ? nullptr : (*this->get_value_list())[0]->get_val(); }
+
     void print();
 };
-class Jmp : public Instrution
+class Jmp : public Instrution // nextBB：nextBB是跳转指令所在块的使用者
 {
-    BasicBlock *nextBB;
 
 public:
     Jmp(BasicBlock *_next, BasicBlock *_parent);
 
-    BasicBlock *get_nextBB() { return nextBB; }
+    BasicBlock *get_nextBB();
 
     void print();
 };
-class Branch : public Instrution
+class Branch : public Instrution // value: cond    // user: trurBB falseBB
 {
-    Value *cond;
-    BasicBlock *trueBB;
-    BasicBlock *falseBB;
 
 public:
     Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlock *_parent);
 
-    Value *get_cond() { return cond; }
-    BasicBlock *get_trueBB() { return trueBB; }
-    BasicBlock *get_falseBB() { return falseBB; }
+    Value *get_cond() { return (*this->get_value_list())[0]->get_val(); }
+    BasicBlock *get_trueBB();
+    BasicBlock *get_falseBB();
 
     void print();
 };
-class Load : public Instrution
+class Load : public Instrution // p_addr
 {
-    Value *p_addr;
     bool is_stack_ptr;
 
 public:
     Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent);
 
+    Value *get_addr() { return (*this->get_value_list())[0]->get_val(); }
+
     void print();
 };
-class Store : public Instrution
+class Store : public Instrution // p_addr p_src
 {
-    Value *p_addr;
-    Value *p_src;
     bool is_stack_ptr;
 
 public:
     Store(Value *_addr, Value *_src, bool _stack, BasicBlock *_BB);
 
-    Value *get_addr() { return p_addr; }
-    Value *get_src() { return p_src; }
+    Value *get_addr() { return (*this->get_value_list())[0]->get_val(); }
+    Value *get_src() { return (*this->get_value_list())[1]->get_val(); }
     bool get_isptr() { return is_stack_ptr; }
 
     void print();
@@ -195,38 +189,35 @@ public:
 
     void print();
 };
-class Cmp : public Instrution
+class Cmp : public Instrution // p_scr1, p_src2
 {
-    Value *p_src1, *p_src2;
 
 public:
     Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent);
 
-    Value *get_src1() { return p_src1; }
-    Value *get_src2() { return p_src2; }
+    Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
+    Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }
 
     void print();
 };
 class Binary : public Instrution
 {
-    Value *p_src1, *p_src2;
 
 public:
     Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent);
 
-    Value *get_src1() { return p_src1; }
-    Value *get_src2() { return p_src2; }
+    Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
+    Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }
 
     void print();
 };
 class Unary : public Instrution
 {
-    Value *p_src;
 
 public:
     Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent);
 
-    Value *get_src() { return p_src; }
+    Value *get_src() { return (*this->get_value_list())[0]->get_val(); }
 
     void print();
 };

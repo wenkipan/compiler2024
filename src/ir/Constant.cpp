@@ -39,7 +39,7 @@ ConstantStr::ConstantStr(const char *_str)
 void ConstantI32::print_ID()
 {
     if (i32.size() == 1)
-        printf("i32 %d", i32[0]);
+        printf("%d", i32[0]);
     else
         printf("%%%d", this->get_ID());
 }
@@ -47,7 +47,7 @@ void ConstantI32::print_ID()
 void ConstantF32::print_ID()
 {
     if (f32.size() == 1)
-        printf("i32 %f", f32[0]);
+        printf("%f", f32[0]);
     else
         printf("%%%d", this->get_ID());
 }
