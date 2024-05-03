@@ -50,6 +50,7 @@ enum class InstrutionEnum
     XOR,
     BinaryEnd,
     UnaryBegin,
+    Assign,
     MINUS,
     F2I,
     I2F,
@@ -88,6 +89,9 @@ public:
 
     BasicBlock *get_parent() { return parent; }
 
+    void replaceAllUses(Value *RepVal);
+    void eraseFromParent();
+
     virtual void print() override { assert(0); }
 };
 class Call : public Instrution // p_func
@@ -119,8 +123,10 @@ public:
 };
 class PHINode : public Instrution
 {
-
+    std::unordered_map<BasicBlock*, Value*> *valueMap;
 public:
+    PHINode(BasicBlock *_BB, TypeEnum basic_type);
+    void addIncoming(Value *val, BasicBlock *BB);
     void print();
 };
 class Ret : public Instrution // p_val
@@ -211,6 +217,7 @@ public:
 
     void print();
 };
+
 class Unary : public Instrution
 {
 
@@ -219,5 +226,13 @@ public:
 
     Value *get_src() { return (*this->get_value_list())[0]->get_val(); }
 
+    void print();
+};
+
+class Assign : public Unary
+{
+public:
+    Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
+        :Unary(type, _src1, _parent){}
     void print();
 };

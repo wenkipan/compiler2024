@@ -58,7 +58,8 @@ void BasicBlock::print()
     if (n >= 0)
         (*_prev)[n]->get_val()->print_ID();
     putchar('\n');
-
+    for (PHINode *p_PHI: (*phinodes))
+        p_PHI->print();
     for (Instrution *p_instr : (*instrutions))
         p_instr->print();
 }
@@ -68,4 +69,23 @@ BasicBlock::~BasicBlock()
 
     delete phinodes;
     delete instrutions;
+}
+
+void BasicBlock::Insert_Phi(PHINode *phi)
+{
+    phinodes->push_back(phi);
+}
+
+void BasicBlock::erase_instr(Instrution *instr)
+{
+    for (auto it = instrutions->begin(); it != instrutions->end(); it++)
+        if (*it == instr){
+            instrutions->erase(it);
+            break;
+        }
+}
+
+void BasicBlock::Ins_set(int pos, Instrution *p_instr)
+{
+    (*instrutions)[pos] = p_instr;
 }

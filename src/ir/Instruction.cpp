@@ -39,7 +39,8 @@ std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type)
     : User(basic_type), parent(_BB), instr_type(type)
 {
-    _BB->Ins_pushBack(this);
+    if (type != InstrutionEnum::Assign && type != InstrutionEnum::PHINode)
+        _BB->Ins_pushBack(this);
     Function *p_func = _BB->get_func();
     assert(p_func != nullptr);
     p_func->value_pushBack((Value *)this);
@@ -196,7 +197,7 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
     case InstrutionEnum::AddSP:
         break;
     default:
-        assert(0);
+        this->get_type()->reset(src_type);
         break;
     }
     Edge *p_in1 = new Edge(this, _src1);
@@ -396,6 +397,50 @@ void Unary::print()
     Value *p_src = get_src();
     p_src->get_type()->print();
     putchar(' ');
-    p_src->print_ID();
+    p_src->print_ID(); 
     putchar('\n');
 }
+
+void Instrution::replaceAllUses(Value *RepVal)
+{
+    for (Edge *edge : *(get_user_list()))
+        edge->modify_val(RepVal);
+}
+
+void Instrution::eraseFromParent()
+{
+    this->get_BB()->erase_instr(this);
+}
+
+void PHINode::addIncoming(Value *val, BasicBlock *BB)
+{
+    valueMap->insert({BB, val});
+}
+
+PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type) 
+    :Instrution(_BB, InstrutionEnum::PHINode, basic_type)
+{
+    valueMap = new std::unordered_map<BasicBlock*, Value*>();
+}
+
+void PHINode::print()
+{
+    printf("    ");
+    this->get_type()->print();
+    printf(" %%%d = phi(", this->get_ID());
+    int num = valueMap->size();
+    for (auto it : *valueMap)
+    {
+        printf("{label : b%d, %%%d}", it.first->get_ID(), it.second->get_ID());
+        num--;
+        if (num)
+            printf(", ");
+    }
+    printf(")\n");
+}
+
+void Assign::print()
+{
+    Unary::print();
+}
+

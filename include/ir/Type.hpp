@@ -29,6 +29,7 @@ public:
     bool isStr();
     bool isI32();
     bool isF32();
+    bool isArray();
 
     TypeEnum get_type();
 

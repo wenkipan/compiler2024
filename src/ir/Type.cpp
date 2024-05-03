@@ -188,6 +188,11 @@ void Type::print()
     }
 }
 
+bool Type::isArray()
+{
+    return type == TypeEnum::Array;
+}
+
 void Ptr::print()
 {
     b_type->print();

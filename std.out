@@ -1,0 +1,91 @@
+=== program block start ===
+ast_stmt_return
+ast_exp_num
+ast_stmt_return
+ast_exp_num
+=== program block end ===
+=== program start ===
+define i32 getint ()
+define i32 getch ()
+define f32 getfloat ()
+define i32 getarray (i32* $0_arg1)
+define i32 getfarray (f32* $0_arg1)
+define void putint (i32 $0_arg1)
+define void putch (i32 $0_arg1)
+define void putfloat (f32 $0_arg1)
+define void putarray (i32 $0_arg1, i32* $1_arg2)
+define void putfarray (i32 $0_arg1, f32* $1_arg2)
+define void putf (str $0_arg1)
+define void _sysy_starttime (i32 $0_arg1)
+define void _sysy_stoptime (i32 $0_arg1)
+define void memset (void* $0_arg1, i32 $1_arg2, i32 $2_arg3)
+define i32 main ()
+=== program end ===
+0
+
+      ---------------IR begin---------------------
+i32 @getint()
+i32 @getch()
+f32 @getfloat()
+i32 @getarray()
+i32 @getfarray()
+void @putint()
+void @putch()
+void @putfloat()
+void @putarray()
+void @putfarray()
+void @putf()
+void @_sysy_starttime()
+void @_sysy_stoptime()
+void @memset()
+i32 @main()
+{
+b0:                       ;
+    i32* %0 = alloca i32*, align 8
+    i32* %0 = store i32 i32 0
+    br lable b3
+b1:                       ;
+    i32* %0 = store i32 i32 0
+    br lable b3
+b2:                       ;
+b3:                       ;%0, %1
+    i32 %1 = load i32* %0
+    ret %1
+}
+
+      ---------------IR end-----------------------
+b0:                       ;
+    i32* %0 = alloca i32*, align 8
+    i32* %0 = store i32 i32 0
+    br lable b3
+
+      ---------------IR begin---------------------
+i32 @getint()
+i32 @getch()
+f32 @getfloat()
+i32 @getarray()
+i32 @getfarray()
+void @putint()
+void @putch()
+void @putfloat()
+void @putarray()
+void @putfarray()
+void @putf()
+void @_sysy_starttime()
+void @_sysy_stoptime()
+void @memset()
+i32 @main()
+{
+b0:                       ;
+    i32 %0 =  i32 0
+    br lable b3
+b1:                       ;
+    i32* %0 = store i32 i32 0
+    br lable b3
+b2:                       ;
+b3:                       ;%0, %1
+    i32 %28 = phi({label : b0, %0})
+    ret %28
+}
+
+      ---------------IR end-----------------------

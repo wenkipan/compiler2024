@@ -39,6 +39,7 @@ public:
     virtual void print_ID() { printf("%%%d", ID); };
 
     Type *get_type();
+    void set_type(Type *ty) { type = ty;}
     std::vector<Edge *> *get_value_list() { return value_list; }
     std::vector<Edge *> *get_user_list() { return user_list; }
 
@@ -46,4 +47,10 @@ public:
 
     void value_list_push_back(Edge *edge);
     void user_list_push_back(Edge *edge);
+};
+
+class UndefValue : public Value
+{
+public:
+    UndefValue(Type *ty) {set_type(ty);}
 };

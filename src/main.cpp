@@ -4,9 +4,12 @@
 #include <program/program.hpp>
 #include <frontend/use.hpp>
 #include <ir/ir.hpp>
+#include <ir_opt/Mem2Reg.hpp>
 
 int main(int argc, char *argv[])
 {
+    freopen("std.in", "r", stdin);
+    freopen("std.out", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -44,7 +47,14 @@ int main(int argc, char *argv[])
     p_program->program_variable_print();
     delete p_program;
     module->print();
-
+    for (Function *Func : (*module->get_funcs()))
+    {
+        if (Func->get_isExternal())
+            continue;
+        Mem2Reg mem2reg;
+        mem2reg.run(Func);
+    }
+    module->print();
     delete module;
 
     // // into ssa

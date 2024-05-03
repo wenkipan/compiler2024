@@ -2,6 +2,7 @@
 
 #include <ir/GlobalValue.hpp>
 #include <ir/Constant.hpp>
+#include <string>
 
 class GlobalVariable : public GlobalValue
 {
