@@ -56,6 +56,7 @@ void DomTree::Run()
 
 void DomTree::MakeDomInit()
 {
+    DomFsBlock.clear();
     for (DomTreeNode *BB : *DomTreeNodes)
     {
         BB->dfn = 0;
@@ -149,4 +150,32 @@ bool DomTree::is_dom(BasicBlock *A, BasicBlock *B)
         if (tmp->parent == B)
             return true;
     return false;
+}
+
+void DomTree::get_DF()
+{
+    Function *Func = parent;
+    for (BasicBlock *BB : *(Func->get_blocks()))
+        DomFsBlock[BB] = {};
+    BasicBlock *preBB, *idomBB;
+    for (BasicBlock *BB : *(Func->get_blocks()))
+    {
+        if (!get_dfn(BB))
+            continue;
+        if (BB->get_value_list()->size() > 1)
+        {
+            idomBB = get_idom(BB);
+            for (Edge *edge : *(BB->get_value_list()))
+            {
+                preBB = dynamic_cast<BasicBlock *>(edge->get_val());
+                if (!get_dfn(preBB))
+                    continue;
+                while (preBB != idomBB)
+                {
+                    DomFsBlock[preBB].push_back(BB);
+                    preBB = get_idom(preBB);
+                }
+            }
+        }
+    }
 }

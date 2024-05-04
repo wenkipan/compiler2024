@@ -5,33 +5,6 @@ Mem2Reg::~Mem2Reg()
     delete DT;
 }
 
-void Mem2Reg::get_DF(Function *Func)
-{
-    for (BasicBlock *BB : *(Func->get_blocks()))
-        DomFsBlock[BB] = {};
-    BasicBlock *preBB, *idomBB;
-    for (BasicBlock *BB : *(Func->get_blocks()))
-    {
-        if (!DT->get_dfn(BB))
-            continue;
-        if (BB->get_value_list()->size() > 1)
-        {
-            idomBB = DT->get_idom(BB);
-            for (Edge *edge : *(BB->get_value_list()))
-            {
-                preBB = dynamic_cast<BasicBlock *>(edge->get_val());
-                if (!DT->get_dfn(preBB))
-                    continue;
-                while (preBB != idomBB)
-                {
-                    DomFsBlock[preBB].push_back(BB);
-                    preBB = DT->get_idom(preBB);
-                }
-            }
-        }
-    }
-}
-
 int Mem2Reg::get_Instr_id(BasicBlock *BB, Instrution *instr)
 {
     int id = 0;
@@ -177,7 +150,7 @@ void Mem2Reg::work(Function *Func)
         {
             X = W.back();
             W.pop_back();
-            for (BasicBlock *Y : DomFsBlock[X])
+            for (BasicBlock *Y : DT->DomFsBlock[X])
             {
                 if (PhiSet.find(Y) == PhiSet.end())
                 {
@@ -313,10 +286,9 @@ bool Mem2Reg::run(Function *Func)
         DefBlocks.clear();
         UseBlocks.clear();
         PhiMap.clear();
-        DomFsBlock.clear();
         DT = new DomTree(Func);
         DT->MakeDom();
-        get_DF(Func);
+        DT->get_DF();
         work(Func);
     }
     return true;
