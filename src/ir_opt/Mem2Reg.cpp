@@ -50,13 +50,13 @@ bool Mem2Reg::rewriteSingleStoreAlloca(Alloca *alloc)
         }
         Value *RepVal = OnlyStore->get_value_list()->at(1)->get_val();
         LI->replaceAllUses(RepVal);
-        LI->eraseFromParent();
+        LI->drop();
     }
 
     if (!UseBlocks[alloc].empty())
         return false;
-    OnlyStore->eraseFromParent();
-    alloc->eraseFromParent();
+    OnlyStore->drop();
+    alloc->drop();
     return true;
 }
 
@@ -129,7 +129,7 @@ void Mem2Reg::work(Function *Func)
         Alloca *AI = Allocas[AllocNum];
         if (AI->get_user_list()->empty())
         {
-            AI->eraseFromParent();
+            AI->drop();
             removeFromAllocaList(AllocNum);
         }
         analysisAlloca(AI);
@@ -154,8 +154,7 @@ void Mem2Reg::work(Function *Func)
             {
                 if (PhiSet.find(Y) == PhiSet.end())
                 {
-                    phi = new PHINode(Y, alloc->get_type()->get_basic_type());
-                    Y->get_instrutions()->pop_back();
+                    phi = new PHINode(Y, alloc->get_type()->get_basic_type(), true);
                     Y->Insert_Phi(phi);
                     PhiSet.insert(Y);
                     PhiMap[Y].insert({phi, alloc});
@@ -177,8 +176,7 @@ void Mem2Reg::work(Function *Func)
     {
         Value *_pval = new Value(alloc->get_type()->get_basic_type());
         Func->value_pushBack(_pval);
-        Worklist[0].second[alloc] = new Assign(InstrutionEnum::Assign, _pval, Func->get_entryBB());
-        Func->get_entryBB()->get_instrutions()->pop_back();
+        Worklist[0].second[alloc] = new Assign(InstrutionEnum::Assign, _pval, Func->get_entryBB(), true);
     }
     while (!Worklist.empty())
     {
@@ -217,8 +215,7 @@ void Mem2Reg::work(Function *Func)
                     {
                         Value *_pval = new Value(AI->get_type()->get_basic_type());
                         Func->value_pushBack(_pval);
-                        IncommingValues[AI] = new Assign(InstrutionEnum::Assign, _pval, BB);
-                        BB->get_instrutions()->pop_back();
+                        IncommingValues[AI] = new Assign(InstrutionEnum::Assign, _pval, BB, true);
                     }
                     LI->replaceAllUses(IncommingValues[AI]);
                     InstrRemoveList.push_back(Instr);
@@ -238,8 +235,7 @@ void Mem2Reg::work(Function *Func)
                 }
                 else
                 {
-                    IncommingValues[AI] = new Assign(InstrutionEnum::Assign, SI->get_src(), BB);
-                    BB->get_instrutions()->pop_back();
+                    IncommingValues[AI] = new Assign(InstrutionEnum::Assign, SI->get_src(), BB, true);
                     BB->Ins_set(pos - 1, (Instrution *)IncommingValues[AI]);
                     Instr->drop();
                 }
@@ -261,7 +257,6 @@ void Mem2Reg::work(Function *Func)
     while (!InstrRemoveList.empty())
     {
         Instr = InstrRemoveList.back();
-        Instr->eraseFromParent();
         InstrRemoveList.pop_back();
         Instr->drop();
     }
@@ -271,7 +266,7 @@ void Mem2Reg::work(Function *Func)
         for (auto &it : it1.second)
         {
             if (it.first->get_user_list()->empty())
-                it.first->eraseFromParent();
+                it.first->drop();
         }
     }
 }

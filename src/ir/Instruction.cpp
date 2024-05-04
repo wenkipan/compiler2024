@@ -1,6 +1,8 @@
 #include <ir/Instrution.hpp>
 #include <ir/BasicBlock.hpp>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{
@@ -40,6 +42,16 @@ Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type
     : User(basic_type), parent(_BB), instr_type(type)
 {
     _BB->Ins_pushBack(this);
+    Function *p_func = _BB->get_func();
+    assert(p_func != nullptr);
+    p_func->value_pushBack((Value *)this);
+}
+
+Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type, bool notPush)
+    : User(basic_type), parent(_BB), instr_type(type)
+{
+    if (!notPush)
+        _BB->Ins_pushBack(this);
     Function *p_func = _BB->get_func();
     assert(p_func != nullptr);
     p_func->value_pushBack((Value *)this);
@@ -179,6 +191,33 @@ Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_par
 }
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
     : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type()))
+{
+    TypeEnum src_type = _src1->get_type()->get_type();
+    switch (type)
+    {
+    case InstrutionEnum::MINUS:
+        break;
+    case InstrutionEnum::F2I:
+        assert(src_type == TypeEnum::F32);
+        this->get_type()->reset(TypeEnum::I32);
+        break;
+    case InstrutionEnum::I2F:
+        assert(src_type == TypeEnum::I32);
+        this->get_type()->reset(TypeEnum::F32);
+        break;
+    case InstrutionEnum::AddSP:
+        break;
+    default:
+        this->get_type()->reset(src_type);
+        break;
+    }
+    Edge *p_in1 = new Edge(this, _src1);
+    value_list_push_back(p_in1);
+    _src1->user_list_push_back(p_in1);
+}
+
+Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
+    : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type()), notPush)
 {
     TypeEnum src_type = _src1->get_type()->get_type();
     switch (type)
@@ -410,9 +449,10 @@ void Instrution::replaceAllUses(Value *RepVal)
     this->get_user_list()->clear();
 }
 
-void Instrution::eraseFromParent()
+void Instrution::drop()
 {
-    this->get_BB()->erase_instr(this);
+    parent->erase_instr(this);
+    Value::drop();  
 }
 
 void PHINode::addIncoming(Value *val, BasicBlock *BB)
@@ -420,8 +460,8 @@ void PHINode::addIncoming(Value *val, BasicBlock *BB)
     valueMap->insert({BB, val});
 }
 
-PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type) 
-    :Instrution(_BB, InstrutionEnum::PHINode, basic_type)
+PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush) 
+    :Instrution(_BB, InstrutionEnum::PHINode, basic_type, notPush)
 {
     valueMap = new std::unordered_map<BasicBlock*, Value*>();
 }

@@ -67,6 +67,7 @@ public:
     static std::unordered_map<InstrutionEnum, std::string> *_symbol_map;
 
     Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type);
+    Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type, bool notPush);
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
     Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array, bool _ele);
     ~Instrution() override;
@@ -90,7 +91,7 @@ public:
     BasicBlock *get_parent() { return parent; }
 
     void replaceAllUses(Value *RepVal);
-    void eraseFromParent();
+    virtual void drop();
 
     virtual void print() override { assert(0); }
 };
@@ -125,7 +126,7 @@ class PHINode : public Instrution
 {
     std::unordered_map<BasicBlock*, Value*> *valueMap;
 public:
-    PHINode(BasicBlock *_BB, TypeEnum basic_type);
+    PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush);
     ~PHINode();
     void addIncoming(Value *val, BasicBlock *BB);
     void print();
@@ -224,6 +225,7 @@ class Unary : public Instrution
 
 public:
     Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent);
+    Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush);
 
     Value *get_src() { return (*this->get_value_list())[0]->get_val(); }
 
@@ -235,5 +237,7 @@ class Assign : public Unary
 public:
     Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
         :Unary(type, _src1, _parent){}
+    Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
+        :Unary(type, _src1, _parent, notPush){}
     void print();
 };
