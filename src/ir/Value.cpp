@@ -1,4 +1,5 @@
 #include <ir/Value.hpp>
+#include <algorithm>
 
 int Value::CurID = 0;
 
@@ -96,4 +97,24 @@ Value::~Value()
     delete value_list;
     delete user_list;
     delete type;
+}
+
+void Value::drop()
+{
+    for (Edge *edge : *value_list)
+    {
+        assert(edge->get_user() == this);
+        auto tmp = edge->get_val()->get_user_list();
+        tmp->erase(remove(tmp->begin(), tmp->end(), edge), tmp->end());
+        delete edge;
+    }
+    for (Edge *edge : *user_list)
+    {
+        assert(edge->get_val() == this);
+        auto tmp = edge->get_user()->get_value_list();
+        tmp->erase(remove(tmp->begin(), tmp->end(), edge), tmp->end());
+        delete edge;
+    }
+    user_list->clear();
+    value_list->clear();
 }

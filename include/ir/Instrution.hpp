@@ -126,6 +126,7 @@ class PHINode : public Instrution
     std::unordered_map<BasicBlock*, Value*> *valueMap;
 public:
     PHINode(BasicBlock *_BB, TypeEnum basic_type);
+    ~PHINode();
     void addIncoming(Value *val, BasicBlock *BB);
     void print();
 };

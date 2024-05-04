@@ -47,6 +47,7 @@ public:
 
     void value_list_push_back(Edge *edge);
     void user_list_push_back(Edge *edge);
+    void drop();
 };
 
 class UndefValue : public Value

@@ -15,6 +15,13 @@ DomTreeNode::DomTreeNode(BasicBlock *BB)
     sdom_graph = new std::vector<DomTreeNode *>();
 }
 
+DomTreeNode::~DomTreeNode()
+{
+    delete doms;
+    delete idoms;
+    delete sdom_graph;
+}
+
 DomTree::DomTree(Function *Func)
 {
     parent = Func;
@@ -23,11 +30,18 @@ DomTree::DomTree(Function *Func)
     std::vector<BasicBlock *> *BBs = Func->get_blocks();
     for (BasicBlock *BB : *BBs)
     {   
-        new DomTreeNode(BB);
         DomTreeNodes->push_back(new DomTreeNode(BB));
         BB_map_Dom->insert(std::make_pair(BB, DomTreeNodes->back()));
     }
     order = new std::vector<DomTreeNode *>();
+}
+DomTree::~DomTree()
+{
+    delete BB_map_Dom;
+    for (auto it : *DomTreeNodes)
+        delete it;
+    delete DomTreeNodes;
+    delete order;
 }
 
 DomTreeNode* DomTree::get_DomTreeNode(BasicBlock *BB)

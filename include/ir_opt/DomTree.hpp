@@ -19,6 +19,7 @@ class DomTreeNode
     int dfn;
 public:
     DomTreeNode(BasicBlock *BB);
+    ~DomTreeNode();
     friend class DomTree;
 };
 
@@ -32,6 +33,7 @@ class DomTree
     int timer;
 public:
     DomTree (Function *Func);
+    ~DomTree();
     /*static DomTree* get_DomTree(Function *Func)
     {
         return Func_map_Dom->find(Func)->second;

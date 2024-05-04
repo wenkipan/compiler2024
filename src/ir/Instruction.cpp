@@ -39,8 +39,7 @@ std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type)
     : User(basic_type), parent(_BB), instr_type(type)
 {
-    if (type != InstrutionEnum::Assign && type != InstrutionEnum::PHINode)
-        _BB->Ins_pushBack(this);
+    _BB->Ins_pushBack(this);
     Function *p_func = _BB->get_func();
     assert(p_func != nullptr);
     p_func->value_pushBack((Value *)this);
@@ -404,7 +403,11 @@ void Unary::print()
 void Instrution::replaceAllUses(Value *RepVal)
 {
     for (Edge *edge : *(get_user_list()))
+    {
         edge->modify_val(RepVal);
+        RepVal->user_list_push_back(edge);
+    }
+    this->get_user_list()->clear();
 }
 
 void Instrution::eraseFromParent()
@@ -437,6 +440,11 @@ void PHINode::print()
             printf(", ");
     }
     printf(")\n");
+}
+
+PHINode::~PHINode()
+{
+    delete valueMap;
 }
 
 void Assign::print()
