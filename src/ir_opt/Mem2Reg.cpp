@@ -7,12 +7,16 @@ void Mem2Reg::get_DF(Function *Func)
     BasicBlock *preBB, *idomBB;
     for (BasicBlock *BB : *(Func->get_blocks()))
     {
+        if (!DT->get_dfn(BB))
+            continue;
         if (BB->get_value_list()->size() > 1)
         {
             idomBB = DT->get_idom(BB);
             for (Edge *edge : *(BB->get_value_list()))
             {
                 preBB = dynamic_cast<BasicBlock*>(edge->get_val());
+                if (!DT->get_dfn(preBB))
+                    continue;
                 while (preBB != idomBB)
                 {
                     DomFsBlock[preBB].push_back(BB);
@@ -86,14 +90,9 @@ void Mem2Reg::removeFromAllocaList(unsigned& AllocaId)
     --AllocaId;
 }
 
-bool Mem2Reg::isAggregateType(Type* type)
-{
-    return !type->isArray();
-}
-
 bool Mem2Reg::isPromote(Alloca* alloc)
 {
-    if (!isAggregateType(alloc->get_type()))
+    if (dynamic_cast<Ptr*>(alloc->get_type())->get_btype()->get_type() != TypeEnum::F32 and dynamic_cast<Ptr*>(alloc->get_type())->get_btype()->get_type() != TypeEnum::I32)
         return false;   
     for (Edge *edge : *(alloc->get_user_list()))
     {
@@ -110,8 +109,6 @@ void Mem2Reg::collectPromotedAllocas(Function *Func)
     Allocas.clear();
     for (BasicBlock *BBit : *(Func->get_blocks()))
     {
-        //BB = Func->get_entryBB();
-        //?BBit?
         BB = BBit;
         for (Instrution *Instrit : *(BB->get_instrs()))
         {
@@ -218,7 +215,7 @@ void Mem2Reg::work(Function *Func)
             IncommingValues[PhiMap[BB][Phi]] = Phi;            
         }
         for (Instrution *it : *(BB->get_instrs()))
-        {
+        {   pos++;
             Instr = it;
             if (Alloca* AI = dynamic_cast<Alloca*>(it))
             {
@@ -254,10 +251,9 @@ void Mem2Reg::work(Function *Func)
                 }
                 else{
                     IncommingValues[AI] = new Assign(InstrutionEnum::Assign, SI->get_src(), BB);
-                    BB->Ins_set(pos, (Instrution*)IncommingValues[AI]);
+                    BB->Ins_set(pos - 1, (Instrution*)IncommingValues[AI]);
                 }
             }
-            pos++;
         }
         for (Edge *edge : *(BB->get_user_list()))
         {

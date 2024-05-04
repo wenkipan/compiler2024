@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         Mem2Reg mem2reg;
         mem2reg.run(Func);
     }
+    
     module->print();
     delete module;
 

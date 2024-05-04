@@ -45,4 +45,5 @@ public:
     DomTreeNode* Query_uni(DomTreeNode *u);
     BasicBlock* get_idom(BasicBlock *BB);
     bool is_dom(BasicBlock *A, BasicBlock *B);
+    int get_dfn(BasicBlock *BB) { return get_DomTreeNode(BB)->dfn;}
 };

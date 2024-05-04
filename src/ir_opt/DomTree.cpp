@@ -53,6 +53,7 @@ void DomTree::MakeDomInit()
 
 void DomTree::dfs(DomTreeNode *u)
 {
+    u->dfn = ++timer;
     order->push_back(u);
     BasicBlock *BB = u->parent;
     for (Edge *edge : *(BB->get_user_list()))
