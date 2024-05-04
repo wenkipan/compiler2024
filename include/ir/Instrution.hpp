@@ -42,6 +42,8 @@ enum class InstrutionEnum
     FSUB,
     FMUL,
     FDIV,
+    // ptr add
+    PADD,
     // bitwise
     SHL,  // Shift left  (logical)
     LSHR, // Shift right (logical)
@@ -72,6 +74,10 @@ public:
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
     Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array, bool _ele);
     ~Instrution() override;
+
+    void replaceInstr(BasicBlock *_BB, int pos);
+    void insertInstr(BasicBlock *_BB, int pos);
+    void removeInstr();
 
     InstrutionEnum get_Instrtype() { return instr_type; }
 
@@ -119,6 +125,7 @@ class GEP : public Instrution // p_addr p_offset
 public:
     GEP(Value *_addr, Value *_offset, bool _elemet, BasicBlock *_parent);
 
+    bool get_isele() { return is_element; }
     Value *get_addr() { return (*this->get_value_list())[0]->get_val(); }
     Value *get_offset() { return (*this->get_value_list())[1]->get_val(); }
 
@@ -216,6 +223,7 @@ class Binary : public Instrution
 
 public:
     Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent);
+    Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent, bool is_ele);
 
     Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
     Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }

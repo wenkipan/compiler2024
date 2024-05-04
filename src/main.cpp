@@ -59,6 +59,9 @@ int main(int argc, char *argv[])
     }
     delete mem2reg;
     module->print();
+    module->lowerIR();
+    module->print();
+
     delete module;
 
     // // into ssa

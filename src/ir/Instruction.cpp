@@ -18,6 +18,7 @@ std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
         {InstrutionEnum::FSUB, "-"},
         {InstrutionEnum::FMUL, "*"},
         {InstrutionEnum::FDIV, "/"},
+        {InstrutionEnum::PADD, "+"},
         {InstrutionEnum::SHL, "<<"},
         {InstrutionEnum::LSHR, ">>"},
         {InstrutionEnum::ASHR, "(Arithmetic)>>"},
@@ -37,6 +38,67 @@ std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
         {InstrutionEnum::FGT, ">"},
         {InstrutionEnum::FGE, ">="},
         {InstrutionEnum::AddSP, "SP +"}};
+
+void Instrution::replaceInstr(BasicBlock *_BB, int pos)
+{
+    std::vector<Instrution *> *_instrs = this->get_parent()->get_instrutions();
+    if (_instrs->back() == this)
+        _instrs->pop_back();
+    else
+    {
+        for (auto it = _instrs->begin(); it != _instrs->end(); it++)
+            if (*it == this)
+            {
+                _instrs->erase(it);
+                break;
+            }
+    }
+    this->parent = _BB;
+    Value *tmp = (*_BB->get_instrutions())[pos];
+    for (Edge *_edge : (*tmp->get_user_list()))
+    {
+        _edge->set_val(this);
+        this->user_list_push_back(_edge);
+    }
+    tmp->get_user_list()->clear();
+    (*_BB->get_instrutions())[pos] = this;
+}
+
+void Instrution::insertInstr(BasicBlock *_BB, int pos)
+{
+    std::vector<Instrution *> *_instrs = this->get_parent()->get_instrutions();
+    if (_instrs->back() == this)
+        _instrs->pop_back();
+    else
+    {
+        for (auto it = _instrs->begin(); it != _instrs->end(); it++)
+            if (*it == this)
+            {
+                _instrs->erase(it);
+                break;
+            }
+    }
+    this->parent = _BB;
+    _instrs = _BB->get_instrutions();
+    _instrs->insert(_instrs->begin() + pos, this);
+}
+
+void Instrution::removeInstr()
+{
+    std::vector<Instrution *> *_instrs = this->get_parent()->get_instrutions();
+    if (_instrs->back() == this)
+        _instrs->pop_back();
+    else
+    {
+        for (auto it = _instrs->begin(); it != _instrs->end(); it++)
+            if (*it == this)
+            {
+                _instrs->erase(it);
+                break;
+            }
+    }
+    this->parent = nullptr;
+}
 
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type)
     : User(basic_type), parent(_BB), instr_type(type)
@@ -189,6 +251,18 @@ Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_par
     _src1->user_list_push_back(p_in1);
     _src2->user_list_push_back(p_in2);
 }
+
+Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent, bool is_ele)
+    : Instrution(_parent, InstrutionEnum::PADD, _src1->get_type(), is_ele)
+{
+    Edge *p_in1 = new Edge(this, _src1);
+    Edge *p_in2 = new Edge(this, _src2);
+    value_list_push_back(p_in1);
+    value_list_push_back(p_in2);
+    _src1->user_list_push_back(p_in1);
+    _src2->user_list_push_back(p_in2);
+}
+
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
     : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type()))
 {
@@ -420,7 +494,7 @@ void Binary::print()
     putchar(' ');
     std::cout << (*_symbol_map)[this->get_Instrtype()];
     putchar(' ');
-    p_src1->get_type()->print();
+    p_src2->get_type()->print();
     putchar(' ');
     p_src2->print_ID();
     putchar('\n');

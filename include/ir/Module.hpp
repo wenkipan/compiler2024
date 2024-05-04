@@ -24,6 +24,8 @@ public:
     void func_push_back(Function *p_func);
     void Gvar_add(p_symbol_var p_var);
 
+    void lowerIR();
+
     std::vector<Function *> *get_funcs();
 
     void GenerSet();
