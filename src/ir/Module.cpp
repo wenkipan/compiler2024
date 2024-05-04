@@ -13,9 +13,21 @@ Module::~Module()
 {
     // std::cout << global_variables->size() << std::endl;
     for (GlobalValue *p_Gvar : (*global_variables))
+    {
+        std::vector<Edge *> *_nw = p_Gvar->get_user_list();
+        for (Edge *_edge : (*_nw))
+            delete _edge;
         delete p_Gvar;
+    }
+
     for (GlobalValue *p_func : (*functions))
+    {
+        std::vector<Edge *> *_nw = p_func->get_user_list();
+        for (Edge *_edge : (*_nw))
+            delete _edge;
         delete p_func;
+    }
+
     delete global_variables;
     delete functions;
 }

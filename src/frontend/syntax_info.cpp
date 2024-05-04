@@ -294,8 +294,8 @@ void syntax_info::syntax_func_end(p_ast_block p_block)
     Function *_p_func = new Function(p_func);
     this->module->func_push_back(_p_func);
     _p_func->CallGen(p_block, p_func);
-    syntax_info_print_block(p_block);
-    // drop
+    // syntax_info_print_block(p_block);
+    //  drop
     p_block->ast_block_drop();
 }
 static inline p_symbol_func syntax_rtlib_decl(p_syntax_info p_info, basic_type type, std::string name1, p_symbol_type p_param1, p_symbol_type p_param2, p_symbol_type p_param3, bool is_va)

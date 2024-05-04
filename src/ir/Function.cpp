@@ -138,9 +138,20 @@ void Param::print()
 Function::~Function()
 {
     for (Value *_var : (*values))
+    {
+        std::vector<Edge *> *_nw = _var->get_user_list();
+        for (Edge *_edge : (*_nw))
+            delete _edge;
         delete _var;
+    }
     for (BasicBlock *BB : (*blocks))
+    {
+        std::vector<Edge *> *_nw = BB->get_user_list();
+        for (Edge *_edge : (*_nw))
+            delete _edge;
         delete BB;
+    }
+
     delete params;
     delete values;
     delete blocks;

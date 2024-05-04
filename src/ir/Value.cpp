@@ -93,9 +93,6 @@ void Value::user_list_push_back(Edge *edge)
 
 Value::~Value()
 {
-    for (Edge *p_edge : (*user_list))
-        delete p_edge;
-
     delete value_list;
     delete user_list;
     delete type;
