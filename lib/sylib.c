@@ -1,6 +1,6 @@
-#include <stdio.hpp>
-#include <stdarg.hpp>
-#include <sys/time.hpp>
+#include <stdio.h>
+#include <stdarg.h>
+#include <sys/time.h>
 #include "sylib.h"
 /* Input & output functions */
 int getint()

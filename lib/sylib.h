@@ -1,9 +1,9 @@
 #ifndef __SYLIB_H_
 #define __SYLIB_H_
 
-#include <stdio.hpp>
-#include <stdarg.hpp>
-#include <sys/time.hpp>
+#include <stdio.h>
+#include <stdarg.h>
+#include <sys/time.h>
 /* Input & output functions */
 int getint(), getch(), getarray(int a[]);
 float getfloat();
