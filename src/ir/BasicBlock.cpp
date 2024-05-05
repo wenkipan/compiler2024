@@ -1,5 +1,6 @@
+#include "ir/Value.hpp"
 #include <ir/BasicBlock.hpp>
-
+#include <algorithm>
 BasicBlock::BasicBlock(Function *p_func)
     : Value(), parent(p_func),
       phinodes(new std::vector<PHINode *>),
@@ -13,6 +14,21 @@ BasicBlock::BasicBlock()
       phinodes(new std::vector<PHINode *>),
       p_branch(nullptr),
       instrutions(new std::vector<Instrution *>){};
+
+void BasicBlock::drop()
+{
+    // erase from function
+    auto blocks = parent->get_blocks();
+    blocks->erase(remove(blocks->begin(), blocks->end(), this), blocks->end());
+    // erase its instr
+    for (auto phi : *phinodes)
+        phi->drop();
+    for (auto instr : *instrutions)
+        instr->drop();
+    // erase from cfg(value drop)
+    Value::drop();
+    delete this;
+}
 
 void BasicBlock::Set_jmp(BasicBlock *p_next)
 {
@@ -58,7 +74,7 @@ void BasicBlock::print()
     if (n >= 0)
         (*_prev)[n]->get_val()->print_ID();
     putchar('\n');
-    for (PHINode *p_PHI: (*phinodes))
+    for (PHINode *p_PHI : (*phinodes))
         p_PHI->print();
     for (Instrution *p_instr : (*instrutions))
         p_instr->print();
@@ -79,7 +95,8 @@ void BasicBlock::Insert_Phi(PHINode *phi)
 void BasicBlock::erase_instr(Instrution *instr)
 {
     for (auto it = instrutions->begin(); it != instrutions->end(); it++)
-        if (*it == instr){
+        if (*it == instr)
+        {
             instrutions->erase(it);
             break;
         }

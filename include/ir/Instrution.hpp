@@ -82,6 +82,7 @@ public:
     bool isBranch() { return instr_type == InstrutionEnum::Branch; }
     bool isPHINode() { return instr_type == InstrutionEnum::PHINode; }
     bool isReturn() { return instr_type == InstrutionEnum::Ret; }
+    bool isAlloca() { return instr_type == InstrutionEnum::Alloca; }
     bool isLoad() { return instr_type == InstrutionEnum::Load; }
     bool isStore() { return instr_type == InstrutionEnum::Store; }
     bool isCmp() { return instr_type >= InstrutionEnum::CmpBegin && instr_type < InstrutionEnum::CmpEnd; }

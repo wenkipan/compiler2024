@@ -6,7 +6,8 @@ GlobalValue::GlobalValue(p_symbol_var p_var)
 {
     name = std::string(p_var->name, strlen(p_var->name));
 }
-
+GlobalValue::GlobalValue()
+    : User() {}
 GlobalValue::GlobalValue(p_symbol_func p_func)
     : User(p_func)
 {

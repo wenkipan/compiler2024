@@ -1,17 +1,12 @@
 #pragma once
 
 #include <ir/Type.hpp>
-#include <ir/Edge.hpp>
+// #include <ir/Edge.hpp>
 
 #include <symbol/var.hpp>
 #include <symbol/func.hpp>
 
-template <typename T>
-bool is_a(Value *p_val)
-{
-    return dynamic_cast<T *>(p_val) != nullptr;
-}
-
+class Edge;
 class Value
 {
 
@@ -39,7 +34,7 @@ public:
     virtual void print_ID() { printf("%%%d", ID); };
 
     Type *get_type();
-    void set_type(Type *ty) { type = ty;}
+    void set_type(Type *ty) { type = ty; }
     std::vector<Edge *> *get_value_list() { return value_list; }
     std::vector<Edge *> *get_user_list() { return user_list; }
 
@@ -50,8 +45,13 @@ public:
     void drop();
 };
 
+template <typename T>
+bool is_a(Value *p_val)
+{
+    return dynamic_cast<T *>(p_val) != nullptr;
+}
 class UndefValue : public Value
 {
 public:
-    UndefValue(Type *ty) {set_type(ty);}
+    UndefValue(Type *ty) { set_type(ty); }
 };

@@ -1,3 +1,4 @@
+#include "ir_opt/DCE.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -8,8 +9,8 @@
 
 int main(int argc, char *argv[])
 {
-    //freopen("std.in", "r", stdin);
-    //freopen("std.out", "w", stdout);
+    // freopen("std.in", "r", stdin);
+    // freopen("std.out", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -51,10 +52,12 @@ int main(int argc, char *argv[])
     {
         if (Func->get_isExternal())
             continue;
-        Mem2Reg mem2reg;
-        mem2reg.run(Func);
+        DCE dd(Func);
+        dd.run();
+        Mem2Reg mr;
+        mr.run(Func);
     }
-    
+
     module->print();
     delete module;
 

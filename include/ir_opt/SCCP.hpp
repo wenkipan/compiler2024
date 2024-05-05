@@ -5,6 +5,7 @@
 #include <ir/ir.hpp>
 #include <queue>
 #include <map>
+#include <iostream>
 class Lattice
 {
 public:
@@ -63,10 +64,27 @@ public:
     bool exp_insersect(Lattice, Lattice, InstrutionEnum itype);
     bool phi_insersect(Lattice, Lattice &);
     Lattice constfold(Lattice lat1, Lattice lat2, InstrutionEnum itype);
+    friend std::ostream &operator<<(std::ostream &output, const Lattice &D)
+    {
+        switch (D.lat)
+        {
+        case Lat::UNDEF:
+            output << "UNDEF";
+            break;
+        case Lat::CONST:
+            output << "CONST";
+            break;
+        case Lat::NAC:
+            output << "NAC";
+            break;
+        default:
+            break;
+        }
+        return output;
+    }
 };
 class SCCP
 {
-public:
     Function *function;
     std::unordered_map<Value *, Lattice> latticemap;
     std::unordered_map<BasicBlock *, bool> executed_block_map;
@@ -76,7 +94,8 @@ public:
     std::queue<Edge *> cfg_worklist;
     std::queue<Edge *> ssa_worklist;
 
-    // SCCP();
+public:
+    SCCP(Function *func) { function = func; }
     void run();
     void init();
     void visit_exp(Instrution *);
@@ -86,6 +105,8 @@ public:
     bool visit_unary(Instrution *instr);
     bool visit_GEP(Instrution *instr);
     void do_sccp();
+    void print();
+    Lattice get_lattice_from_map(Value *);
 };
 
 // (1) Initialize the FlowWorkList to contain the edges exiting the start node of

@@ -7,6 +7,7 @@ class GlobalValue : public User
     std::string name;
 
 public:
+    GlobalValue();
     GlobalValue(p_symbol_var p_var);
     GlobalValue(p_symbol_func p_func);
     ~GlobalValue() override;

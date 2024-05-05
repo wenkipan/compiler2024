@@ -7,6 +7,7 @@ class User : public Value
 {
 
 public:
+    User();
     User(TypeEnum basic_type);
     User(p_symbol_var p_var);
     // User(p_symbol_var p_var, basic_type basic);
@@ -14,5 +15,5 @@ public:
     User(Type *p_array, bool _ele);
     virtual ~User();
 
-    //virtual void print() { assert(0); }
+    // virtual void print() { assert(0); }
 };

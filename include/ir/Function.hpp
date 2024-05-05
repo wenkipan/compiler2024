@@ -35,6 +35,7 @@ class Function : public GlobalValue
 
 public:
     Function(p_symbol_func _p_func);
+    Function();
     ~Function() override;
 
     void ResetID();

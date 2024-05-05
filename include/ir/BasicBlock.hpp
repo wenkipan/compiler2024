@@ -17,7 +17,7 @@ public:
     BasicBlock(Function *p_func);
     BasicBlock(std::vector<Instrution *> *instrs);
     ~BasicBlock() override;
-
+    void drop();
     Function *get_func() { return parent; }
     std::vector<Instrution *> *get_instrs() { return instrutions; }
     std::vector<PHINode *> *get_phis() { return phinodes; }

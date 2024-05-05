@@ -19,7 +19,8 @@ User::User(p_symbol_func p_func)
     : Value(p_func)
 {
 }
-
+User::User()
+    : Value() {}
 User::User(Type *p_array, bool _ele)
     : Value(p_array, _ele)
 {

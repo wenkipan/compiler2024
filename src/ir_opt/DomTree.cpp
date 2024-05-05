@@ -1,6 +1,8 @@
+#include "ir/Edge.hpp"
+#include "ir/Function.hpp"
 #include <ir_opt/DomTree.hpp>
 
-std::unordered_map<Function*, DomTree*>*Func_map_Dom = new std::unordered_map<Function*, DomTree*>;
+std::unordered_map<Function *, DomTree *> *Func_map_Dom = new std::unordered_map<Function *, DomTree *>;
 
 DomTreeNode::DomTreeNode(BasicBlock *BB)
 {
@@ -29,7 +31,7 @@ DomTree::DomTree(Function *Func)
     DomTreeNodes = new std::vector<DomTreeNode *>();
     std::vector<BasicBlock *> *BBs = Func->get_blocks();
     for (BasicBlock *BB : *BBs)
-    {   
+    {
         DomTreeNodes->push_back(new DomTreeNode(BB));
         BB_map_Dom->insert(std::make_pair(BB, DomTreeNodes->back()));
     }
@@ -44,7 +46,7 @@ DomTree::~DomTree()
     delete order;
 }
 
-DomTreeNode* DomTree::get_DomTreeNode(BasicBlock *BB)
+DomTreeNode *DomTree::get_DomTreeNode(BasicBlock *BB)
 {
     return BB_map_Dom->find(BB)->second;
 }
@@ -82,11 +84,11 @@ void DomTree::dfs(DomTreeNode *u)
     }
 }
 
-DomTreeNode* DomTree::Query_uni(DomTreeNode *u)
+DomTreeNode *DomTree::Query_uni(DomTreeNode *u)
 {
     if (u == u->uni)
         return u;
-    DomTreeNode * res = Query_uni(u->uni);
+    DomTreeNode *res = Query_uni(u->uni);
     if (u->uni->mn->Sdom->dfn < u->mn->Sdom->dfn)
         u->mn = u->uni->mn;
     return u->uni = res;
@@ -94,7 +96,7 @@ DomTreeNode* DomTree::Query_uni(DomTreeNode *u)
 
 void DomTree::MakeDom()
 {
-    BasicBlock* enter = parent->get_entryBB();
+    BasicBlock *enter = parent->get_entryBB();
     MakeDomInit();
     dfs(BB_map_Dom->find(enter)->second);
     for (DomTreeNode *BB : *DomTreeNodes)
@@ -104,7 +106,7 @@ void DomTree::MakeDom()
         DomTreeNode *u = (*order)[i];
         for (Edge *edge : *(u->parent->get_value_list()))
         {
-            DomTreeNode *v = BB_map_Dom->find((BasicBlock*)edge->get_val())->second;
+            DomTreeNode *v = BB_map_Dom->find((BasicBlock *)edge->get_val())->second;
             if (!v->dfn)
                 continue;
             Query_uni(v);
@@ -137,7 +139,7 @@ void DomTree::MakeDom()
     }
 }
 
-BasicBlock* DomTree::get_idom(BasicBlock *BB)
+BasicBlock *DomTree::get_idom(BasicBlock *BB)
 {
     if (BB_map_Dom->find(BB)->second->Idom == nullptr)
         return nullptr;
@@ -178,4 +180,53 @@ void DomTree::get_DF()
             }
         }
     }
+}
+
+PostDomTree::PostDomTree(Function *f)
+{
+    for (auto BB : *f->get_blocks())
+    {
+        BasicBlock *postblock = new BasicBlock(parent);
+        parent->get_blocks()->push_back(postblock);
+        blockmap.emplace(BB, postblock);
+    }
+    for (auto BB : *f->get_blocks())
+    {
+        for (auto edge : *BB->get_user_list())
+        {
+            auto post_bb = blockmap.find(BB)->second;
+            auto post_userbb = blockmap.find((BasicBlock *)edge->get_user())->second;
+            Edge *newedge = new Edge(post_bb, post_userbb);
+            post_bb->value_list_push_back(newedge);
+            post_userbb->user_list_push_back(newedge);
+        }
+    }
+    exit = new BasicBlock(parent);
+    parent->get_blocks()->push_back(exit);
+    BasicBlock *post_ret = blockmap.find(f->get_retBB())->second;
+    Edge *newedge = new Edge(post_ret, exit);
+    exit->user_list_push_back(newedge);
+    post_ret->value_list_push_back(newedge);
+
+    entry = new BasicBlock(parent);
+    parent->get_blocks()->push_back(entry);
+    BasicBlock *post_entry = blockmap.find(f->get_entryBB())->second;
+    Edge *newedg2 = new Edge(entry, post_entry);
+    entry->value_list_push_back(newedg2);
+    post_entry->user_list_push_back(newedg2);
+
+    Edge *edge3 = new Edge(entry, exit);
+    entry->value_list_push_back(edge3);
+    exit->user_list_push_back(edge3);
+
+    parent->set_entryBB(exit);
+    pdt = new DomTree(parent);
+    pdt->Run();
+    pdt->get_DF();
+}
+
+PostDomTree::~PostDomTree()
+{
+    delete pdt;
+    delete parent;
 }

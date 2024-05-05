@@ -1,6 +1,6 @@
 #include <ir/Value.hpp>
 #include <algorithm>
-
+#include <ir/Edge.hpp>
 int Value::CurID = 0;
 
 Value::Value()

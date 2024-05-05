@@ -59,6 +59,16 @@ Function::Function(p_symbol_func _p_func)
 
 {
 }
+Function::Function()
+    : GlobalValue(),
+      currentbblabel(0),
+      params(new std::vector<Param *>),
+      values(new std::vector<Value *>),
+      entry_block(nullptr),
+      blocks(new std::vector<BasicBlock *>)
+
+{
+}
 void Function::ResetID()
 {
     int curlable = 0, curID = 0;
@@ -154,6 +164,7 @@ Function::~Function()
 
     delete params;
     delete values;
+
     delete blocks;
 }
 std::vector<Param *> *Function::get_params()

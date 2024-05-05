@@ -435,7 +435,7 @@ void Unary::print()
     Value *p_src = get_src();
     p_src->get_type()->print();
     putchar(' ');
-    p_src->print_ID(); 
+    p_src->print_ID();
     putchar('\n');
 }
 
@@ -443,7 +443,7 @@ void Instrution::replaceAllUses(Value *RepVal)
 {
     for (Edge *edge : *(get_user_list()))
     {
-        edge->modify_val(RepVal);
+        edge->set_val(RepVal);
         RepVal->user_list_push_back(edge);
     }
     this->get_user_list()->clear();
@@ -452,7 +452,7 @@ void Instrution::replaceAllUses(Value *RepVal)
 void Instrution::drop()
 {
     parent->erase_instr(this);
-    Value::drop();  
+    Value::drop();
 }
 
 void PHINode::addIncoming(Value *val, BasicBlock *BB)
@@ -460,10 +460,10 @@ void PHINode::addIncoming(Value *val, BasicBlock *BB)
     valueMap->insert({BB, val});
 }
 
-PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush) 
-    :Instrution(_BB, InstrutionEnum::PHINode, basic_type, notPush)
+PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush)
+    : Instrution(_BB, InstrutionEnum::PHINode, basic_type, notPush)
 {
-    valueMap = new std::unordered_map<BasicBlock*, Value*>();
+    valueMap = new std::unordered_map<BasicBlock *, Value *>();
 }
 
 void PHINode::print()
@@ -491,4 +491,3 @@ void Assign::print()
 {
     Unary::print();
 }
-

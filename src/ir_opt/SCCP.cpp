@@ -3,11 +3,11 @@
 #include "ir/Function.hpp"
 #include "ir/Instrution.hpp"
 #include <ir_opt/SCCP.hpp>
-
+#include <fstream>
 void SCCP::run()
 {
     init();
-    while (!cfg_worklist.empty() && !ssa_worklist.empty())
+    while (!cfg_worklist.empty() || !ssa_worklist.empty())
     {
         while (!cfg_worklist.empty())
         {
@@ -21,6 +21,7 @@ void SCCP::run()
             executed_edge_map[edge] = true;
 
             BasicBlock *cur_bb = (BasicBlock *)edge->get_user();
+            cur_bb->print();
             for (auto phi : *cur_bb->get_phinodes())
                 visit_phi(phi);
 
@@ -62,19 +63,23 @@ void SCCP::run()
             }
         }
     }
+    print();
     do_sccp();
 }
 
 void SCCP::init()
 {
     // entry bb cfg_worklist
-    assert(function->get_entryBB());
-    Edge *fakeedge = new Edge(nullptr, function->get_entryBB()); // TODO:delete this edge
+    assert((function->get_entryBB()));
+    Edge *fakeedge = new Edge(function->get_entryBB(), nullptr); // TODO:delete this edge
     cfg_worklist.push(fakeedge);
-
+    executed_edge_map.emplace(fakeedge, false);
     //  executed_block_edge_map init
     for (BasicBlock *bb : *function->get_blocks())
     {
+        // bb->print();
+        if (bb->get_instrutions()->size() == 0)
+            continue;
         auto jmporbranch = bb->get_last_instrution();
         assert(jmporbranch->isBranch() || jmporbranch->isJmp() || jmporbranch->isReturn());
         // set BB out-edge
@@ -116,6 +121,12 @@ void SCCP::do_sccp()
 {
 }
 
+Lattice SCCP::get_lattice_from_map(Value *v)
+{
+    auto it = latticemap.find(v);
+    assert(it != latticemap.end());
+    return it->second;
+}
 static inline bool is_lat_lower(Lattice::Lat latbefore, Lattice::Lat latafter)
 {
     if (latbefore != latafter)
@@ -131,9 +142,8 @@ static inline bool is_lat_lower(Lattice::Lat latbefore, Lattice::Lat latafter)
 }
 void SCCP::visit_phi(Value *phi)
 {
-    assert(latticemap.find(phi) != latticemap.end());
-    Lattice tmp = latticemap.find(phi)->second;
-    if (latticemap.find(phi)->second.lat == Lattice::Lat::NAC)
+    Lattice tmp = get_lattice_from_map(phi);
+    if (tmp.lat == Lattice::Lat::NAC)
         return;
     auto phi_value_list = phi->get_value_list();
     for (auto edge : *phi_value_list)
@@ -154,8 +164,7 @@ void SCCP::visit_phi(Value *phi)
         if (executed_block_map[bb] == false)
             continue;
 
-        assert(latticemap.find(value) != latticemap.end());
-        Lattice lat_for_value = latticemap.find(value)->second;
+        Lattice lat_for_value = get_lattice_from_map(value);
         tmp.phi_insersect(tmp, lat_for_value);
     }
     if (is_lat_lower(latticemap.find(phi)->second.lat, tmp.lat))
@@ -173,9 +182,9 @@ void SCCP::visit_exp(Instrution *instrution)
     bool need_add_ssa = false;
     if (instrution->isBranch())
     {
+        // about Branch ,it always dealing cond , branch itself is useless
         auto cond = ((Branch *)instrution)->get_cond();
-        assert(latticemap.find(cond) != latticemap.end());
-        Lattice cond_lattice = latticemap.find(cond)->second;
+        Lattice cond_lattice = get_lattice_from_map(cond);
         if (cond_lattice.lat == Lattice::Lat::NAC)
         {
             for (auto nextbb : *instrution->get_parent()->get_user_list())
@@ -233,6 +242,10 @@ void SCCP::visit_exp(Instrution *instrution)
     { // do nothing
         latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
     }
+    else if (instrution->isAlloca())
+    { // do nothing
+        latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
+    }
     else
     {
         assert(0);
@@ -250,20 +263,16 @@ bool SCCP::visit_binary(Instrution *instr)
 {
     auto value_list = instr->get_value_list();
     assert(value_list->size() == 2);
-    assert(latticemap.find((*value_list)[0]->get_val()) != latticemap.end());
-    assert(latticemap.find((*value_list)[2]->get_val()) != latticemap.end());
-    auto lat1 = latticemap.find((*value_list)[0]->get_val())->second;
-    auto lat2 = latticemap.find((*value_list)[1]->get_val())->second;
+    auto lat1 = get_lattice_from_map((*value_list)[0]->get_val());
+    auto lat2 = get_lattice_from_map((*value_list)[1]->get_val());
     return latticemap.find(instr)->second.exp_insersect(lat1, lat2, instr->get_Instrtype());
 }
 bool SCCP::visit_cmp(Instrution *instr)
 {
     auto value_list = instr->get_value_list();
     assert(value_list->size() == 2);
-    assert(latticemap.find((*value_list)[0]->get_val()) != latticemap.end());
-    assert(latticemap.find((*value_list)[2]->get_val()) != latticemap.end());
-    auto lat1 = latticemap.find((*value_list)[0]->get_val())->second;
-    auto lat2 = latticemap.find((*value_list)[1]->get_val())->second;
+    auto lat1 = get_lattice_from_map((*value_list)[0]->get_val());
+    auto lat2 = get_lattice_from_map((*value_list)[1]->get_val());
     return latticemap.find(instr)->second.exp_insersect(lat1, lat2, instr->get_Instrtype());
 }
 bool SCCP::visit_unary(Instrution *instr)
@@ -331,6 +340,41 @@ bool SCCP::visit_GEP(Instrution *instr)
     if (tmp != Lattice::Lat::NAC)
         return 1;
     return 0;
+}
+
+void SCCP::print()
+{
+    FILE *fp;
+    fp = freopen("doc/draw_source/SCCPBLOCK.txt", "w+", stdout);
+    for (auto bb : *function->get_blocks())
+    {
+        // printf("BB::%d\n", bb->get_ID());
+        for (auto userbb : *bb->get_user_list())
+        {
+            assert(is_a<BasicBlock>(userbb->get_user()));
+            std::cout << bb->get_ID() << ',' << (executed_block_map.find(bb)->second ? "true" : "false") << "->"
+                      << userbb->get_user()->get_ID() << ',' << (executed_block_map.find((BasicBlock *)userbb->get_user())->second ? "true" : "false") << std::endl;
+        }
+    }
+    fclose(fp);
+    fp = freopen("doc/draw_source/SCCPINSTR.txt", "w+", stdout);
+    for (auto bb : *function->get_blocks())
+    {
+        for (auto instr : *bb->get_instrs())
+        {
+            // printf("instr::%d\n", instr->get_ID());
+            for (auto user : *instr->get_user_list())
+            {
+                assert(latticemap.find(instr) != latticemap.end());
+                assert(latticemap.find(user->get_user()) != latticemap.end());
+                Lattice lattice = latticemap.find(instr)->second;
+                Lattice l2 = latticemap.find(user->get_user())->second;
+                std::cout << instr->get_ID() << ',' << lattice << "->"
+                          << user->get_user()->get_ID() << ',' << l2 << std::endl;
+            }
+        }
+    }
+    fclose(fp);
 }
 bool Lattice::exp_insersect(Lattice lat1, Lattice lat2, InstrutionEnum itype)
 {

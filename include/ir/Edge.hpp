@@ -1,6 +1,6 @@
 #pragma once
-
-class Value;
+#include <ir/Value.hpp>
+// class Value;
 class Edge
 {
     Value *value;
@@ -11,6 +11,7 @@ public:
 
     Value *get_val() { return value; }
     Value *get_user() { return user; }
-    void modify_val(Value *RepVal) { value = RepVal;}
-    void modify_user(Value *RepUser) { user = RepUser;}
+    void set_val(Value *RepVal) { value = RepVal; }
+    void set_user(Value *RepUser) { user = RepUser; }
+    void drop();
 };
