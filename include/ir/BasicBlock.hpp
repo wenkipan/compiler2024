@@ -3,6 +3,7 @@
 #include <ir/Function.hpp>
 #include <ir/Instrution.hpp>
 
+void dropInstrs(const std::vector<Instrution *> &dropList);
 class BasicBlock : public Value
 {
     Function *parent;
@@ -41,4 +42,5 @@ public:
     void Insert_Phi(PHINode *phi);
 
     void erase_instr(Instrution *instr);
+    friend void dropInstrs(const std::vector<Instrution *> &dropList);
 };

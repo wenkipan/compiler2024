@@ -347,6 +347,7 @@ void Load::print()
     printf("    ");
     this->get_type()->print();
     printf(" %%%d = load ", this->get_ID());
+    fflush(stdout);
     Value *p_addr = get_addr();
     p_addr->get_type()->print();
     putchar(' ');
@@ -457,6 +458,9 @@ void Instrution::drop()
 
 void PHINode::addIncoming(Value *val, BasicBlock *BB)
 {
+    Edge *edge = new Edge(this, val);
+    this->value_list_push_back(edge);
+    val->user_list_push_back(edge);
     valueMap->insert({BB, val});
 }
 

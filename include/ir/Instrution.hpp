@@ -2,6 +2,7 @@
 
 #include <ir/User.hpp>
 #include <unordered_map>
+#include <queue>
 
 class BasicBlock;
 
@@ -125,7 +126,8 @@ public:
 };
 class PHINode : public Instrution
 {
-    std::unordered_map<BasicBlock*, Value*> *valueMap;
+    std::unordered_map<BasicBlock *, Value *> *valueMap;
+
 public:
     PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush);
     ~PHINode();
@@ -237,8 +239,8 @@ class Assign : public Unary
 {
 public:
     Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
-        :Unary(type, _src1, _parent){}
+        : Unary(type, _src1, _parent) {}
     Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
-        :Unary(type, _src1, _parent, notPush){}
+        : Unary(type, _src1, _parent, notPush) {}
     void print();
 };

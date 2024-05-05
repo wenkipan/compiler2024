@@ -106,3 +106,32 @@ void BasicBlock::Ins_set(int pos, Instrution *p_instr)
 {
     (*instrutions)[pos] = p_instr;
 }
+
+void dropInstrs(const std::vector<Instrution *> &dropList)
+{
+    std::unordered_map<BasicBlock *, std::queue<Instrution *>> dropMap;
+    for (auto Instr : dropList)
+    {
+        if (dropMap.find(Instr->get_BB()) == dropMap.end())
+            dropMap.insert(make_pair(Instr->get_BB(), std::queue<Instrution *>()));
+        dropMap.find(Instr->get_BB())->second.push(Instr);
+    }
+    for (auto it : dropMap)
+    {
+        std::vector<Instrution *> *tmp = new std::vector<Instrution *>();
+        std::vector<Instrution *> *removeList = new std::vector<Instrution *>();
+        for (auto Instr : *(it.first->get_instrutions()))
+            if (!it.second.empty() && Instr == it.second.front())
+            {
+                it.second.pop();
+                removeList->push_back(Instr);
+            }
+            else
+                tmp->push_back(Instr);
+        std::swap(it.first->instrutions, tmp);
+        delete tmp;
+        for (auto it : *removeList)
+            dynamic_cast<Value *>(it)->drop();
+        delete removeList;
+    }
+}

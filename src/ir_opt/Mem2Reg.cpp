@@ -55,13 +55,6 @@ bool Mem2Reg::rewriteSingleStoreAlloca(Alloca *alloc)
     return true;
 }
 
-void Mem2Reg::removeFromAllocaList(unsigned &AllocaId)
-{
-    Allocas[AllocaId] = Allocas.back();
-    Allocas.pop_back();
-    --AllocaId;
-}
-
 bool Mem2Reg::isPromote(Alloca *alloc)
 {
     if (dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::F32 and dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::I32)
@@ -87,7 +80,7 @@ void Mem2Reg::collectPromotedAllocas(Function *Func)
             if (Alloca *alloc = dynamic_cast<Alloca *>(Instrit))
             {
                 if (isPromote(alloc))
-                    Allocas.push_back(alloc);
+                    Allocas.insert(alloc);
             }
         }
     }
@@ -119,17 +112,16 @@ void Mem2Reg::analysisAlloca(Alloca *alloc)
 
 void Mem2Reg::work(Function *Func)
 {
-    for (unsigned AllocNum = 0; AllocNum != Allocas.size(); AllocNum++)
+    for (auto it = Allocas.begin(); it != Allocas.end(); it++)
     {
-        Alloca *AI = Allocas[AllocNum];
+        Alloca *AI = *it;
         if (AI->get_user_list()->empty())
         {
             AI->drop();
-            removeFromAllocaList(AllocNum);
+            it = Allocas.erase(it);
         }
         analysisAlloca(AI);
     }
-
     std::set<BasicBlock *> PhiSet;
     std::vector<BasicBlock *> W;
     PHINode *phi;
@@ -159,7 +151,6 @@ void Mem2Reg::work(Function *Func)
             }
         }
     }
-
     std::vector<Instrution *> InstrRemoveList;
     std::vector<std::pair<BasicBlock *, std::map<Alloca *, Value *>>> Worklist;
     std::set<BasicBlock *> VisSet;
@@ -195,7 +186,7 @@ void Mem2Reg::work(Function *Func)
             Instr = it;
             if (Alloca *AI = dynamic_cast<Alloca *>(it))
             {
-                if (std::find(Allocas.begin(), Allocas.end(), AI) == Allocas.end())
+                if (Allocas.find(AI) == Allocas.end())
                     continue;
                 InstrRemoveList.push_back(Instr);
             }
@@ -204,7 +195,7 @@ void Mem2Reg::work(Function *Func)
                 Alloca *AI = dynamic_cast<Alloca *>(LI->get_addr());
                 if (!AI)
                     continue;
-                if (std::find(Allocas.begin(), Allocas.end(), AI) != Allocas.end())
+                if (Allocas.find(AI) != Allocas.end())
                 {
                     if (IncommingValues.find(AI) == IncommingValues.end())
                     {
@@ -221,7 +212,7 @@ void Mem2Reg::work(Function *Func)
                 Alloca *AI = dynamic_cast<Alloca *>(SI->get_addr());
                 if (!AI)
                     continue;
-                if (std::find(Allocas.begin(), Allocas.end(), AI) == Allocas.end())
+                if (Allocas.find(AI) == Allocas.end())
                     continue;
                 if (dynamic_cast<Instrution *>(SI->get_src()))
                 {
@@ -232,7 +223,7 @@ void Mem2Reg::work(Function *Func)
                 {
                     IncommingValues[AI] = new Assign(InstrutionEnum::Assign, SI->get_src(), BB, true);
                     BB->Ins_set(pos - 1, (Instrution *)IncommingValues[AI]);
-                    Instr->drop();
+                    dynamic_cast<Value *>(Instr)->drop();
                 }
             }
         }
@@ -249,13 +240,13 @@ void Mem2Reg::work(Function *Func)
             }
         }
     }
-    while (!InstrRemoveList.empty())
+    /*while (!InstrRemoveList.empty())
     {
         Instr = InstrRemoveList.back();
         InstrRemoveList.pop_back();
         Instr->drop();
-    }
-
+    }*/
+    dropInstrs(InstrRemoveList);
     for (auto &it1 : PhiMap)
     {
         for (auto &it : it1.second)
@@ -281,6 +272,7 @@ bool Mem2Reg::run(Function *Func)
         DT->get_DF();
         work(Func);
         delete DT;
+        return true;
     }
     return true;
 }
