@@ -39,6 +39,7 @@ DomTree::DomTree(Function *Func)
 }
 DomTree::~DomTree()
 {
+    assert(parent != nullptr);
     delete BB_map_Dom;
     for (auto it : *DomTreeNodes)
         delete it;

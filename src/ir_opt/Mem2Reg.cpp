@@ -1,10 +1,5 @@
 #include <ir_opt/Mem2Reg.hpp>
 
-Mem2Reg::~Mem2Reg()
-{
-    delete DT;
-}
-
 int Mem2Reg::get_Instr_id(BasicBlock *BB, Instrution *instr)
 {
     int id = 0;
@@ -285,6 +280,7 @@ bool Mem2Reg::run(Function *Func)
         DT->MakeDom();
         DT->get_DF();
         work(Func);
+        delete DT;
     }
     return true;
 }

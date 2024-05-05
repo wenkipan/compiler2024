@@ -48,16 +48,16 @@ int main(int argc, char *argv[])
     p_program->program_variable_print();
     delete p_program;
     module->print();
+    Mem2Reg *mem2reg = new Mem2Reg;
     for (Function *Func : (*module->get_funcs()))
     {
         if (Func->get_isExternal())
             continue;
-        DCE dd(Func);
-        dd.run();
-        Mem2Reg mr;
-        mr.run(Func);
+        block_DCE cc(Func);
+        cc.run();
+        mem2reg->run(Func);
     }
-
+    delete mem2reg;
     module->print();
     delete module;
 

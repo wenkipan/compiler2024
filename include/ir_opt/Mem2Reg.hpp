@@ -19,7 +19,7 @@ class Mem2Reg
     Store *OnlyStore;
     DomTree *DT;
 public:
-    ~Mem2Reg();
+    //~Mem2Reg();
     int get_Instr_id(BasicBlock *BB, Instrution *instr);
     bool rewriteSingleStoreAlloca(Alloca *alloc);
     void removeFromAllocaList(unsigned& AllocaId);
