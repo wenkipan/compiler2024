@@ -1,4 +1,5 @@
 #include <ir_opt/Mem2Reg.hpp>
+#include <ir_opt/DCE.hpp>
 
 int Mem2Reg::get_Instr_id(BasicBlock *BB, Instrution *instr)
 {
@@ -246,6 +247,8 @@ void Mem2Reg::work(Function *Func)
 
 bool Mem2Reg::run(Function *Func)
 {
+    block_DCE cc(Func);
+    cc.run();
     while (true)
     {
         collectPromotedAllocas(Func);

@@ -5,12 +5,12 @@
 #include <program/program.hpp>
 #include <frontend/use.hpp>
 #include <ir/ir.hpp>
-#include <ir_opt/Mem2Reg.hpp>
+#include <ir_opt/Manager.hpp>
 
 int main(int argc, char *argv[])
 {
-    freopen("std.in", "r", stdin);
-    freopen("std.out", "w", stdout);
+    // freopen("std.in", "r", stdin);
+    // freopen("std.out", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -42,27 +42,19 @@ int main(int argc, char *argv[])
     }
 
     // gen ir
-    Module *module = new Module(Infile, Outfile);
-    module->GenerSet();
-    p_program p_program = frontend_trans(in_file, out_file, module);
+    Manager *manager = new Manager(new Module(Infile, Outfile));
+    p_program p_program = frontend_trans(in_file, out_file, manager->get_module());
     p_program->program_variable_print();
     delete p_program;
-    module->print();
-    Mem2Reg *mem2reg = new Mem2Reg;
-    for (Function *Func : (*module->get_funcs()))
-    {
-        if (Func->get_isExternal())
-            continue;
-        block_DCE cc(Func);
-        cc.run();
-        mem2reg->run(Func);
-    }
-    delete mem2reg;
-    module->print();
-    module->lowerIR();
-    module->print();
+    manager->printModule();
+    // IR
 
-    delete module;
+    manager->run<Mem2Reg>();
+    manager->printModule();
+    // module->lowerIR();
+    // module->print();
+
+    delete manager;
 
     // // into ssa
     // ir_simplify_cfg_pass(p_program);
