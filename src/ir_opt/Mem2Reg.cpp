@@ -158,12 +158,12 @@ void Mem2Reg::work(Function *Func)
     std::map<Alloca *, Value *> IncommingValues;
     Instrution *Instr;
     Worklist.push_back({Func->get_entryBB(), {}});
-    for (Alloca *alloc : Allocas)
+    /*for (Alloca *alloc : Allocas)
     {
         Value *_pval = new Value(alloc->get_type()->get_basic_type());
         Func->value_pushBack(_pval);
         Worklist[0].second[alloc] = new Assign(InstrutionEnum::Assign, _pval, Func->get_entryBB(), true);
-    }
+    }*/
     while (!Worklist.empty())
     {
         BB = Worklist.back().first;
@@ -199,6 +199,7 @@ void Mem2Reg::work(Function *Func)
                 {
                     if (IncommingValues.find(AI) == IncommingValues.end())
                     {
+                        assert(0);
                         Value *_pval = new Value(AI->get_type()->get_basic_type());
                         Func->value_pushBack(_pval);
                         IncommingValues[AI] = new Assign(InstrutionEnum::Assign, _pval, BB, true);
