@@ -102,6 +102,16 @@ void BasicBlock::erase_instr(Instrution *instr)
         }
 }
 
+void BasicBlock::erase_phi(PHINode *phi)
+{
+    for (auto it = phinodes->begin(); it != phinodes->end(); it++)
+        if (*it == phi)
+        {
+            phinodes->erase(it);
+            break;
+        }
+}
+
 void BasicBlock::Ins_set(int pos, Instrution *p_instr)
 {
     (*instrutions)[pos] = p_instr;

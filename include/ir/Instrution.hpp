@@ -139,6 +139,7 @@ public:
     ~PHINode();
     void addIncoming(Value *val, BasicBlock *BB);
     void print();
+    void drop();
 };
 class Ret : public Instrution // p_val
 {

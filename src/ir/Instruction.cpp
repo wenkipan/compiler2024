@@ -568,6 +568,11 @@ PHINode::~PHINode()
     delete valueMap;
 }
 
+void PHINode::drop()
+{
+    get_BB()->erase_phi(this);
+    Value::drop();
+}
 void Assign::print()
 {
     Unary::print();

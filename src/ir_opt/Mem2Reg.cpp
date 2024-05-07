@@ -240,21 +240,7 @@ void Mem2Reg::work(Function *Func)
             }
         }
     }
-    /*while (!InstrRemoveList.empty())
-    {
-        Instr = InstrRemoveList.back();
-        InstrRemoveList.pop_back();
-        Instr->drop();
-    }*/
     dropInstrs(InstrRemoveList);
-    for (auto &it1 : PhiMap)
-    {
-        for (auto &it : it1.second)
-        {
-            if (it.first->get_user_list()->empty())
-                it.first->drop();
-        }
-    }
 }
 
 bool Mem2Reg::run(Function *Func)

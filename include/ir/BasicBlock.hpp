@@ -42,5 +42,6 @@ public:
     void Insert_Phi(PHINode *phi);
 
     void erase_instr(Instrution *instr);
+    void erase_phi(PHINode *phi);
     friend void dropInstrs(const std::vector<Instrution *> &dropList);
 };
