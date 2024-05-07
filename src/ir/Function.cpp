@@ -56,9 +56,9 @@ Function::Function(p_symbol_func _p_func)
       values(new std::vector<Value *>),
       entry_block(nullptr),
       blocks(new std::vector<BasicBlock *>)
-
 {
 }
+
 Function::Function()
     : GlobalValue(),
       currentbblabel(0),
@@ -69,17 +69,45 @@ Function::Function()
 
 {
 }
-void Function::ResetID()
+
+void Function::ResetID(bool _flag)
 {
-    int curlable = 0, curID = 0;
+    int curlable = 0, curID = 0, voidCnt = 0;
     for (Param *_ptr : (*params))
         _ptr->reset_ID(curID++);
-    for (BasicBlock *_BB : (*blocks))
-    {
-        _BB->reset_ID(curlable++);
-        for (Instrution *p_instr : (*_BB->get_instrs()))
-            p_instr->reset_ID(curID++);
-    }
+    if (_flag)
+        for (BasicBlock *_BB : (*blocks))
+        {
+            _BB->reset_ID(curlable++);
+            auto phis = _BB->get_phis();
+            for (PHINode *p_node : (*phis))
+            {
+                p_node->reset_ID(curID++);
+            }
+            auto instrs = _BB->get_instrs();
+            for (Instrution *p_instr : (*instrs))
+            {
+                p_instr->reset_ID(curID - voidCnt);
+                ++curID;
+                if (p_instr->get_type()->get_type() == TypeEnum::Void)
+                    ++voidCnt;
+            }
+        }
+    else
+        for (BasicBlock *_BB : (*blocks))
+        {
+            _BB->reset_ID(curlable++);
+            _BB->reset_ID(curlable++);
+            auto phis = _BB->get_phis();
+            for (PHINode *p_node : (*phis))
+            {
+                p_node->reset_ID(curID++);
+            }
+            auto instrs = _BB->get_instrs();
+            for (Instrution *p_instr : (*instrs))
+                p_instr->reset_ID(curID++);
+        }
+    Value::CurID = curID;
 }
 
 void Function::CallGen(p_ast_block p_ast_block, p_symbol_func _p_func)
@@ -114,20 +142,26 @@ void Function::block_pushBack(BasicBlock *p_block)
 static inline void _params_print(std::vector<Param *> &params)
 {
     putchar('(');
-    int n = params.size() - 1;
-    for (int i = 0; i < n; ++i)
+    int n = params.size();
+    for (int i = 0; i < n - 1; ++i)
     {
-        params[i]->print();
+        params[i]->get_type()->print();
+        printf(" noundef ");
+        params[i]->print_ID();
         printf(", ");
     }
-    if (n >= 0)
-        params[n]->print();
-    printf(")\n");
+    if (n)
+    {
+        params[n - 1]->get_type()->print();
+        printf(" noundef ");
+        params[n - 1]->print_ID();
+    }
+    printf(") #0\n");
 }
 
 void Function::print()
 {
-    this->ResetID();
+    std::cout << "define dso_local ";
     this->get_type()->print();
     std::cout << " @" << this->get_name();
     _params_print((*params));

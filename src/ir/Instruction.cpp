@@ -1,42 +1,43 @@
 #include <ir/Instrution.hpp>
 #include <ir/BasicBlock.hpp>
+#include <ir/Constant.hpp>
 #include <iostream>
 #include <vector>
 #include <algorithm>
 
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{
-        {InstrutionEnum::MINUS, "MINUS"},
+        {InstrutionEnum::MINUS, "neg"},
         {InstrutionEnum::F2I, "F2I"},
         {InstrutionEnum::I2F, "I2F"},
-        {InstrutionEnum::IADD, "+"},
-        {InstrutionEnum::ISUB, "-"},
-        {InstrutionEnum::IMUL, "*"},
-        {InstrutionEnum::IDIV, "/"},
-        {InstrutionEnum::IMOD, "%"},
-        {InstrutionEnum::FADD, "+"},
-        {InstrutionEnum::FSUB, "-"},
-        {InstrutionEnum::FMUL, "*"},
-        {InstrutionEnum::FDIV, "/"},
-        {InstrutionEnum::PADD, "+"},
+        {InstrutionEnum::IADD, "add nsw"},
+        {InstrutionEnum::ISUB, "sub nsw"},
+        {InstrutionEnum::IMUL, "mul nsw"},
+        {InstrutionEnum::IDIV, "sdiv"},
+        {InstrutionEnum::IMOD, "srem"},
+        {InstrutionEnum::FADD, "fadd"},
+        {InstrutionEnum::FSUB, "fsub"},
+        {InstrutionEnum::FMUL, "fmul"},
+        {InstrutionEnum::FDIV, "fdiv"},
+        {InstrutionEnum::PADD, "add ptr"},
         {InstrutionEnum::SHL, "<<"},
         {InstrutionEnum::LSHR, ">>"},
         {InstrutionEnum::ASHR, "(Arithmetic)>>"},
         {InstrutionEnum::AND, "&"},
         {InstrutionEnum::OR, "|"},
         {InstrutionEnum::XOR, "^"},
-        {InstrutionEnum::IEQ, "=="},
-        {InstrutionEnum::INEQ, "!="},
-        {InstrutionEnum::ILT, "<"},
-        {InstrutionEnum::ILE, "<="},
-        {InstrutionEnum::IGT, ">"},
-        {InstrutionEnum::IGE, ">="},
-        {InstrutionEnum::FEQ, "=="},
-        {InstrutionEnum::FNEQ, "!="},
-        {InstrutionEnum::FLT, "<"},
-        {InstrutionEnum::FLE, "<="},
-        {InstrutionEnum::FGT, ">"},
-        {InstrutionEnum::FGE, ">="},
+        {InstrutionEnum::IEQ, "icmp eq"},
+        {InstrutionEnum::INEQ, "icmp ne"},
+        {InstrutionEnum::ILT, "icmp slt"},
+        {InstrutionEnum::ILE, "icmp sle"},
+        {InstrutionEnum::IGT, "icmp sgt"},
+        {InstrutionEnum::IGE, "icmp sge"},
+        {InstrutionEnum::FEQ, "fcmp oeq"},
+        {InstrutionEnum::FNEQ, "fcmp une"},
+        {InstrutionEnum::FLT, "fcmp olt"},
+        {InstrutionEnum::FLE, "fcmp ole"},
+        {InstrutionEnum::FGT, "fcmp ogt"},
+        {InstrutionEnum::FGE, "fcmp oge"},
         {InstrutionEnum::AddSP, "SP +"}};
 
 void Instrution::replaceInstr(BasicBlock *_BB, int pos)
@@ -340,6 +341,26 @@ Instrution::~Instrution()
 
 // print
 
+static inline void print_align(TypeEnum type)
+{
+    switch (type)
+    {
+    case TypeEnum::I32:
+    case TypeEnum::F32:
+        printf(", align 4\n");
+        break;
+    case TypeEnum::Ptr:
+        printf(", align 8\n");
+        break;
+    case TypeEnum::Array:
+        printf(", align 16\n");
+        break;
+    default:
+        assert(0);
+        break;
+    }
+}
+
 void Call::print()
 {
     printf("    ");
@@ -347,25 +368,25 @@ void Call::print()
     if (p_func->get_type()->get_type() != TypeEnum::Void)
     {
 
-        this->get_type()->print();
-        printf(" %%%d = ", this->get_ID());
+        printf("%%%d = ", this->get_ID());
     }
-    printf("call @");
-    std::cout << ((GlobalValue *)p_func)->get_name();
+    printf("call ");
+    p_func->get_type()->print();
+    std::cout << " @" << ((GlobalValue *)p_func)->get_name();
     putchar('(');
     std::vector<Edge *> *params = this->get_value_list();
     int n = params->size();
     for (int i = 1; i < n - 1; ++i)
     {
         (*params)[i]->get_val()->get_type()->print();
-        putchar(' ');
+        printf(" noundef ");
         (*params)[i]->get_val()->print_ID();
         printf(", ");
     }
     if (n > 1)
     {
         (*params)[n - 1]->get_val()->get_type()->print();
-        putchar(' ');
+        printf(" noundef ");
         (*params)[n - 1]->get_val()->print_ID();
     }
 
@@ -374,22 +395,19 @@ void Call::print()
 
 void GEP::print()
 {
-    printf("    ");
-    this->get_type()->print();
     Value *p_addr = (*this->get_value_list())[0]->get_val();
     Value *p_offset = (*this->get_value_list())[1]->get_val();
-    printf(" %%%d = getelementptr ", this->get_ID());
-    p_addr->get_type()->print();
-    putchar(' ');
+    printf("    %%%d = getelementptr inbounds ", this->get_ID());
+    assert(p_addr->get_type()->get_type() == TypeEnum::Ptr);
+    ((Ptr *)p_addr->get_type())->print_btype();
+    printf(", ptr ");
     if (is_a<GlobalValue>(p_addr))
-        std::cout << ((GlobalValue *)p_addr)->get_name();
+        std::cout << '@' << ((GlobalValue *)p_addr)->get_name();
     else
         printf("%%%d", p_addr->get_ID());
     if (is_element)
-        printf(" i32 0 ");
-    putchar(' ');
-    p_offset->get_type()->print();
-    putchar(' ');
+        printf(", i32 0 ");
+    printf(", i32 ");
     p_offset->print_ID();
     putchar('\n');
 }
@@ -398,6 +416,8 @@ void Ret::print()
 {
     printf("    ret ");
     std::vector<Edge *> *p_in = this->get_value_list();
+    this->get_type()->print();
+    putchar(' ');
     if (!p_in->empty())
         (*p_in)[0]->get_val()->print_ID();
     putchar('\n');
@@ -405,99 +425,91 @@ void Ret::print()
 
 void Jmp::print()
 {
-    printf("    br lable b%d\n", (*(this->get_parent()->get_user_list()))[0]->get_user()->get_ID());
+    printf("    br label %%b%d\n", (*(this->get_parent()->get_user_list()))[0]->get_user()->get_ID());
 }
 
 void Branch::print()
 {
-    printf("    br ");
+    printf("    br i1 ");
     std::vector<Edge *> *_list = this->get_value_list();
     (*_list)[0]->get_val()->print_ID();
     _list = this->get_parent()->get_user_list();
     assert(_list->size() == 2);
     Value *trueBB = (*_list)[0]->get_user(), *falseBB = (*_list)[1]->get_user();
-    printf(", lable b%d, lable b%d\n", trueBB->get_ID(), falseBB->get_ID());
+    printf(", label %%b%d, label %%b%d\n", trueBB->get_ID(), falseBB->get_ID());
 }
 
 void Load::print()
 {
-    printf("    ");
-    this->get_type()->print();
-    printf(" %%%d = load ", this->get_ID());
-    fflush(stdout);
+    printf("    %%%d = load ", this->get_ID());
     Value *p_addr = get_addr();
-    p_addr->get_type()->print();
-    putchar(' ');
+    ((Ptr *)p_addr->get_type())->print_btype();
+    printf(", ptr ");
     if (is_a<GlobalValue>(p_addr))
-        std::cout << ((GlobalValue *)p_addr)->get_name() << std::endl;
+        std::cout << '@' << ((GlobalValue *)p_addr)->get_name();
     else
-        printf("%%%d\n", p_addr->get_ID());
+        printf("%%%d", p_addr->get_ID());
+    print_align(this->get_type()->get_type());
 }
 
 void Store::print()
 {
-    printf("    ");
-    printf("store ");
+    printf("    store ");
     Value *p_addr = get_addr();
     Value *p_src = get_src();
-    p_addr->get_type()->print();
-    putchar(' ');
-    if (is_a<GlobalValue>(p_addr))
-        std::cout << ((GlobalValue *)p_addr)->get_name();
-    else
-        printf("%%%d", p_addr->get_ID());
-    putchar(' ');
     p_src->get_type()->print();
     putchar(' ');
     p_src->print_ID();
-    putchar('\n');
+    printf(", ptr ");
+    if (is_a<GlobalValue>(p_addr))
+        std::cout << "@" << ((GlobalValue *)p_addr)->get_name();
+    else
+        printf("%%%d", p_addr->get_ID());
+    print_align(p_src->get_type()->get_type());
 }
 
 void Alloca::print()
 {
-    printf("    ");
-    this->get_type()->print();
-    printf(" %%%d = alloca ", this->get_ID());
+    printf("    %%%d = alloca ", this->get_ID());
     Type *_mtype = this->get_type();
+    assert(_mtype->get_type() == TypeEnum::Ptr);
+    _mtype = ((Ptr *)_mtype)->get_btype();
     _mtype->print();
-    printf(", align ");
-    if (_mtype->get_type() == TypeEnum::Ptr)
-        printf("%d\n", 8);
-    else
-        printf("%d\n", 4);
+    print_align(_mtype->get_type());
 }
 
 void Cmp::print()
 {
-    printf("    ");
-    this->get_type()->print();
-    printf(" %%%d = ", this->get_ID());
-    Value *p_src1 = get_src1(), *p_src2 = get_src2();
-    p_src1->get_type()->print();
-    putchar(' ');
-    p_src1->print_ID();
-    putchar(' ');
+    printf("    %%%d = ", this->get_ID());
     std::cout << (*_symbol_map)[this->get_Instrtype()];
     putchar(' ');
-    p_src2->get_type()->print();
-    putchar(' ');
+    Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    if (!is_a<Constant>(p_src1))
+    {
+        p_src1->get_type()->print();
+        putchar(' ');
+    }
+    p_src1->print_ID();
+    printf(", ");
+    if (!is_a<Constant>(p_src2))
+    {
+        p_src2->get_type()->print();
+        putchar(' ');
+    }
     p_src2->print_ID();
     putchar('\n');
 }
 
 void Binary::print()
 {
-    printf("    ");
-    this->get_type()->print();
-    printf(" %%%d = ", this->get_ID());
-    Value *p_src1 = get_src1(), *p_src2 = get_src2();
-    p_src1->get_type()->print();
-    putchar(' ');
-    p_src1->print_ID();
-    putchar(' ');
+    printf("    %%%d = ", this->get_ID());
     std::cout << (*_symbol_map)[this->get_Instrtype()];
     putchar(' ');
-    p_src2->get_type()->print();
+    this->get_type()->print();
+    Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    putchar(' ');
+    p_src1->print_ID();
+    putchar(',');
     putchar(' ');
     p_src2->print_ID();
     putchar('\n');
@@ -505,11 +517,10 @@ void Binary::print()
 
 void Unary::print()
 {
-    printf("    ");
-    this->get_type()->print();
-    printf(" %%%d = ", this->get_ID());
+    printf("    %%%d = ", this->get_ID());
     std::cout << (*_symbol_map)[this->get_Instrtype()];
-    putchar(' ');
+    if (InstrutionEnum::Assign != this->get_Instrtype())
+        putchar(' ');
     Value *p_src = get_src();
     p_src->get_type()->print();
     putchar(' ');
@@ -549,18 +560,18 @@ PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush)
 
 void PHINode::print()
 {
-    printf("    ");
+
+    printf("    %%%d = phi ", this->get_ID());
     this->get_type()->print();
-    printf(" %%%d = phi(", this->get_ID());
     int num = valueMap->size();
     for (auto it : *valueMap)
     {
-        printf("{label : b%d, %%%d}", it.first->get_ID(), it.second->get_ID());
+        printf(" [ %%%d, %%b%d]", it.second->get_ID(), it.first->get_ID());
         num--;
         if (num)
-            printf(", ");
+            printf(",");
     }
-    printf(")\n");
+    printf("\n");
 }
 
 PHINode::~PHINode()

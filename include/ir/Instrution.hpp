@@ -97,6 +97,7 @@ public:
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
 
     BasicBlock *get_parent() { return parent; }
+    InstrutionEnum get_Instype() { return instr_type; }
 
     void replaceAllUses(Value *RepVal);
     virtual void drop();

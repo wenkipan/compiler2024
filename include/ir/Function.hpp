@@ -38,7 +38,7 @@ public:
     Function();
     ~Function() override;
 
-    void ResetID();
+    void ResetID(bool _flag);
     void CallGen(p_ast_block p_ast_block, p_symbol_func _p_func);
 
     void value_pushBack(Value *p_val);

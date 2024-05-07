@@ -30,5 +30,6 @@ public:
 
     void GenerSet();
 
+    void llvm_print();
     void print();
 };

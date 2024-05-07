@@ -174,29 +174,18 @@ void Type::print()
         printf("void");
         break;
     case TypeEnum::F32:
-        printf("f32");
+        printf("float");
         break;
     case TypeEnum::I32:
         printf("i32");
         break;
-    case TypeEnum::Str:
-        printf("str");
+    case TypeEnum::Ptr:
+        printf("ptr");
         break;
     default:
         assert(0);
         break;
     }
-}
-
-bool Type::isArray()
-{
-    return type == TypeEnum::Array;
-}
-
-void Ptr::print()
-{
-    b_type->print();
-    putchar('*');
 }
 
 void ArrayType::print()

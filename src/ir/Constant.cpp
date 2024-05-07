@@ -47,7 +47,10 @@ void ConstantI32::print_ID()
 void ConstantF32::print_ID()
 {
     if (f32.size() == 1)
-        printf("%f", f32[0]);
+    {
+        printf("0x%X", *(unsigned int *)&f32[0]);
+    }
+
     else
         printf("%%%d", this->get_ID());
 }

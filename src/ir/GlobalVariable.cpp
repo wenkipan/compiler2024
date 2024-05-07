@@ -27,7 +27,7 @@ GlobalVariable::GlobalVariable(p_symbol_var p_var)
 
 void GlobalVariable::print()
 {
-
+    assert(this->get_type()->get_type() == TypeEnum::Ptr);
     this->get_type()->print();
     putchar(' ');
     std::cout << this->get_name();

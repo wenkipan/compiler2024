@@ -67,17 +67,23 @@ void BasicBlock::print()
     int n = _prev->size() - 1;
     for (int i = 0; i < n; ++i)
     {
+        putchar('b');
         (*_prev)[i]->get_val()->print_ID();
         printf(", ");
     }
 
     if (n >= 0)
+    {
+        putchar('b');
         (*_prev)[n]->get_val()->print_ID();
+    }
     putchar('\n');
     for (PHINode *p_PHI : (*phinodes))
         p_PHI->print();
     for (Instrution *p_instr : (*instrutions))
         p_instr->print();
+    if (instrutions->empty())
+        printf("    br label %%b%d\n", this->get_func()->get_retBB()->get_ID());
 }
 
 BasicBlock::~BasicBlock()

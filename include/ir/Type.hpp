@@ -79,5 +79,5 @@ public:
 
     TypeEnum get_basic_type() override { return b_type->get_basic_type(); };
     Type *get_btype() { return b_type; }
-    void print() override;
+    void print_btype() { b_type->print(); };
 };

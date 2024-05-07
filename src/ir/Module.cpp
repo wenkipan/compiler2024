@@ -95,8 +95,22 @@ void Module::print()
     for (GlobalVariable *p_var : (*global_variables))
         p_var->print();
     for (Function *p_func : (*functions))
+    {
+        p_func->ResetID(false);
         p_func->print();
+    }
     printf("\n      ---------------IR end-----------------------\n");
+}
+
+void Module::llvm_print()
+{
+    for (GlobalVariable *p_var : (*global_variables))
+        p_var->print();
+    for (Function *p_func : (*functions))
+    {
+        p_func->ResetID(true);
+        p_func->print();
+    }
 }
 
 /*
