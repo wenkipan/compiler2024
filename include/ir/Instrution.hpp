@@ -106,7 +106,6 @@ public:
 class Call : public Instrution // p_func
 {
     Value *p_first_store; // Instr
-    std::vector<Value *> params;
 
 public:
     Call(Value *_func, BasicBlock *_parent);

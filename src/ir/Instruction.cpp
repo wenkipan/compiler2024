@@ -327,7 +327,9 @@ Call::Call(Value *_func, BasicBlock *_parent)
 
 void Call::params_pushback(Value *_param)
 {
-    params.emplace_back(_param);
+    Edge *p_in1 = new Edge(this, _param);
+    this->value_list_push_back(p_in1);
+    _param->user_list_push_back(p_in1);
 }
 
 // drop
@@ -351,19 +353,20 @@ void Call::print()
     printf("call @");
     std::cout << ((GlobalValue *)p_func)->get_name();
     putchar('(');
-    int n = params.size();
-    for (int i = 0; i < n - 1; ++i)
+    std::vector<Edge *> *params = this->get_value_list();
+    int n = params->size();
+    for (int i = 1; i < n - 1; ++i)
     {
-        params[i]->get_type()->print();
+        (*params)[i]->get_val()->get_type()->print();
         putchar(' ');
-        params[i]->print_ID();
+        (*params)[i]->get_val()->print_ID();
         printf(", ");
     }
-    if (n)
+    if (n > 1)
     {
-        params[n - 1]->get_type()->print();
+        (*params)[n - 1]->get_val()->get_type()->print();
         putchar(' ');
-        params[n - 1]->print_ID();
+        (*params)[n - 1]->get_val()->print_ID();
     }
 
     printf(")\n");
