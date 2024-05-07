@@ -12,9 +12,6 @@ void DCE::init()
     pdt = new PostDomTree(function);
     for (auto bb : *function->get_blocks())
     {
-        // for (auto phi : *bb->get_phinodes())
-        // {
-        // }
         for (auto instr : *bb->get_instrs())
         {
             // side-effect and terminator
@@ -24,7 +21,6 @@ void DCE::init()
             case InstrutionEnum::Ret:
             case InstrutionEnum::Call:
                 worklist.push(instr);
-                live_instr.emplace(instr);
                 break;
             default:
                 break;
@@ -37,8 +33,6 @@ void DCE::run()
     init();
     do
     {
-        // Worklist holds newly discovered live instructions
-        // where we need to mark the inputs as live.
         while (!worklist.empty())
         {
             Instrution *instr = worklist.front();
@@ -47,17 +41,30 @@ void DCE::run()
             if (is_live(instr)) // already checked
                 continue;
             live_instr.emplace(instr);
+            printf("marklive:");
+            instr->print();
+            printf("\n");
+            markblocklive(instr->get_parent());
 
-            if (!is_live(instr->get_parent()))
-            {
-                live_blocks.emplace(instr->get_parent());
-                newliveblocks.emplace(instr->get_parent());
+            if (instr == instr->get_parent()->get_last_instrution())
+            { // succblocks
+                for (auto edge : *instr->get_parent()->get_user_list())
+                    markblocklive((BasicBlock *)edge->get_user());
             }
 
             for (auto edge : *instr->get_value_list())
             {
                 if (is_a<Instrution>(edge->get_val()))
+                {
                     worklist.push((Instrution *)edge->get_val());
+                    printf("push:");
+                    edge->get_val()->print();
+                    printf("\n");
+                }
+            }
+            if (is_a<PHINode>(instr))
+            { // CFLive
+                markphilive((PHINode *)instr);
             }
         }
         // After data flow liveness has been identified, examine which branch
@@ -66,69 +73,140 @@ void DCE::run()
 
     } while (!worklist.empty());
 
-    print();
+    // print();
+    for (auto BB : *function->get_blocks())
+    {
+        BB->print_ID();
+        printf("CDGPREDS");
+        BasicBlock *reverseBB = pdt->blockmap.find(BB)->second;
+        auto CDGpreds = pdt->pdt->DomFsBlock.find(reverseBB)->second;
+        for (auto bb : CDGpreds)
+        {
+
+            auto itrereverseBB = pdt->blockmapreverse.find(bb);
+            if (itrereverseBB == pdt->blockmapreverse.end())
+            {
+                assert(bb == pdt->entry);
+                printf("entry");
+                continue;
+            }
+            BasicBlock *rereverseBB = itrereverseBB->second;
+            rereverseBB->print_ID();
+            if (rereverseBB->get_instrs()->size())
+            {
+            }
+        }
+        printf("\n");
+    }
     elimate();
 }
+void DCE::markphilive(PHINode *phi)
+{
+    if (phichecked.find(phi->get_parent()) != phichecked.end())
+        return;
+    phichecked.emplace(phi->get_parent());
+    for (auto edge : *phi->get_parent()->get_value_list())
+    {
+        assert(is_a<BasicBlock>(edge->get_val()));
+        BasicBlock *prebb = (BasicBlock *)edge->get_val();
+        if (CFlive_block.find(prebb) == CFlive_block.end())
+        {
+            CFlive_block.emplace(prebb);
+            newliveblocks.emplace(prebb);
+        }
+    }
+}
+void DCE::markblocklive(BasicBlock *bb)
+{
+    if (live_blocks.find(bb) != live_blocks.end())
+        return;
+    live_blocks.emplace(bb);
+
+    if (CFlive_block.find(bb) == CFlive_block.end())
+    {
+        CFlive_block.emplace(bb);
+        newliveblocks.emplace(bb);
+    }
+
+    worklist.push(bb->get_last_instrution());
+    printf("push:");
+    bb->get_last_instrution()->print();
+    printf("\n");
+}
+
 void DCE::mark_live_from_CDG()
 {
     // newliveblocks :: add their CDG block terminator to worklist
     for (auto BB : newliveblocks)
     {
-        auto CDGpreds = pdt->pdt->DomFsBlock.find(BB)->second;
+        printf("CDG:BB");
+        BB->print_ID();
+        BasicBlock *reverseBB = pdt->blockmap.find(BB)->second;
+        std::vector<BasicBlock *> CDGpreds = pdt->pdt->DomFsBlock.find(reverseBB)->second;
         for (auto bb : CDGpreds)
-            if (bb->get_instrs()->size())
-                worklist.push(bb->get_last_instrution());
-            else
+        {
+            printf("CDG:predBB");
+            auto itrereverseBB = pdt->blockmapreverse.find(bb);
+            if (itrereverseBB == pdt->blockmapreverse.end())
+            {
                 assert(bb == pdt->entry);
+                continue;
+            }
+            BasicBlock *rereverseBB = itrereverseBB->second;
+            rereverseBB->print_ID();
+            if (rereverseBB->get_instrs()->size())
+            {
+                worklist.push(rereverseBB->get_last_instrution());
+                printf("pushfromCDG:");
+                rereverseBB->get_last_instrution()->print();
+                printf("\n");
+            }
+        }
     }
     newliveblocks.clear();
 }
 void DCE::elimate()
 {
-    std::queue<Value *> deletelist;
+    std::vector<Instrution *> valuelist;
+    std::vector<PHINode *> philist;
     std::queue<PHINode *> simplyphilist;
     // elimate dead block and its phi user
-    for (auto bb : *function->get_blocks())
+    auto vecbb = *function->get_blocks();
+    for (int i = vecbb.size() - 1; i >= 0; i--)
     {
-        if (!is_live(bb))
-        {
-            deletelist.push(bb);
-            continue;
-        }
-        // elimate dead instr and phi
-        for (auto instr : *bb->get_instrs())
+        // if (!is_live(vecbb[i]))
+        // {
+        //     elimate_block(vecbb[i]);
+        //     continue;
+        // }
+        for (auto instr : *vecbb[i]->get_instrs())
         {
             if (!is_live(instr))
-                deletelist.push(instr);
-        }
-        for (auto phi : *bb->get_phinodes())
-        {
-            if (!is_live(phi))
-                deletelist.push(phi);
-            else if (phi->get_value_list()->size() == 1)
             {
-                simplyphilist.push(phi);
+                valuelist.push_back(instr);
             }
         }
-    }
-    while (!deletelist.empty())
-    {
-        Value *bb = deletelist.front();
-        deletelist.pop();
-        if (is_a<BasicBlock>(bb))
-            ((BasicBlock *)bb)->drop();
-        else
+        for (auto phi : *vecbb[i]->get_phinodes())
         {
-            assert(is_a<Instrution>(bb));
-            ((Instrution *)bb)->drop();
+            if (!is_live(phi))
+            {
+                philist.push_back(phi);
+            }
+            // else if (phi->get_value_list()->size() == 1)
+            //     simplyphilist.push(phi);
         }
     }
-    while (!simplyphilist.empty())
+    dropInstrs(valuelist);
+    for (int i = philist.size() - 1; i >= 0; i--)
     {
-        PHINode *p = simplyphilist.front();
-        simplyphilist.pop();
-        simplifyPHI(p);
+        philist[i]->drop();
     }
+    // while (!simplyphilist.empty())
+    // {
+    //     PHINode *p = simplyphilist.front();
+    //     simplyphilist.pop();
+    //     simplifyPHI(p);
+    // }
 }
 void DCE::simplifyPHI(PHINode *phi)
 {
@@ -141,17 +219,24 @@ void DCE::simplifyPHI(PHINode *phi)
         v->user_list_push_back(useredge);
         useredge->set_val(v);
     }
-    delete phi;
+    phi->get_user_list()->clear();
+    phi->drop();
 }
 void DCE::elimate_block(BasicBlock *bb)
 {
+    printf("DELETEBBB:");
+    bb->print_ID();
+    printf("\n");
     for (auto instr : *bb->get_instrs())
     {
-        assert(is_live(instr));
+        instr->print();
+        printf("\n");
+        assert(is_a<Instrution>(instr));
+        assert(!is_live(instr));
     }
     for (auto phi : *bb->get_phinodes())
     {
-        assert(is_live(phi));
+        assert(!is_live(phi));
     }
     bb->drop();
 }

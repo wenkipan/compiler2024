@@ -63,6 +63,7 @@ class PostDomTree
 {
 public:
     std::unordered_map<BasicBlock *, BasicBlock *> blockmap;
+    std::unordered_map<BasicBlock *, BasicBlock *> blockmapreverse;
     Function *parent = new Function;
     PostDomTree(Function *f);
     DomTree *pdt;

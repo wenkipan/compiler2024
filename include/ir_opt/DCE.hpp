@@ -13,6 +13,8 @@ public:
     PostDomTree *pdt;
     std::unordered_set<Instrution *> live_instr;
     std::unordered_set<BasicBlock *> live_blocks;
+    std::unordered_set<BasicBlock *> CFlive_block;
+    std::unordered_set<BasicBlock *> phichecked;
     std::queue<Instrution *> worklist;
     std::unordered_set<BasicBlock *> newliveblocks;
     DCE(Function *func) { function = func; }
@@ -22,8 +24,10 @@ public:
     void elimate();
     void print();
     void mark_live_from_CDG();
+    void markphilive(PHINode *phi);
     bool is_live(BasicBlock *bb) { return live_blocks.find(bb) != live_blocks.end(); }
     bool is_live(Instrution *bb) { return live_instr.find(bb) != live_instr.end(); }
+    void markblocklive(BasicBlock *bb);
     void elimate_block(BasicBlock *bb);
     void simplifyPHI(PHINode *phi);
 };

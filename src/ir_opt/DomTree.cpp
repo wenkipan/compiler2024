@@ -189,6 +189,7 @@ PostDomTree::PostDomTree(Function *f)
         BasicBlock *postblock = new BasicBlock(parent);
         parent->get_blocks()->push_back(postblock);
         blockmap.emplace(BB, postblock);
+        blockmapreverse.emplace(postblock, BB);
     }
     for (auto BB : *f->get_blocks())
     {
