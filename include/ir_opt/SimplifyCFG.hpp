@@ -8,9 +8,9 @@ class SimplifyCFG
 
 public:
     SimplifyCFG(Function *f) { function = f; }
-    void run();
+    bool run();
     void elimate_no_predesessor_block();
-    void merge_single_predecessor_block();
+    bool merge_single_predecessor_block();
     void eliminate_single_br_block();
     void eliminate_single_predecessor_phi();
 };

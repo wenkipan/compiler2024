@@ -61,4 +61,5 @@ public:
     std::vector<Param *> *get_params();
     std::vector<Value *> *get_Values();
     std::vector<BasicBlock *> *get_blocks() { return blocks; }
+    bool check_can_ret();
 };

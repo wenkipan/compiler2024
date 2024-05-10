@@ -20,12 +20,31 @@ void BasicBlock::drop()
     // erase from function
     auto blocks = parent->get_blocks();
     blocks->erase(remove(blocks->begin(), blocks->end(), this), blocks->end());
-    // erase its instr
+    // erase phi
     for (auto phi : *phinodes)
         phi->drop();
+    // erase its instr
     for (auto instr : *instrutions)
         instr->drop();
-    // erase from cfg(value drop)
+    // erase succBB phi income
+    for (auto succedge : *this->get_user_list())
+    {
+        BasicBlock *succ = (BasicBlock *)succedge->get_user();
+        for (auto phi : *succ->get_phinodes())
+        {
+            Value *phiincome = phi->get_valueMap()->find(this)->second;
+            for (auto i : *phi->get_value_list())
+            {
+                if (i->get_val() == phiincome)
+                {
+                    i->drop();
+                    break;
+                }
+            }
+            phi->get_valueMap()->erase(this);
+        }
+    }
+    //  erase from cfg(value drop)
     Value::drop();
     delete this;
 }
@@ -52,6 +71,7 @@ void BasicBlock::Ins_pushFront(Instrution *p_instr)
 
 void BasicBlock::Ins_pushBack(Instrution *p_instr)
 {
+    assert(p_instr->get_parent() == this);
     instrutions->emplace_back(p_instr);
 }
 
@@ -86,7 +106,6 @@ void BasicBlock::print()
             continue;
         p_instr->print();
     }
-
     if (instrutions->empty())
         printf("    br label %%b%d\n", this->get_func()->get_retBB()->get_ID());
 }

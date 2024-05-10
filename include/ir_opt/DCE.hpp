@@ -9,6 +9,7 @@
 class DCE
 {
 public:
+    int if_debug = 1;
     Function *function;
     PostDomTree *pdt;
     std::unordered_set<Instrution *> live_instr;
@@ -17,7 +18,13 @@ public:
     std::unordered_set<BasicBlock *> phichecked;
     std::queue<Instrution *> worklist;
     std::unordered_set<BasicBlock *> newliveblocks;
-    DCE(Function *func) { function = func; }
+    std::unordered_map<BasicBlock *, int> postorder;
+    int c;
+    DCE(Function *func)
+    {
+        function = func;
+        c = function->get_blocks()->size();
+    }
     ~DCE() { delete pdt; }
     void run();
     void init();
@@ -29,7 +36,9 @@ public:
     bool is_live(Instrution *bb) { return live_instr.find(bb) != live_instr.end(); }
     void markblocklive(BasicBlock *bb);
     void elimate_block(BasicBlock *bb);
-    void simplifyPHI(PHINode *phi);
+    void caculatepostorder();
+    void update_dead_block();
+    void search(BasicBlock *n);
 };
 
 // delete unreachableblock

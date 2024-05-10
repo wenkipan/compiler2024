@@ -1,5 +1,6 @@
 #pragma once
 #include <ir/Value.hpp>
+#include <queue>
 // class Value;
 class Edge
 {
@@ -14,4 +15,5 @@ public:
     void set_val(Value *RepVal) { value = RepVal; }
     void set_user(Value *RepUser) { user = RepUser; }
     void drop();
+    friend void drop_all_edge(std::queue<Edge *> q);
 };

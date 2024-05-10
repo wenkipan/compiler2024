@@ -13,3 +13,12 @@ void Edge::drop()
     tmp->erase(remove(tmp->begin(), tmp->end(), this), tmp->end());
     delete this;
 }
+void drop_all_edge(std::queue<Edge *> q)
+{
+    while (!q.empty())
+    {
+        Edge *t = q.front();
+        q.pop();
+        t->drop();
+    }
+}

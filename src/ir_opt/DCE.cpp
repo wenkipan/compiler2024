@@ -27,9 +27,13 @@ void DCE::init()
             }
         }
     }
+    live_blocks.emplace(function->get_entryBB());
+    if (function->get_entryBB()->get_last_instrution()->isJmp())
+        worklist.push(function->get_entryBB()->get_last_instrution());
 }
 void DCE::run()
 {
+
     init();
     do
     {
@@ -41,12 +45,14 @@ void DCE::run()
             if (is_live(instr)) // already checked
                 continue;
             live_instr.emplace(instr);
-            printf("marklive:");
-            instr->print();
-            printf("\n");
+            if (if_debug)
+            {
+                printf("marklive:");
+                instr->print();
+            }
             markblocklive(instr->get_parent());
 
-            if (instr == instr->get_parent()->get_last_instrution())
+            if (instr == instr->get_parent()->get_last_instrution() && instr->isBranch())
             { // succblocks
                 for (auto edge : *instr->get_parent()->get_user_list())
                     markblocklive((BasicBlock *)edge->get_user());
@@ -57,9 +63,11 @@ void DCE::run()
                 if (is_a<Instrution>(edge->get_val()))
                 {
                     worklist.push((Instrution *)edge->get_val());
-                    printf("push:");
-                    edge->get_val()->print();
-                    printf("\n");
+                    if (if_debug)
+                    {
+                        printf("push:");
+                        edge->get_val()->print();
+                    }
                 }
             }
             if (is_a<PHINode>(instr))
@@ -73,31 +81,28 @@ void DCE::run()
 
     } while (!worklist.empty());
 
-    // print();
-    for (auto BB : *function->get_blocks())
-    {
-        BB->print_ID();
-        printf("CDGPREDS");
-        BasicBlock *reverseBB = pdt->blockmap.find(BB)->second;
-        auto CDGpreds = pdt->pdt->DomFsBlock.find(reverseBB)->second;
-        for (auto bb : CDGpreds)
+    if (if_debug) // print();
+        for (auto BB : *function->get_blocks())
         {
+            BB->print_ID();
+            printf("CDGPREDS");
+            BasicBlock *reverseBB = pdt->blockmap.find(BB)->second;
+            auto CDGpreds = pdt->pdt->DomFsBlock.find(reverseBB)->second;
+            for (auto bb : CDGpreds)
+            {
 
-            auto itrereverseBB = pdt->blockmapreverse.find(bb);
-            if (itrereverseBB == pdt->blockmapreverse.end())
-            {
-                assert(bb == pdt->entry);
-                printf("entry");
-                continue;
+                auto itrereverseBB = pdt->blockmapreverse.find(bb);
+                if (itrereverseBB == pdt->blockmapreverse.end())
+                {
+                    assert(bb == pdt->entry);
+                    printf("entry");
+                    continue;
+                }
+                BasicBlock *rereverseBB = itrereverseBB->second;
+                rereverseBB->print_ID();
             }
-            BasicBlock *rereverseBB = itrereverseBB->second;
-            rereverseBB->print_ID();
-            if (rereverseBB->get_instrs()->size())
-            {
-            }
+            printf("\n");
         }
-        printf("\n");
-    }
     elimate();
 }
 void DCE::markphilive(PHINode *phi)
@@ -127,11 +132,13 @@ void DCE::markblocklive(BasicBlock *bb)
         CFlive_block.emplace(bb);
         newliveblocks.emplace(bb);
     }
-
-    worklist.push(bb->get_last_instrution());
-    printf("push:");
-    bb->get_last_instrution()->print();
-    printf("\n");
+    if (bb->get_last_instrution()->isJmp())
+        worklist.push(bb->get_last_instrution());
+    if (if_debug)
+    {
+        printf("push:");
+        bb->get_last_instrution()->print();
+    }
 }
 
 void DCE::mark_live_from_CDG()
@@ -139,13 +146,10 @@ void DCE::mark_live_from_CDG()
     // newliveblocks :: add their CDG block terminator to worklist
     for (auto BB : newliveblocks)
     {
-        printf("CDG:BB");
-        BB->print_ID();
         BasicBlock *reverseBB = pdt->blockmap.find(BB)->second;
         std::vector<BasicBlock *> CDGpreds = pdt->pdt->DomFsBlock.find(reverseBB)->second;
         for (auto bb : CDGpreds)
         {
-            printf("CDG:predBB");
             auto itrereverseBB = pdt->blockmapreverse.find(bb);
             if (itrereverseBB == pdt->blockmapreverse.end())
             {
@@ -153,13 +157,9 @@ void DCE::mark_live_from_CDG()
                 continue;
             }
             BasicBlock *rereverseBB = itrereverseBB->second;
-            rereverseBB->print_ID();
             if (rereverseBB->get_instrs()->size())
             {
                 worklist.push(rereverseBB->get_last_instrution());
-                printf("pushfromCDG:");
-                rereverseBB->get_last_instrution()->print();
-                printf("\n");
             }
         }
     }
@@ -167,10 +167,11 @@ void DCE::mark_live_from_CDG()
 }
 void DCE::elimate()
 {
+    update_dead_block();
     std::vector<Instrution *> valuelist;
     std::vector<PHINode *> philist;
     std::queue<PHINode *> simplyphilist;
-    // elimate dead block and its phi user
+    // elimate dead instr
     auto vecbb = *function->get_blocks();
     for (int i = vecbb.size() - 1; i >= 0; i--)
     {
@@ -192,8 +193,6 @@ void DCE::elimate()
             {
                 philist.push_back(phi);
             }
-            // else if (phi->get_value_list()->size() == 1)
-            //     simplyphilist.push(phi);
         }
     }
     dropInstrs(valuelist);
@@ -201,27 +200,74 @@ void DCE::elimate()
     {
         philist[i]->drop();
     }
-    // while (!simplyphilist.empty())
-    // {
-    //     PHINode *p = simplyphilist.front();
-    //     simplyphilist.pop();
-    //     simplifyPHI(p);
-    // }
 }
-void DCE::simplifyPHI(PHINode *phi)
+void DCE::caculatepostorder()
 {
-    assert(phi->get_value_list()->size() == 1);
-    Value *v = phi->get_value_list()->at(0)->get_val();
-    // drop single edge
-    phi->get_value_list()->at(0)->drop();
-    for (auto useredge : *phi->get_user_list())
-    { // v   ->  useredge->get_user()
-        v->user_list_push_back(useredge);
-        useredge->set_val(v);
-    }
-    phi->get_user_list()->clear();
-    phi->drop();
+    search(function->get_entryBB());
+    if (if_debug)
+        for (auto BB : *function->get_blocks())
+        {
+            BB->print_ID();
+            printf("      %d\n", postorder[BB]);
+        }
 }
+void DCE::search(BasicBlock *n)
+{
+    postorder.emplace(n, -1);
+    for (auto succedge : *n->get_user_list())
+    {
+        BasicBlock *succ = (BasicBlock *)succedge->get_user();
+        if (postorder.find(succ) == postorder.end())
+        {
+            search(succ);
+        }
+    }
+    postorder[n] = c;
+    c = c - 1;
+}
+void DCE::update_dead_block()
+{
+    std::queue<Edge *> deletelist;
+    int havepostorder = 0;
+    std::vector<BasicBlock *> deadblocks;
+    for (auto BB : *function->get_blocks())
+        if (!is_live(BB->get_last_instrution()))
+            deadblocks.push_back(BB);
+    for (auto BB : deadblocks)
+    {
+        if (BB->get_instrs()->size())
+        {
+            if (BB->get_last_instrution()->isJmp())
+            {
+                live_instr.emplace(BB->get_last_instrution());
+                continue;
+            }
+        }
+
+        if (!havepostorder)
+        {
+            caculatepostorder();
+            havepostorder = 1;
+        }
+        BasicBlock *prefersucc = nullptr;
+        for (auto succedge : *BB->get_user_list())
+        {
+            BasicBlock *succ = (BasicBlock *)succedge->get_user();
+            if (!prefersucc || postorder[prefersucc] < postorder[succ])
+                prefersucc = succ;
+        }
+        assert(prefersucc);
+        for (auto edge : *BB->get_user_list())
+        {
+            deletelist.push(edge);
+        }
+        new Jmp(prefersucc, BB);
+        live_instr.emplace(BB->get_last_instrution());
+    }
+    drop_all_edge(deletelist);
+    assert(function->check_can_ret());
+}
+
 void DCE::elimate_block(BasicBlock *bb)
 {
     printf("DELETEBBB:");
@@ -230,7 +276,6 @@ void DCE::elimate_block(BasicBlock *bb)
     for (auto instr : *bb->get_instrs())
     {
         instr->print();
-        printf("\n");
         assert(is_a<Instrution>(instr));
         assert(!is_live(instr));
     }
@@ -240,7 +285,7 @@ void DCE::elimate_block(BasicBlock *bb)
     }
     bb->drop();
 }
-void DCE::print()
+void DCE::print() // unuse
 {
     FILE *fp = freopen("doc/draw_source/DCE.txt", "w+", stdout);
     for (auto bb : *function->get_blocks())

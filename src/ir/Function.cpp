@@ -1,6 +1,7 @@
 #include <ir/Function.hpp>
 #include <ir/IRGener.hpp>
 #include <iostream>
+#include <unordered_set>
 
 int Param::CurID = 0;
 
@@ -209,4 +210,25 @@ std::vector<Param *> *Function::get_params()
 std::vector<Value *> *Function::get_Values()
 {
     return values;
+}
+static inline bool check(BasicBlock *ret, BasicBlock *BB, std::unordered_set<BasicBlock *> *checked)
+{
+    if (BB == ret)
+        return 1;
+    checked->emplace(BB);
+    int f = 0;
+    for (auto edge : *BB->get_user_list())
+    {
+        BasicBlock *succ = (BasicBlock *)edge->get_user();
+        if (checked->find(succ) == checked->end())
+            f = f | check(ret, succ, checked);
+    }
+    return f;
+}
+bool Function::check_can_ret()
+{
+    std::unordered_set<BasicBlock *> *checked = new std::unordered_set<BasicBlock *>;
+    int f = check(this->get_retBB(), this->get_entryBB(), checked);
+    delete checked;
+    return f;
 }

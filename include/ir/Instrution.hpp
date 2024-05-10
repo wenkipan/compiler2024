@@ -78,6 +78,7 @@ public:
     void replaceInstr(BasicBlock *_BB, int pos);
     void insertInstr(BasicBlock *_BB, int pos);
     void removeInstr();
+    void set_parent(BasicBlock *newf) { parent = newf; }
 
     InstrutionEnum get_Instrtype() { return instr_type; }
 
@@ -137,6 +138,7 @@ class PHINode : public Instrution
 
 public:
     PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush);
+    std::unordered_map<BasicBlock *, Value *> *get_valueMap() { return valueMap; }
     ~PHINode();
     void addIncoming(Value *val, BasicBlock *BB);
     void print();
