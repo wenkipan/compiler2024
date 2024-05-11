@@ -232,7 +232,7 @@ Store::Store(Value *_addr, Value *_src, bool _stack, BasicBlock *_BB)
 }
 
 Cmp::Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
-    : Instrution(_parent, type, TypeEnum::I32)
+    : Instrution(_parent, type, TypeEnum::I1)
 {
     Edge *p_in1 = new Edge(this, _src1);
     Edge *p_in2 = new Edge(this, _src2);
@@ -243,7 +243,10 @@ Cmp::Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
 }
 
 Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
-    : Instrution(_parent, type, (type <= InstrutionEnum::IMOD ? TypeEnum::I32 : TypeEnum::F32))
+    : Instrution(_parent, type,
+                 (_src1->get_type()->get_type() == TypeEnum::I1 || _src2->get_type()->get_type() == TypeEnum::I1)
+                     ? TypeEnum::I1
+                     : (type <= InstrutionEnum::IMOD ? TypeEnum::I32 : TypeEnum::F32))
 {
     Edge *p_in1 = new Edge(this, _src1);
     Edge *p_in2 = new Edge(this, _src2);
@@ -277,7 +280,7 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
         this->get_type()->reset(TypeEnum::I32);
         break;
     case InstrutionEnum::I2F:
-        assert(src_type == TypeEnum::I32);
+        assert(src_type == TypeEnum::I32 || src_type == TypeEnum::I1);
         this->get_type()->reset(TypeEnum::F32);
         break;
     case InstrutionEnum::AddSP:
@@ -304,7 +307,7 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPus
         this->get_type()->reset(TypeEnum::I32);
         break;
     case InstrutionEnum::I2F:
-        assert(src_type == TypeEnum::I32);
+        assert(src_type == TypeEnum::I32 || src_type == TypeEnum::I1);
         this->get_type()->reset(TypeEnum::F32);
         break;
     case InstrutionEnum::AddSP:

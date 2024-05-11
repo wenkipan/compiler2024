@@ -179,6 +179,9 @@ void Type::print()
     case TypeEnum::I32:
         printf("i32");
         break;
+    case TypeEnum::I1:
+        printf("i1");
+        break;
     case TypeEnum::Ptr:
         printf("ptr");
         break;

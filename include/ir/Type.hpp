@@ -9,6 +9,7 @@ enum class TypeEnum
     Void,
     Str,
     I32,
+    I1,
     F32,
     Ptr,
     Array,

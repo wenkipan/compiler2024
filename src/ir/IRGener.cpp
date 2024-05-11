@@ -132,8 +132,8 @@ Value *GenFunction::ast2ir_exp_relational_gen(p_ast_exp p_exp)
     Value *p_src2 = ast2ir_exp_gen(p_exp->r.p_rsrc_2);
     Value *p_instr = nullptr;
     TypeEnum type1 = p_src1->get_type()->get_type(), type2 = p_src2->get_type()->get_type();
-    assert(type1 == TypeEnum::I32 || type1 == TypeEnum::F32);
-    assert(type2 == TypeEnum::I32 || type2 == TypeEnum::F32);
+    assert(type1 == TypeEnum::I32 || type1 == TypeEnum::F32 || type1 == TypeEnum::I1);
+    assert(type2 == TypeEnum::I32 || type2 == TypeEnum::F32 || type2 == TypeEnum::I1);
     int add = 0;
     if (type1 == TypeEnum::F32 || type2 == TypeEnum::F32)
         add = 6;
@@ -177,8 +177,8 @@ Value *GenFunction::ast2ir_exp_binary_gen(p_ast_exp p_exp)
     Value *p_src2 = ast2ir_exp_gen(p_exp->b.p_src_2);
     Value *p_instr = nullptr;
     TypeEnum type1 = p_src1->get_type()->get_type(), type2 = p_src2->get_type()->get_type();
-    assert(type1 == TypeEnum::I32 || type1 == TypeEnum::F32);
-    assert(type2 == TypeEnum::I32 || type2 == TypeEnum::F32);
+    assert(type1 == TypeEnum::I32 || type1 == TypeEnum::F32 || type1 == TypeEnum::I1);
+    assert(type2 == TypeEnum::I32 || type2 == TypeEnum::F32 || type2 == TypeEnum::I1);
     int add = 0;
     if (type1 == TypeEnum::F32 || type2 == TypeEnum::F32)
         add = 5;
