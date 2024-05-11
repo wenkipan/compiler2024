@@ -485,7 +485,7 @@ void Alloca::print()
         std::cout << "    call void @llvm.memset.p0.i64(ptr align 16 ";
         this->print_ID();
         std::cout << ", i8 0, i64 ";
-        printf("%d", ((ArrayType *)_mtype)->get_size());
+        printf("%d", ((ArrayType *)_mtype)->get_size() << 2);
         std::cout << ", i1 false)" << std::endl;
     }
 }
