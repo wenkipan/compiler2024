@@ -30,6 +30,6 @@ public:
 
     void GenerSet();
 
-    void llvm_print();
     void print();
+    void print(std::string _sub);
 };

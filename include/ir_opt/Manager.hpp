@@ -14,6 +14,7 @@ public:
 
     Module *get_module() { return p_module; }
     void printModule() { p_module->print(); }
+    void printModule(std::string _sub) { p_module->print(_sub); }
 
     template <typename Pass>
     void run()

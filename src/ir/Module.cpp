@@ -1,6 +1,8 @@
 #include <ir/Module.hpp>
 #include <ir/IRGener.hpp>
 
+#include <iostream>
+
 Module::Module(const std::string &input, const std::string &output)
     : infile(input), outfile(output),
       global_variables(new std::vector<GlobalVariable *>),
@@ -96,21 +98,61 @@ void Module::print()
         p_var->print();
     for (Function *p_func : (*functions))
     {
+        if (p_func->get_isExternal())
+            continue;
         p_func->ResetID(false);
         p_func->print();
     }
     printf("\n      ---------------IR end-----------------------\n");
 }
 
-void Module::llvm_print()
+void Module::print(std::string _sub)
 {
+    // infile = "sssss";
+    int _len = infile.size();
+    assert(_len >= 4);
+    std::string _outfile = std::string(infile, 0, (_len - 3)) + "_" + _sub + ".ll";
+    freopen(const_cast<char *>(_outfile.c_str()), "w", stdout);
+    // printf("source_filename = ");
+    // std::cout << "\"" << _outfile + _sub + ".sy" << "\"" << std::endl;
+    puts("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
+    puts("target triple = \"x86_64-pc-linux-gnu\"\n");
+    puts("%struct.timeval = type { i64, i64 }");
+    puts("@_sysy_start = dso_local global %struct.timeval zeroinitializer, align 8");
+    puts("@_sysy_end = dso_local global %struct.timeval zeroinitializer, align 8");
+    puts("@_sysy_l1 = dso_local global [1024 x i32] zeroinitializer, align 16");
+    puts("@_sysy_l2 = dso_local global [1024 x i32] zeroinitializer, align 16");
+    puts("@_sysy_h = dso_local global [1024 x i32] zeroinitializer, align 16");
+    puts("@_sysy_m = dso_local global [1024 x i32] zeroinitializer, align 16");
+    puts("@_sysy_s = dso_local global [1024 x i32] zeroinitializer, align 16");
+    puts("@_sysy_us = dso_local global [1024 x i32] zeroinitializer, align 16");
+    puts("@_sysy_idx = dso_local global i32 0, align 4\n");
     for (GlobalVariable *p_var : (*global_variables))
         p_var->print();
     for (Function *p_func : (*functions))
     {
+        if (p_func->get_isExternal())
+            continue;
         p_func->ResetID(true);
         p_func->print();
     }
+    puts("declare i32 @getint(...) #1\n");
+    puts("declare i32 @getch() #1\n");
+    puts("declare i32 @getarray(ptr noundef) #1\n");
+    puts("declare float @getfloat(...) #1\n");
+    puts("declare i32 @getfarray(ptr noundef) #1\n");
+    puts("declare void @putint(i32 noundef) #1\n");
+    puts("declare void @putch(i32 noundef) #1\n");
+    puts("declare void @putarray(i32 noundef, ptr noundef) #1\n");
+    puts("declare void @putfloat(float noundef) #1\n");
+    puts("declare void @putfarray(i32 noundef, ptr noundef) #1\n");
+    puts("declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2\n");
+    puts("declare void @putf(ptr noundef, ...) #1\n");
+    puts("declare void @_sysy_starttime(i32 noundef) #1\n");
+    puts("declare void @_sysy_stoptime(i32 noundef) #1\n");
+    _outfile = "output/" + std::string(infile, 0, (_len - 3)) + ".compiler_out";
+    freopen(const_cast<char *>(_outfile.c_str()), "a", stdout);
+    // freopen("/dev/tty", "w", stdout);
 }
 
 /*

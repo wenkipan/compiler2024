@@ -1,4 +1,3 @@
-#include "ir_opt/DCE.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -9,8 +8,8 @@
 
 int main(int argc, char *argv[])
 {
-    freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
+    // freopen("std.in", "r", stdin);
+    // freopen("std.out", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -46,48 +45,19 @@ int main(int argc, char *argv[])
     p_program p_program = frontend_trans(in_file, out_file, manager->get_module());
     p_program->program_variable_print();
     delete p_program;
-    manager->printModule();
     // IR
+    manager->printModule();
+    manager->printModule("O0");
 
     manager->run<Mem2Reg>();
     manager->printModule();
+    manager->printModule("O1");
+
+    // 2lir
+
     // module->lowerIR();
     // module->print();
 
     delete manager;
-
-    // // into ssa
-    // ir_simplify_cfg_pass(p_program);
-    // mem2reg_program_pass(p_program);
-    // // deadcode elimate
-    // ir_deadcode_elimate_pass(p_program, true);
-
-    // do
-    // {
-    //     // optimize - need keep block information
-    //     ir_opt_copy_propagation(p_program);
-    //     ir_opt_sccp(p_program);
-    //     ir_opt_gcm(p_program);
-
-    //     // deadcode elimate
-    //     ir_deadcode_elimate_pass(p_program, true);
-    // } while (0);
-
-    // // shared lir trans
-    // share_lir_trans_pass(p_program);
-
-    // // arm lir trans
-    // arm_lir_trans_pass(p_program);
-    // set_cond_pass(p_program);
-    // reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
-    // arm_trans_after_pass(p_program);
-    // set_cond_pass(p_program);
-    // critical_edge_cut_pass(p_program);
-
-    // arm_codegen_pass(p_program);
-
-    // // drop ir
-    // program_ir_print(p_program);
-    // program_drop(p_program);
     return 0;
 }

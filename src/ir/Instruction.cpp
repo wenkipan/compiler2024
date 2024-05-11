@@ -8,8 +8,8 @@
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{
         {InstrutionEnum::MINUS, "neg"},
-        {InstrutionEnum::F2I, "F2I"},
-        {InstrutionEnum::I2F, "I2F"},
+        {InstrutionEnum::F2I, "fptosi"},
+        {InstrutionEnum::I2F, "sitofp"},
         {InstrutionEnum::IADD, "add nsw"},
         {InstrutionEnum::ISUB, "sub nsw"},
         {InstrutionEnum::IMUL, "mul nsw"},
@@ -479,6 +479,15 @@ void Alloca::print()
     _mtype = ((Ptr *)_mtype)->get_btype();
     _mtype->print();
     print_align(_mtype->get_type());
+
+    if (_mtype->get_type() == TypeEnum::Array)
+    {
+        std::cout << "    call void @llvm.memset.p0.i64(ptr align 16 ";
+        this->print_ID();
+        std::cout << ", i8 0, i64 ";
+        printf("%d", ((ArrayType *)_mtype)->get_size());
+        std::cout << ", i1 false)" << std::endl;
+    }
 }
 
 void Cmp::print()
@@ -487,18 +496,13 @@ void Cmp::print()
     std::cout << (*_symbol_map)[this->get_Instrtype()];
     putchar(' ');
     Value *p_src1 = get_src1(), *p_src2 = get_src2();
-    if (!is_a<Constant>(p_src1))
-    {
+    if (is_a<Cmp>(p_src1) || is_a<Cmp>(p_src2))
+        printf("i1");
+    else
         p_src1->get_type()->print();
-        putchar(' ');
-    }
+    putchar(' ');
     p_src1->print_ID();
     printf(", ");
-    if (!is_a<Constant>(p_src2))
-    {
-        p_src2->get_type()->print();
-        putchar(' ');
-    }
     p_src2->print_ID();
     putchar('\n');
 }
@@ -508,8 +512,11 @@ void Binary::print()
     printf("    %%%d = ", this->get_ID());
     std::cout << (*_symbol_map)[this->get_Instrtype()];
     putchar(' ');
-    this->get_type()->print();
     Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    if (is_a<Cmp>(p_src1) || is_a<Cmp>(p_src2))
+        printf("i1");
+    else
+        this->get_type()->print();
     putchar(' ');
     p_src1->print_ID();
     putchar(',');
@@ -521,13 +528,38 @@ void Binary::print()
 void Unary::print()
 {
     printf("    %%%d = ", this->get_ID());
+    if (get_Instrtype() == InstrutionEnum::MINUS)
+    {
+        if (this->get_type()->get_type() == TypeEnum::I32)
+            printf("sub nsw i32 0, ");
+        else if (this->get_type()->get_type() == TypeEnum::I1)
+            printf("sub nsw i1 0, ");
+        else
+            printf("fsub float 0.000000e+00, ");
+
+        get_src()->print_ID();
+        putchar('\n');
+        return;
+    }
     std::cout << (*_symbol_map)[this->get_Instrtype()];
-    if (InstrutionEnum::Assign != this->get_Instrtype())
-        putchar(' ');
+    assert(this->get_Instrtype() != InstrutionEnum::Assign);
+    putchar(' ');
     Value *p_src = get_src();
     p_src->get_type()->print();
     putchar(' ');
     p_src->print_ID();
+    switch (this->get_Instype())
+    {
+    case InstrutionEnum::F2I:
+        printf(" to i32");
+        break;
+    case InstrutionEnum::I2F:
+        printf(" to float");
+        break;
+    default:
+
+        break;
+    }
     putchar('\n');
 }
 
@@ -587,7 +619,23 @@ void PHINode::drop()
     get_BB()->erase_phi(this);
     Value::drop();
 }
+
 void Assign::print()
 {
-    Unary::print();
+    printf("    %%%d = ", this->get_ID());
+    Value *p_src = get_src();
+    Type *p_type = get_type();
+    assert(p_type->get_type() == TypeEnum::I32 || p_type->get_type() == TypeEnum ::F32);
+    if (p_type->get_type() == TypeEnum::I32)
+    {
+        printf("add nsw i32 ");
+        p_src->print_ID();
+        printf(", 0\n");
+    }
+    else if (p_type->get_type() == TypeEnum::F32)
+    {
+        printf("fadd float  ");
+        p_src->print_ID();
+        printf(", 0.000000e+00\n");
+    }
 }

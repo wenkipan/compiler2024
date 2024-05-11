@@ -82,7 +82,8 @@ void Function::ResetID(bool _flag)
             auto phis = _BB->get_phis();
             for (PHINode *p_node : (*phis))
             {
-                p_node->reset_ID(curID++);
+                p_node->reset_ID(curID - voidCnt);
+                ++curID;
             }
             auto instrs = _BB->get_instrs();
             for (Instrution *p_instr : (*instrs))

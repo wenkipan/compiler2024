@@ -201,7 +201,7 @@ void ArrayType::print()
     if (b_type == TypeEnum::I32)
         printf("i32");
     else
-        printf("f32");
+        printf("float");
     for (int i = 0; i <= n; ++i)
         putchar(']');
 }

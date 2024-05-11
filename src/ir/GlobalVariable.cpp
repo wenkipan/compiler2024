@@ -28,10 +28,43 @@ GlobalVariable::GlobalVariable(p_symbol_var p_var)
 void GlobalVariable::print()
 {
     assert(this->get_type()->get_type() == TypeEnum::Ptr);
-    this->get_type()->print();
-    putchar(' ');
-    std::cout << this->get_name();
-    putchar('\n');
+    std::cout << '@' << get_name() << " =  dso_local ";
+    if (is_const)
+        printf("constant ");
+    else
+        printf("global ");
+
+    Type *_mtype = ((Ptr *)this->get_type())->get_btype();
+    if (_mtype->get_type() == TypeEnum::Array)
+    {
+        if (is_const)
+            assert(0);
+        _mtype->print();
+        printf(" zeroinitializer, align 16\n");
+    }
+    else
+    {
+        _mtype->print();
+        putchar(' ');
+        if (init)
+            init->print_ID();
+        else
+        {
+            switch (_mtype->get_type())
+            {
+            case TypeEnum::I32:
+                putchar('0');
+                break;
+            case TypeEnum::F32:
+                printf("0.000000e+00");
+                break;
+            default:
+                assert(0);
+                break;
+            }
+        }
+        printf(", align 4\n");
+    }
 }
 
 GlobalVariable::~GlobalVariable()

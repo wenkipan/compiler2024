@@ -81,7 +81,12 @@ void BasicBlock::print()
     for (PHINode *p_PHI : (*phinodes))
         p_PHI->print();
     for (Instrution *p_instr : (*instrutions))
+    {
+        if (p_instr->get_Instrtype() == InstrutionEnum::Call && ((GlobalValue *)((Call *)p_instr)->get_func())->get_name() == "memset")
+            continue;
         p_instr->print();
+    }
+
     if (instrutions->empty())
         printf("    br label %%b%d\n", this->get_func()->get_retBB()->get_ID());
 }

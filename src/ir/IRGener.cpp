@@ -306,6 +306,7 @@ Value *GenFunction::ast2ir_exp_call_gen(p_ast_exp p_exp)
         if (p_param->is_stck_ptr)
         {
             new Unary(InstrutionEnum::AddSP, p_op, curBB);
+            curBB->Ins_popBack();
         }
         ((Call *)p_instr)->params_pushback(p_op);
     }

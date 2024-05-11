@@ -48,7 +48,9 @@ void ConstantF32::print_ID()
 {
     if (f32.size() == 1)
     {
-        printf("0x%X", *(unsigned int *)&f32[0]);
+        double nw = f32[0];
+        unsigned long long *ptr = (unsigned long long *)&(nw);
+        printf("0x%llX", *ptr);
     }
 
     else
