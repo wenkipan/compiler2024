@@ -65,6 +65,7 @@ public:
     std::vector<int> *get_dims() { return dims; }
     int get_size() { return size; }
     void print() override;
+    void print(int pos);
 };
 class Ptr : public Type
 {

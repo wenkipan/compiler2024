@@ -113,8 +113,8 @@ void Module::print(std::string _sub)
     assert(_len >= 4);
     std::string _outfile = std::string(infile, 0, (_len - 3)) + "_" + _sub + ".ll";
     freopen(const_cast<char *>(_outfile.c_str()), "w", stdout);
-    // printf("source_filename = ");
-    // std::cout << "\"" << _outfile + _sub + ".sy" << "\"" << std::endl;
+    //  printf("source_filename = ");
+    //  std::cout << "\"" << _outfile + _sub + ".sy" << "\"" << std::endl;
     puts("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
     puts("target triple = \"x86_64-pc-linux-gnu\"\n");
     puts("%struct.timeval = type { i64, i64 }");
@@ -128,7 +128,7 @@ void Module::print(std::string _sub)
     puts("@_sysy_us = dso_local global [1024 x i32] zeroinitializer, align 16");
     puts("@_sysy_idx = dso_local global i32 0, align 4\n");
     for (GlobalVariable *p_var : (*global_variables))
-        p_var->print();
+        p_var->llvm_print();
     for (Function *p_func : (*functions))
     {
         if (p_func->get_isExternal())

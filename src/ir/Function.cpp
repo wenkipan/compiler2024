@@ -98,7 +98,6 @@ void Function::ResetID(bool _flag)
         for (BasicBlock *_BB : (*blocks))
         {
             _BB->reset_ID(curlable++);
-            _BB->reset_ID(curlable++);
             auto phis = _BB->get_phis();
             for (PHINode *p_node : (*phis))
             {

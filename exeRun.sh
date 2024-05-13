@@ -14,18 +14,21 @@ function process_files {
             input_file="${executable::-7}.in"
 
             if [[ -f "$input_file" ]]; then
-                echo "Running executable: $executable"
-                timeout 5m cat "$input_file" | ./"$executable" > "${executable%.exe}.ans"
+                (echo "Running executable: $executable"
+                timeout 5m cat "$input_file" | ./"$executable" > "${executable%.exe}.ans" 
+                echo $? > "${executable%.exe}.tmp"
+                echo >> "${executable%.exe}.ans"
+                cat "${executable%.exe}.tmp" >> "${executable%.exe}.ans") &
             else
-                echo "Running executable: $executable"
-                timeout 5m ./"$executable" > "${executable%.exe}.ans"
+                (echo "Running executable: $executable"
+                timeout 5m ./"$executable" > "${executable%.exe}.ans" 
+                echo $? > "${executable%.exe}.tmp"
+                echo >> "${executable%.exe}.ans"
+                cat "${executable%.exe}.tmp" >> "${executable%.exe}.ans") &
             fi
-            echo $? > "$ret.tmp"
-            echo >> "${executable%.exe}.ans"
-            cat "$ret.tmp" >> "${executable%.exe}.ans"
         elif [[ -d "$executable" ]]; then
                 # 如果是文件夹，则递归调用函数处理子文件夹中的文件
-                process_files "$executable"
+                process_files "$executable" &
         fi
     done
 }

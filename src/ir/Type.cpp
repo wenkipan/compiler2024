@@ -191,6 +191,22 @@ void Type::print()
     }
 }
 
+void ArrayType::print(int pos)
+{
+    putchar('[');
+    int n = dims->size() - 1;
+    assert(pos <= n);
+    for (int i = pos; i < n; ++i)
+        printf("%d x [", (*dims)[i]);
+    printf("%d x ", (*dims)[n]);
+    if (b_type == TypeEnum::I32)
+        printf("i32");
+    else
+        printf("float");
+    for (int i = pos; i <= n; ++i)
+        putchar(']');
+}
+
 void ArrayType::print()
 {
     putchar('[');

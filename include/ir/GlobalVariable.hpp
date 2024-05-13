@@ -17,4 +17,5 @@ public:
     bool check_const() { return is_const; }
 
     void print() override;
+    void llvm_print();
 };

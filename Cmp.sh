@@ -21,10 +21,8 @@ function compare_files {
                     echo "$file is different:"
                     # echo "$diff_result"
                 else 
-                    echo "$file is same"
+                    echo "$file is same" >> res.log
                 fi
-            else
-                echo "Counterpart file $counterpart_file does not exist for $compare_file"
             fi
         fi
     done
