@@ -5,12 +5,13 @@
 #include <vector>
 #include <unordered_map>
 #include <set>
+#include <unordered_set>
 
 class DomTreeNode
 {
     BasicBlock *parent;
-    std::vector<DomTreeNode *> *doms;
-    std::vector<DomTreeNode *> *idoms;
+    std::unordered_set<DomTreeNode *> *doms;
+    std::unordered_set<DomTreeNode *> *idoms;
     DomTreeNode *Sdom;
     DomTreeNode *Idom;
     DomTreeNode *fa;

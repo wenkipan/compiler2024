@@ -127,20 +127,26 @@ void Mem2Reg::work(Function *Func)
     }
     for (auto it : dropList)
         Allocas.erase(it);
-    std::set<BasicBlock *> PhiSet;
+    std::unordered_set<BasicBlock *> PhiSet;
     std::vector<BasicBlock *> W;
+    std::unordered_set<BasicBlock *> inW;
     PHINode *phi;
     BasicBlock *X;
     for (Alloca *alloc : Allocas)
     {
         PhiSet.clear();
         W.clear();
+        inW.clear();
         phi = nullptr;
         for (BasicBlock *BB : DefBlocks[alloc])
+        {
             W.push_back(BB);
+            inW.insert(BB);
+        }
         while (!W.empty())
         {
             X = W.back();
+            inW.erase(X);
             W.pop_back();
             for (BasicBlock *Y : DT->DomFsBlock[X])
             {
@@ -150,15 +156,18 @@ void Mem2Reg::work(Function *Func)
                     Y->Insert_Phi(phi);
                     PhiSet.insert(Y);
                     PhiMap[Y].insert({phi, alloc});
-                    if (std::find(W.begin(), W.end(), Y) == W.end())
+                    if (inW.find(Y) == inW.end())
+                    {
                         W.push_back(Y);
+                        inW.insert(Y);
+                    }
                 }
             }
         }
     }
     std::vector<Instrution *> InstrRemoveList;
     std::vector<std::pair<BasicBlock *, std::map<Alloca *, Value *>>> Worklist;
-    std::set<BasicBlock *> VisSet;
+    std::unordered_set<BasicBlock *> VisSet;
     BasicBlock *SuccBB, *BB;
     std::map<Alloca *, Value *> IncommingValues;
     Instrution *Instr;

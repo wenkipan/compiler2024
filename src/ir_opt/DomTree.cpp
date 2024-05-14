@@ -7,8 +7,8 @@ std::unordered_map<Function *, DomTree *> *Func_map_Dom = new std::unordered_map
 DomTreeNode::DomTreeNode(BasicBlock *BB)
 {
     parent = BB;
-    doms = new std::vector<DomTreeNode *>();
-    idoms = new std::vector<DomTreeNode *>();
+    doms = new std::unordered_set<DomTreeNode *>();
+    idoms = new std::unordered_set<DomTreeNode *>();
     Sdom = nullptr;
     Idom = nullptr;
     fa = nullptr;
@@ -133,10 +133,10 @@ void DomTree::MakeDom()
     {
         DomTreeNode *u = (*order)[i];
         DomTreeNode *f = u->Idom;
-        u->doms->push_back(u);
-        f->idoms->push_back(u);
+        u->doms->insert(u);
+        f->idoms->insert(u);
         for (DomTreeNode *v : *(u->doms))
-            f->doms->push_back(v);
+            f->doms->insert(v);
     }
 }
 
@@ -149,10 +149,9 @@ BasicBlock *DomTree::get_idom(BasicBlock *BB)
 
 bool DomTree::is_dom(BasicBlock *A, BasicBlock *B)
 {
-    for (DomTreeNode *tmp : *(get_DomTreeNode(A)->doms))
-        if (tmp->parent == B)
-            return true;
-    return false;
+    DomTreeNode *DA = get_DomTreeNode(A);
+    DomTreeNode *DB = get_DomTreeNode(B);
+    return DA->doms->find(DB) != DA->doms->end();
 }
 
 void DomTree::get_DF()
