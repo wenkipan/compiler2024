@@ -72,7 +72,10 @@ public:
             output << "UNDEF";
             break;
         case Lat::CONST:
-            output << "CONST";
+            if (D.is_i)
+                output << D.i;
+            else
+                output << D.f;
             break;
         case Lat::NAC:
             output << "NAC";
@@ -93,20 +96,31 @@ class SCCP
 
     std::queue<Edge *> cfg_worklist;
     std::queue<Edge *> ssa_worklist;
+    Edge *fakeedge;
 
 public:
-    SCCP(Function *func) { function = func; }
-    void run();
+    void run(Function *func);
     void init();
     void visit_exp(Instrution *);
-    void visit_phi(Value *);
+    void visit_phi(PHINode *);
     bool visit_binary(Instrution *instr);
     bool visit_cmp(Instrution *instr);
     bool visit_unary(Instrution *instr);
     bool visit_GEP(Instrution *instr);
     void do_sccp();
     void print();
+    void do_sccp_drop_unexecuted_blocks();
     Lattice get_lattice_from_map(Value *);
+    void PassRun(Module *m)
+    {
+        for (auto func : *m->get_funcs())
+        {
+            if (func->get_isExternal())
+                continue;
+            SCCP s;
+            s.run(func);
+        }
+    }
 };
 
 // (1) Initialize the FlowWorkList to contain the edges exiting the start node of
@@ -137,7 +151,7 @@ public:
 
 //
 // Visit-PHI is defined as follows: The LatticeCells for each operand of the
-// o-function are defined on the basis of the ExecutableFlag for the correspond-
+// PHI-function are defined on the basis of the ExecutableFlag for the correspond-
 // ing program flow edge.
 // executable:
 // The LatticeCell has the same value as the LatticeCell at the

@@ -2,7 +2,7 @@
 #include <ir/Value.hpp>
 #include <ir/Function.hpp>
 #include <ir/Instrution.hpp>
-
+#include <set>
 void dropInstrs(const std::vector<Instrution *> &dropList);
 class BasicBlock : public Value
 {
@@ -44,4 +44,9 @@ public:
     void erase_instr(Instrution *instr);
     void erase_phi(PHINode *phi);
     friend void dropInstrs(const std::vector<Instrution *> &dropList);
+    friend std::vector<BasicBlock *> successors(BasicBlock *);
+    friend BasicBlock *successors(BasicBlock *, int pos);
+    friend std::vector<BasicBlock *> predecessors(BasicBlock *);
+    friend BasicBlock *predecessors(BasicBlock *, int pos);
+    friend void drop_blocks(std::set<BasicBlock *> q);
 };

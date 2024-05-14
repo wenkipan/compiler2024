@@ -8,8 +8,8 @@
 
 int main(int argc, char *argv[])
 {
-    // freopen("std.in", "r", stdin);
-    // freopen("std.out", "w", stdout);
+    // freopen("in.txt", "r", stdin);
+    // freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
     manager->printModule();
     manager->printModule("O0");
     manager->run<Mem2Reg>();
+    manager->run<SimplifyCFG>();
     manager->printModule();
     manager->printModule("O1");
 

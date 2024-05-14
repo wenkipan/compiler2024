@@ -175,3 +175,35 @@ void dropInstrs(const std::vector<Instrution *> &dropList)
         delete removeList;
     }
 }
+std::vector<BasicBlock *> successors(BasicBlock *bb)
+{
+    std::vector<BasicBlock *> tmp;
+    for (auto c : *bb->get_user_list())
+        tmp.push_back((BasicBlock *)c->get_user());
+    return tmp;
+}
+BasicBlock *successors(BasicBlock *bb, int pos)
+{
+    return (BasicBlock *)bb->get_user_list()->at(pos)->get_user();
+}
+std::vector<BasicBlock *> predecessors(BasicBlock *bb)
+{
+    std::vector<BasicBlock *> tmp;
+    for (auto c : *bb->get_value_list())
+        tmp.push_back((BasicBlock *)c->get_val());
+    return tmp;
+}
+BasicBlock *predecessors(BasicBlock *bb, int pos)
+{
+    return (BasicBlock *)bb->get_value_list()->at(pos)->get_val();
+}
+void drop_blocks(std::set<BasicBlock *> q)
+{
+    auto it = q.begin();
+    while (it != q.end())
+    {
+        BasicBlock *bb = *it;
+        it = q.erase(it);
+        bb->drop();
+    }
+}

@@ -1,8 +1,9 @@
 #include "ir/BasicBlock.hpp"
 #include <ir_opt/SimplifyCFG.hpp>
 
-bool SimplifyCFG::run()
+bool SimplifyCFG::run(Function *f)
 {
+    function = f;
     bool deal = false;
     elimate_no_predesessor_block();
     deal = deal | merge_single_predecessor_block();
@@ -111,7 +112,10 @@ void SimplifyCFG::eliminate_single_predecessor_phi()
         for (auto p : *BB->get_phinodes())
         {
             if (p->get_value_list()->size() == 1)
+            {
                 philist.push(p);
+                assert(p->get_user_list()->size() == 0);
+            }
         }
     }
     while (!philist.empty())

@@ -9,7 +9,7 @@
 class DCE
 {
 public:
-    int if_debug = 1;
+    int if_debug = 0;
     Function *function;
     PostDomTree *pdt;
     std::unordered_set<Instrution *> live_instr;
@@ -20,13 +20,8 @@ public:
     std::unordered_set<BasicBlock *> newliveblocks;
     std::unordered_map<BasicBlock *, int> postorder;
     int c;
-    DCE(Function *func)
-    {
-        function = func;
-        c = function->get_blocks()->size();
-    }
     ~DCE() { delete pdt; }
-    void run();
+    void run(Function *func);
     void init();
     void elimate();
     void print();
@@ -39,6 +34,16 @@ public:
     void caculatepostorder();
     void update_dead_block();
     void search(BasicBlock *n);
+    void PassRun(Module *m)
+    {
+        for (auto func : *m->get_funcs())
+        {
+            if (func->get_isExternal())
+                continue;
+            DCE s;
+            s.run(func);
+        }
+    }
 };
 
 // delete unreachableblock

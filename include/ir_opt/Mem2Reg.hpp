@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ir/Function.hpp"
 #include <ir/ir.hpp>
 #include <ir_opt/DomTree.hpp>
 #include <vector>

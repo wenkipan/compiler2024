@@ -4,8 +4,11 @@
 #include "ir/Instrution.hpp"
 #include <ir_opt/SCCP.hpp>
 #include <fstream>
-void SCCP::run()
+#include <ostream>
+#include <set>
+void SCCP::run(Function *func)
 {
+    function = func;
     init();
     while (!cfg_worklist.empty() || !ssa_worklist.empty())
     {
@@ -21,7 +24,7 @@ void SCCP::run()
             executed_edge_map[edge] = true;
 
             BasicBlock *cur_bb = (BasicBlock *)edge->get_user();
-            cur_bb->print();
+            // cur_bb->print();
             for (auto phi : *cur_bb->get_phinodes())
                 visit_phi(phi);
 
@@ -31,12 +34,11 @@ void SCCP::run()
                 continue;
             executed_block_map[cur_bb] = true;
 
-            printf("first enter this block\n");
+            // printf("first enter this block\n");
             for (auto instr : *cur_bb->get_instrutions())
                 visit_exp(instr);
 
-            // only have one out-edge
-            // jmp
+            // only have one out-edge(Jmp)
             if (cur_bb->get_user_list()->size() == 1)
             {
                 assert((*cur_bb->get_instrs()).back()->isJmp());
@@ -52,7 +54,7 @@ void SCCP::run()
             Instrution *instr = (Instrution *)ssaedge->get_user();
             if (instr->isPHINode() == true) // for ssa destination is phi
             {
-                visit_phi(instr);
+                visit_phi((PHINode *)instr);
             }
             else // for destination is exp(instruction)
             {
@@ -63,7 +65,8 @@ void SCCP::run()
             }
         }
     }
-    print();
+    delete fakeedge;
+    // print();
     do_sccp();
 }
 
@@ -71,7 +74,7 @@ void SCCP::init()
 {
     // entry bb cfg_worklist
     assert((function->get_entryBB()));
-    Edge *fakeedge = new Edge(function->get_entryBB(), nullptr); // TODO:delete this edge
+    fakeedge = new Edge(function->get_entryBB(), nullptr); // TODO:delete this edge
     cfg_worklist.push(fakeedge);
     executed_edge_map.emplace(fakeedge, false);
     //  executed_block_edge_map init
@@ -119,6 +122,162 @@ void SCCP::init()
 }
 void SCCP::do_sccp()
 {
+    // printf("do_sccp begin\n");
+    do_sccp_drop_unexecuted_blocks();
+    for (auto BB : *function->get_blocks())
+    {
+        assert(executed_block_map.find(BB) != executed_block_map.end());
+        if (executed_block_map.find(BB)->second == false)
+        {
+            // BB->print();
+            for (auto edge : *BB->get_value_list())
+                assert(executed_edge_map.find(edge)->second == false);
+            continue;
+        }
+
+        for (auto instr : *BB->get_instrs())
+        {
+            if (latticemap.find(instr) == latticemap.end())
+                continue;
+            Lattice l = get_lattice_from_map(instr);
+            std::vector<Edge *> edges;
+            switch (l.lat)
+            {
+            case Lattice::Lat::UNDEF:
+                instr->print();
+                assert(0);
+                break;
+            case Lattice::Lat::CONST:
+                edges = *instr->get_user_list();
+                if (l.is_i)
+                {
+                    ConstantI32 *consti = new ConstantI32(l.i);
+                    function->value_pushBack(consti);
+                    for (auto edge : edges)
+                    {
+                        edge->set_val(consti);
+                        consti->user_list_push_back(edge);
+                    }
+                }
+                else
+                {
+                    ConstantF32 *constf = new ConstantF32(l.f);
+                    function->value_pushBack(constf);
+                    for (auto edge : edges)
+                    {
+                        edge->set_val(constf);
+                        constf->user_list_push_back(edge);
+                    }
+                }
+                instr->get_user_list()->clear();
+                break;
+            case Lattice::Lat::NAC:
+                break;
+            default:
+                assert(0);
+                break;
+            }
+        }
+        for (auto phi : *BB->get_phinodes())
+        {
+            std::vector<Edge *> edges;
+            Lattice l = get_lattice_from_map(phi);
+            switch (l.lat)
+            {
+            case Lattice::Lat::UNDEF:
+                assert(0);
+                break;
+            case Lattice::Lat::CONST:
+                edges = *phi->get_user_list();
+                if (l.is_i)
+                {
+                    ConstantI32 *consti = new ConstantI32(l.i);
+                    function->value_pushBack(consti);
+                    for (auto edge : edges)
+                    {
+                        edge->set_val(consti);
+                        consti->user_list_push_back(edge);
+                    }
+                }
+                else
+                {
+                    ConstantF32 *constf = new ConstantF32(l.f);
+                    function->value_pushBack(constf);
+                    for (auto edge : edges)
+                    {
+                        edge->set_val(constf);
+                        constf->user_list_push_back(edge);
+                    }
+                }
+                phi->get_user_list()->clear();
+                break;
+            case Lattice::Lat::NAC:
+                break;
+            default:
+                assert(0);
+                break;
+            }
+        }
+    }
+}
+void SCCP::do_sccp_drop_unexecuted_blocks()
+{
+    std::queue<Edge *> droplist;
+    for (auto BB : *function->get_blocks())
+    {
+        assert(executed_block_map.find(BB) != executed_block_map.end());
+        if (executed_block_map[BB] != true)
+            continue;
+        Instrution *last = BB->get_last_instrution();
+        if (last->isBranch())
+        {
+            auto edges = *BB->get_user_list();
+            assert(edges.size() == 2);
+            Value *cond = ((Branch *)last)->get_cond();
+            Lattice condlattice = latticemap.find(cond)->second;
+            BasicBlock *truebb = (BasicBlock *)edges[0]->get_user();
+            BasicBlock *falsebb = (BasicBlock *)edges[1]->get_user();
+            switch (condlattice.lat)
+            {
+            case Lattice::Lat::UNDEF:
+                assert(0);
+                break;
+            case Lattice::Lat::CONST:
+                assert(condlattice.is_i);
+                last->drop();
+                assert(is_a<Instrution>(cond));
+                ((Instrution *)cond)->drop();
+                droplist.push(edges[0]);
+                droplist.push(edges[1]);
+                BB->get_user_list()->clear();
+                if (condlattice.i)
+                {
+                    assert(executed_edge_map.find(edges[1])->second == false);
+                    new Jmp((BasicBlock *)truebb, BB);
+                }
+                else
+                {
+                    assert(executed_edge_map.find(edges[0])->second == false);
+                    new Jmp((BasicBlock *)falsebb, BB);
+                }
+                break;
+            case Lattice::Lat::NAC:
+                assert(executed_edge_map.find(edges[0])->second == true);
+                assert(executed_edge_map.find(edges[1])->second == true);
+                assert(executed_block_map.find(truebb)->second == true);
+                assert(executed_block_map.find(falsebb)->second == true);
+                break;
+            default:
+                assert(0);
+                break;
+            }
+        }
+        else if (last->isJmp())
+            assert(executed_block_map.find(successors(BB, 0))->second == true);
+        else
+            assert(last->isReturn());
+    }
+    drop_all_edges(droplist);
 }
 
 Lattice SCCP::get_lattice_from_map(Value *v)
@@ -140,31 +299,19 @@ static inline bool is_lat_lower(Lattice::Lat latbefore, Lattice::Lat latafter)
     }
     return false;
 }
-void SCCP::visit_phi(Value *phi)
+void SCCP::visit_phi(PHINode *phi)
 {
     Lattice tmp = get_lattice_from_map(phi);
     if (tmp.lat == Lattice::Lat::NAC)
         return;
-    auto phi_value_list = phi->get_value_list();
-    for (auto edge : *phi_value_list)
+    for (auto kv : *phi->get_valueMap())
     {
-        auto value = edge->get_val();
-        // problem!!!
-        BasicBlock *bb;
-        if (is_a<Param>(value))
-            bb = function->get_entryBB();
-        else if (is_a<Instrution>(value))
-            bb = ((Instrution *)value)->get_parent();
-        // else if (is_a<Constant>(value))
-        //     bb = ((Constant *)value)->get_parent();
-        else
-            assert(0);
-
+        BasicBlock *bb = kv.first;
         assert(executed_block_map.find(bb) != executed_block_map.end());
         if (executed_block_map[bb] == false)
             continue;
 
-        Lattice lat_for_value = get_lattice_from_map(value);
+        Lattice lat_for_value = get_lattice_from_map(kv.second);
         tmp.phi_insersect(tmp, lat_for_value);
     }
     if (is_lat_lower(latticemap.find(phi)->second.lat, tmp.lat))
@@ -198,58 +345,31 @@ void SCCP::visit_exp(Instrution *instrution)
             else // false
                 cfg_worklist.push((*instrution->get_parent()->get_user_list())[1]);
         }
+        latticemap.find(instrution)->second = cond_lattice;
     }
     else if (instrution->isBinary())
-    {
         need_add_ssa = visit_binary(instrution);
-    }
     else if (instrution->isUnary())
-    {
         need_add_ssa = visit_unary(instrution);
-    }
     else if (instrution->isGEP())
-    {
         need_add_ssa = visit_GEP(instrution);
-    }
-    else if (instrution->isCall())
-    { // must be NAC
-
-        Lattice::Lat tmp = latticemap.find(instrution)->second.lat;
-        latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
-        if (tmp != Lattice::Lat::NAC)
-            need_add_ssa = 1;
-    }
     else if (instrution->isCmp())
-    {
         need_add_ssa = visit_cmp(instrution);
-    }
-    else if (instrution->isJmp())
-    { // do nothing
-        latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
-    }
-    else if (instrution->isLoad())
+    else if (instrution->isLoad() || instrution->isCall())
     { // must be NAC
         Lattice::Lat tmp = latticemap.find(instrution)->second.lat;
-        latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
         if (tmp != Lattice::Lat::NAC)
+        {
             need_add_ssa = 1;
+            latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
+        }
     }
-    else if (instrution->isReturn())
-    { // ret dont have users so do nothing or {set to NAC}?
-        latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
-    }
-    else if (instrution->isStore())
-    { // do nothing
-        latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
-    }
-    else if (instrution->isAlloca())
-    { // do nothing
+    else if (instrution->isReturn() || instrution->isStore() || instrution->isAlloca() || instrution->isJmp())
+    { // dont have user ,set to NAC
         latticemap.find(instrution)->second.lat = Lattice::Lat::NAC;
     }
     else
-    {
         assert(0);
-    }
 
     if (need_add_ssa)
     {
@@ -277,16 +397,28 @@ bool SCCP::visit_cmp(Instrution *instr)
 }
 bool SCCP::visit_unary(Instrution *instr)
 {
-    Value *src;
-    Lattice tmp = latticemap.find(instr)->second;
+    assert(is_a<Unary>(instr));
+    Value *src = (*instr->get_value_list())[0]->get_val();
+    Lattice tmp = get_lattice_from_map(src);
     Lattice instr_lattice = latticemap.find(instr)->second;
+    if (tmp.lat == Lattice::Lat::UNDEF)
+    {
+        assert(0);
+    }
+    else if (tmp.lat == Lattice::Lat::NAC)
+    {
+        if (is_lat_lower(instr_lattice.lat, tmp.lat))
+        {
+            latticemap.find(instr)->second.lat = Lattice::Lat::NAC;
+            return true;
+        }
+        return false;
+    }
+
+    assert(tmp.lat == Lattice::Lat::CONST);
     switch (instr->get_Instrtype())
     {
     case InstrutionEnum::MINUS: // problem!!!
-        assert(instr->get_value_list()->size() == 1);
-        src = (*instr->get_value_list())[0]->get_val();
-        assert(latticemap.find(src) != latticemap.end());
-        tmp = latticemap.find(src)->second;
         if (is_lat_lower(instr_lattice.lat, tmp.lat))
         {
             if (tmp.is_i)
@@ -298,10 +430,6 @@ bool SCCP::visit_unary(Instrution *instr)
         }
         return false;
     case InstrutionEnum::F2I:
-        assert(instr->get_value_list()->size() == 1);
-        src = (*instr->get_value_list())[0]->get_val();
-        assert(latticemap.find(src) != latticemap.end());
-        tmp = latticemap.find(src)->second;
         if (is_lat_lower(instr_lattice.lat, tmp.lat))
         {
             assert(!tmp.is_i);
@@ -312,10 +440,6 @@ bool SCCP::visit_unary(Instrution *instr)
         }
         return false;
     case InstrutionEnum::I2F:
-        assert(instr->get_value_list()->size() == 1);
-        src = (*instr->get_value_list())[0]->get_val();
-        assert(latticemap.find(src) != latticemap.end());
-        tmp = latticemap.find(src)->second;
         if (is_lat_lower(instr_lattice.lat, tmp.lat))
         {
             assert(tmp.is_i);
@@ -325,9 +449,16 @@ bool SCCP::visit_unary(Instrution *instr)
             return true;
         }
         return false;
-    case InstrutionEnum::AddSP: // no user so set to NAC?
-        latticemap.find(instr)->second.lat = Lattice::Lat::NAC;
+    case InstrutionEnum::Assign:
+        if (is_lat_lower(instr_lattice.lat, tmp.lat))
+        {
+            latticemap.find(instr)->second = tmp;
+            return true;
+        }
         return false;
+    // case InstrutionEnum::AddSP: // no user so set to NAC?
+    //     latticemap.find(instr)->second.lat = Lattice::Lat::NAC;
+    //     return false;
     default:
         assert(0);
     }
@@ -340,6 +471,76 @@ bool SCCP::visit_GEP(Instrution *instr)
     if (tmp != Lattice::Lat::NAC)
         return 1;
     return 0;
+}
+
+bool Lattice::exp_insersect(Lattice lat1, Lattice lat2, InstrutionEnum itype)
+{
+    Lattice tmp = *this;
+    if (lat1.lat == Lat::NAC || lat2.lat == Lat::NAC)
+        tmp.lat = Lat::NAC;
+    else if (lat1.lat == Lat::CONST && lat2.lat == Lat::CONST)
+    {
+        assert(lat1.is_i == lat2.is_i);
+        tmp = constfold(lat1, lat2, itype);
+    }
+    // does assgin to UNDEF effect?
+    //  else if (lat1.lattice == Lat::CONST || lat2.lattice == Lat::CONST)
+    //  {
+    //      lattice = Lat::CONST;
+    //      is_i = lat1.is_i;
+    //  }
+    else
+    { // UNDEF && UNDEF
+    }
+
+    if (is_lat_lower(this->lat, tmp.lat))
+    {
+        this->lat = tmp.lat;
+        this->is_i = tmp.is_i;
+        if (tmp.is_i)
+            this->i = tmp.i;
+        else
+            this->f = tmp.f;
+        return true;
+    }
+    return false;
+}
+
+bool Lattice::phi_insersect(Lattice lat1, Lattice &lat2)
+{
+    Lattice tmp = *this;
+    if (lat1.lat == Lat::NAC || lat2.lat == Lat::NAC)
+        tmp.lat = Lat::NAC;
+    else if (lat1.lat == Lat::CONST && lat2.lat == Lat::CONST)
+    {
+        assert(lat1.is_i == lat2.is_i);
+        if (lat1.is_i && (lat1.i == lat2.i))
+            tmp = lat1;
+        else if (!lat1.is_i && (lat1.f == lat2.f))
+            tmp = lat1;
+        else
+            tmp.lat = Lat::NAC;
+    }
+    else if (lat1.lat == Lat::CONST)
+        tmp = lat1;
+    else if (lat2.lat == Lat::CONST)
+        tmp = lat2;
+    else
+    { // UNDEF && UNDEF
+    }
+
+    // is lattice lower ?
+    if (is_lat_lower(this->lat, tmp.lat))
+    {
+        this->lat = tmp.lat;
+        this->is_i = tmp.is_i;
+        if (tmp.is_i)
+            this->i = tmp.i;
+        else
+            this->f = tmp.f;
+        return true;
+    }
+    return false;
 }
 
 void SCCP::print()
@@ -376,86 +577,6 @@ void SCCP::print()
     }
     fclose(fp);
 }
-bool Lattice::exp_insersect(Lattice lat1, Lattice lat2, InstrutionEnum itype)
-{
-    Lattice tmp = *this;
-    if (lat1.lat == Lat::NAC || lat2.lat == Lat::NAC)
-        tmp.lat = Lat::NAC;
-    else if (lat1.lat == Lat::CONST && lat2.lat == Lat::CONST)
-    {
-        tmp.lat = Lat::CONST;
-        assert(lat1.is_i == lat2.is_i);
-        tmp = constfold(lat1, lat2, itype);
-    }
-    // does assgin to UNDEF effect?
-    //  else if (lat1.lattice == Lat::CONST || lat2.lattice == Lat::CONST)
-    //  {
-    //      lattice = Lat::CONST;
-    //      is_i = lat1.is_i;
-    //  }
-    else
-    { // UNDEF && UNDEF
-    }
-
-    // is lattice lower ?
-    if (is_lat_lower(this->lat, tmp.lat))
-    {
-        this->lat = tmp.lat;
-        this->is_i = tmp.is_i;
-        if (tmp.is_i)
-            this->i = tmp.i;
-        else
-            this->f = tmp.f;
-        return true;
-    }
-    return false;
-}
-
-bool Lattice::phi_insersect(Lattice lat1, Lattice &lat2)
-{
-    Lattice tmp = *this;
-    if (lat1.lat == Lat::NAC || lat2.lat == Lat::NAC)
-        tmp.lat = Lat::NAC;
-    else if (lat1.lat == Lat::CONST && lat2.lat == Lat::CONST)
-    {
-        assert(lat1.is_i == lat2.is_i);
-        if (lat1.is_i && (lat1.i == lat2.i))
-        {
-            tmp.lat = Lat::CONST;
-            tmp.i = lat1.i;
-            tmp.is_i = lat1.is_i;
-        }
-        else if (!lat1.is_i && (lat1.f == lat2.f))
-        {
-            tmp.lat = Lat::CONST;
-            tmp.f = lat1.f;
-            tmp.is_i = lat1.is_i;
-        }
-        else
-            tmp.lat = Lat::NAC;
-    }
-    else if (lat1.lat == Lat::CONST)
-        tmp.lat = Lat::CONST;
-    else if (lat2.lat == Lat::CONST)
-        tmp.lat = Lat::CONST;
-    else
-    { // UNDEF && UNDEF
-    }
-
-    // is lattice lower ?
-    if (is_lat_lower(this->lat, tmp.lat))
-    {
-        this->lat = tmp.lat;
-        this->is_i = tmp.is_i;
-        if (tmp.is_i)
-            this->i = tmp.i;
-        else
-            this->f = tmp.f;
-        return true;
-    }
-    return false;
-}
-
 Lattice Lattice::constfold(Lattice lat1, Lattice lat2, InstrutionEnum itype)
 {
     assert(lat1.lat == Lat::CONST);
@@ -518,152 +639,102 @@ Lattice Lattice::constfold(Lattice lat1, Lattice lat2, InstrutionEnum itype)
 
 Lattice Lattice::operator!=(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, 1);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i != b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.i = (this->f != b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator==(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, 1);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i == b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.i = (this->f == b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator>=(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, 1);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i >= b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.i = (this->f >= b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator>(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, 1);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i > b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.i = (this->f > b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator<=(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, 1);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i <= b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.i = (this->f <= b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator<(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, 1);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i < b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.i = (this->f < b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator+(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, this->is_i);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i + b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.f = (this->f + b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator-(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, this->is_i);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i - b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.f = (this->f - b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator*(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, this->is_i);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i * b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.f = (this->f * b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator/(const Lattice &b)
 {
+    assert(is_i == b.is_i);
     Lattice ret(this->lat, this->is_i);
     if (is_i)
-    {
-        assert(b.is_i);
         ret.i = (this->i / b.i);
-    }
     else
-    {
-        assert(!b.is_i);
         ret.f = (this->f / b.f);
-    }
     return ret;
 }
 Lattice Lattice::operator%(const Lattice &b)
@@ -672,7 +743,7 @@ Lattice Lattice::operator%(const Lattice &b)
     if (is_i)
     {
         assert(b.is_i);
-        ret.i = (this->i * b.i);
+        ret.i = (this->i % b.i);
     }
     else
     {

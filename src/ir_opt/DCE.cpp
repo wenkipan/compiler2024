@@ -1,14 +1,13 @@
 #include "ir/BasicBlock.hpp"
 #include "ir/Constant.hpp"
 #include "ir/Edge.hpp"
+#include "ir/Function.hpp"
 #include "ir/Instrution.hpp"
 #include <ir_opt/DCE.hpp>
 #include <iostream>
 #include <fstream>
 void DCE::init()
 {
-    block_DCE bdce(function);
-    bdce.run();
     pdt = new PostDomTree(function);
     for (auto bb : *function->get_blocks())
     {
@@ -31,9 +30,10 @@ void DCE::init()
     if (function->get_entryBB()->get_last_instrution()->isJmp())
         worklist.push(function->get_entryBB()->get_last_instrution());
 }
-void DCE::run()
+void DCE::run(Function *func)
 {
-
+    function = func;
+    c = function->get_blocks()->size();
     init();
     do
     {
@@ -264,7 +264,8 @@ void DCE::update_dead_block()
         new Jmp(prefersucc, BB);
         live_instr.emplace(BB->get_last_instrution());
     }
-    drop_all_edge(deletelist);
+    drop_all_edges(deletelist);
+    // function->print();
     assert(function->check_can_ret());
 }
 
