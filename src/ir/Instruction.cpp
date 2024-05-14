@@ -59,7 +59,7 @@ void Instrution::replaceInstr(BasicBlock *_BB, int pos)
     for (Edge *_edge : (*tmp->get_user_list()))
     {
         _edge->set_val(this);
-        this->user_list_push_back(_edge);
+        // this->user_list_push_back(_edge);
     }
     tmp->get_user_list()->clear();
     (*_BB->get_instrutions())[pos] = this;
@@ -151,12 +151,14 @@ Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
 GEP::GEP(Value *_addr, Value *_offset, bool _element, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::GEP, _addr->get_type(), _element), is_element(_element)
 {
-    Edge *p_in1 = new Edge(this, _addr);
-    Edge *p_in2 = new Edge(this, _offset);
-    value_list_push_back(p_in1);
-    value_list_push_back(p_in2);
-    _addr->user_list_push_back(p_in1);
-    _offset->user_list_push_back(p_in2);
+    // Edge *p_in1 = new Edge(this, _addr);
+    // Edge *p_in2 = new Edge(this, _offset);
+    // value_list_push_back(p_in1);
+    // value_list_push_back(p_in2);
+    // _addr->user_list_push_back(p_in1);
+    // _offset->user_list_push_back(p_in2);
+    new Edge(this, _addr);
+    new Edge(this, _offset);
 }
 
 Ret::Ret(BasicBlock *_parent)
@@ -167,9 +169,10 @@ Ret::Ret(BasicBlock *_parent)
 Ret::Ret(Value *_val, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Ret, _val->get_type()->get_type())
 {
-    Edge *p_in1 = new Edge(this, _val);
-    value_list_push_back(p_in1);
-    _val->user_list_push_back(p_in1);
+    // Edge *p_in1 = new Edge(this, _val);
+    // value_list_push_back(p_in1);
+    // _val->user_list_push_back(p_in1);
+    new Edge(this, _val);
 }
 
 BasicBlock *Jmp::get_nextBB()
@@ -180,9 +183,10 @@ BasicBlock *Jmp::get_nextBB()
 Jmp::Jmp(BasicBlock *_next, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Jmp, TypeEnum::Void)
 {
-    Edge *p_in1 = new Edge(_next, _parent);
-    _parent->user_list_push_back(p_in1);
-    _next->value_list_push_back(p_in1);
+    // Edge *p_in1 = new Edge(_next, _parent);
+    // _parent->user_list_push_back(p_in1);
+    // _next->value_list_push_back(p_in1);
+    new Edge(_next, _parent);
 }
 
 BasicBlock *Branch::get_trueBB()
@@ -198,15 +202,18 @@ BasicBlock *Branch::get_falseBB()
 Branch::Branch(Value *_cond, BasicBlock *_trueBB, BasicBlock *_falseBB, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Branch, TypeEnum::Void)
 {
-    Edge *p_in0 = new Edge(this, _cond);
-    this->value_list_push_back(p_in0);
-    _cond->user_list_push_back(p_in0);
-    Edge *p_in1 = new Edge(_trueBB, _parent);
-    Edge *p_in2 = new Edge(_falseBB, _parent);
-    _parent->user_list_push_back(p_in1);
-    _parent->user_list_push_back(p_in2);
-    _trueBB->value_list_push_back(p_in1);
-    _falseBB->value_list_push_back(p_in2);
+    // Edge *p_in0 = new Edge(this, _cond);
+    // this->value_list_push_back(p_in0);
+    // _cond->user_list_push_back(p_in0);
+    // Edge *p_in1 = new Edge(_trueBB, _parent);
+    // Edge *p_in2 = new Edge(_falseBB, _parent);
+    // _parent->user_list_push_back(p_in1);
+    // _parent->user_list_push_back(p_in2);
+    // _trueBB->value_list_push_back(p_in1);
+    // _falseBB->value_list_push_back(p_in2);
+    new Edge(this, _cond);
+    new Edge(_trueBB, _parent);
+    new Edge(_falseBB, _parent);
 }
 
 Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
@@ -215,31 +222,36 @@ Load::Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent)
     assert(p_val->get_type()->get_type() == TypeEnum::Ptr);
     // assert(p_val->get_type()->get_basic_type() == TypeEnum::I32 || p_val->get_type()->get_basic_type() == TypeEnum::F32);
     is_stack_ptr = _is_stack_ptr;
-    Edge *p_in = new Edge(this, p_val);
-    value_list_push_back(p_in);
-    p_val->user_list_push_back(p_in);
+    // Edge *p_in = new Edge(this, p_val);
+    // value_list_push_back(p_in);
+    // p_val->user_list_push_back(p_in);
+    new Edge(this, p_val);
 }
 
 Store::Store(Value *_addr, Value *_src, bool _stack, BasicBlock *_BB)
     : Instrution(_BB, InstrutionEnum::Store, TypeEnum::Void), is_stack_ptr(_stack)
 {
-    Edge *p_in1 = new Edge(this, _addr);
-    Edge *p_in2 = new Edge(this, _src);
-    value_list_push_back(p_in1);
-    value_list_push_back(p_in2);
-    _addr->user_list_push_back(p_in1);
-    _src->user_list_push_back(p_in2);
+    // Edge *p_in1 = new Edge(this, _addr);
+    // Edge *p_in2 = new Edge(this, _src);
+    // value_list_push_back(p_in1);
+    // value_list_push_back(p_in2);
+    // _addr->user_list_push_back(p_in1);
+    // _src->user_list_push_back(p_in2);
+    new Edge(this, _addr);
+    new Edge(this, _src);
 }
 
 Cmp::Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
     : Instrution(_parent, type, TypeEnum::I1)
 {
-    Edge *p_in1 = new Edge(this, _src1);
-    Edge *p_in2 = new Edge(this, _src2);
-    value_list_push_back(p_in1);
-    value_list_push_back(p_in2);
-    _src1->user_list_push_back(p_in1);
-    _src2->user_list_push_back(p_in2);
+    // Edge *p_in1 = new Edge(this, _src1);
+    // Edge *p_in2 = new Edge(this, _src2);
+    // value_list_push_back(p_in1);
+    // value_list_push_back(p_in2);
+    // _src1->user_list_push_back(p_in1);
+    // _src2->user_list_push_back(p_in2);
+    new Edge(this, _src1);
+    new Edge(this, _src2);
 }
 
 Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
@@ -248,23 +260,27 @@ Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_par
                      ? TypeEnum::I1
                      : (type <= InstrutionEnum::IMOD ? TypeEnum::I32 : TypeEnum::F32))
 {
-    Edge *p_in1 = new Edge(this, _src1);
-    Edge *p_in2 = new Edge(this, _src2);
-    value_list_push_back(p_in1);
-    value_list_push_back(p_in2);
-    _src1->user_list_push_back(p_in1);
-    _src2->user_list_push_back(p_in2);
+    // Edge *p_in1 = new Edge(this, _src1);
+    // Edge *p_in2 = new Edge(this, _src2);
+    // value_list_push_back(p_in1);
+    // value_list_push_back(p_in2);
+    // _src1->user_list_push_back(p_in1);
+    // _src2->user_list_push_back(p_in2);
+    new Edge(this, _src1);
+    new Edge(this, _src2);
 }
 
 Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent, bool is_ele)
     : Instrution(_parent, InstrutionEnum::PADD, _src1->get_type(), is_ele)
 {
-    Edge *p_in1 = new Edge(this, _src1);
-    Edge *p_in2 = new Edge(this, _src2);
-    value_list_push_back(p_in1);
-    value_list_push_back(p_in2);
-    _src1->user_list_push_back(p_in1);
-    _src2->user_list_push_back(p_in2);
+    // Edge *p_in1 = new Edge(this, _src1);
+    // Edge *p_in2 = new Edge(this, _src2);
+    // value_list_push_back(p_in1);
+    // value_list_push_back(p_in2);
+    // _src1->user_list_push_back(p_in1);
+    // _src2->user_list_push_back(p_in2);
+    new Edge(this, _src1);
+    new Edge(this, _src2);
 }
 
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
@@ -289,9 +305,10 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
         this->get_type()->reset(src_type);
         break;
     }
-    Edge *p_in1 = new Edge(this, _src1);
-    value_list_push_back(p_in1);
-    _src1->user_list_push_back(p_in1);
+    // Edge *p_in1 = new Edge(this, _src1);
+    // value_list_push_back(p_in1);
+    // _src1->user_list_push_back(p_in1);
+    new Edge(this, _src1);
 }
 
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
@@ -316,24 +333,27 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPus
         this->get_type()->reset(src_type);
         break;
     }
-    Edge *p_in1 = new Edge(this, _src1);
-    value_list_push_back(p_in1);
-    _src1->user_list_push_back(p_in1);
+    // Edge *p_in1 = new Edge(this, _src1);
+    // value_list_push_back(p_in1);
+    // _src1->user_list_push_back(p_in1);
+    new Edge(this, _src1);
 }
 
 Call::Call(Value *_func, BasicBlock *_parent)
     : Instrution(_parent, InstrutionEnum::Call, _func->get_type()->get_type())
 {
-    Edge *p_in = new Edge(this, _func);
-    value_list_push_back(p_in);
-    _func->user_list_push_back(p_in);
+    // Edge *p_in = new Edge(this, _func);
+    // value_list_push_back(p_in);
+    // _func->user_list_push_back(p_in);
+    new Edge(this, _func);
 }
 
 void Call::params_pushback(Value *_param)
 {
-    Edge *p_in1 = new Edge(this, _param);
-    this->value_list_push_back(p_in1);
-    _param->user_list_push_back(p_in1);
+    // Edge *p_in1 = new Edge(this, _param);
+    // this->value_list_push_back(p_in1);
+    // _param->user_list_push_back(p_in1);
+    new Edge(this, _param);
 }
 
 // drop
@@ -568,7 +588,7 @@ void Instrution::replaceAllUses(Value *RepVal)
     for (Edge *edge : *(get_user_list()))
     {
         edge->set_val(RepVal);
-        RepVal->user_list_push_back(edge);
+        // RepVal->user_list_push_back(edge);
     }
     this->get_user_list()->clear();
 }
@@ -581,9 +601,10 @@ void Instrution::drop()
 
 void PHINode::addIncoming(Value *val, BasicBlock *BB)
 {
-    Edge *edge = new Edge(this, val);
-    this->value_list_push_back(edge);
-    val->user_list_push_back(edge);
+    // Edge *edge = new Edge(this, val);
+    // this->value_list_push_back(edge);
+    // val->user_list_push_back(edge);
+    new Edge(this, val);
     valueMap->insert({BB, val});
 }
 

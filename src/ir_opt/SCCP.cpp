@@ -66,6 +66,7 @@ void SCCP::run(Function *func)
         }
     }
     delete fakeedge;
+    delete fakeBlock;
     // print();
     do_sccp();
 }
@@ -74,7 +75,8 @@ void SCCP::init()
 {
     // entry bb cfg_worklist
     assert((function->get_entryBB()));
-    fakeedge = new Edge(function->get_entryBB(), nullptr); // TODO:delete this edge
+    fakeBlock = new BasicBlock;
+    fakeedge = new Edge(function->get_entryBB(), fakeBlock); // TODO:delete this edge
     cfg_worklist.push(fakeedge);
     executed_edge_map.emplace(fakeedge, false);
     //  executed_block_edge_map init
@@ -156,7 +158,6 @@ void SCCP::do_sccp()
                     for (auto edge : edges)
                     {
                         edge->set_val(consti);
-                        consti->user_list_push_back(edge);
                     }
                 }
                 else
@@ -166,7 +167,6 @@ void SCCP::do_sccp()
                     for (auto edge : edges)
                     {
                         edge->set_val(constf);
-                        constf->user_list_push_back(edge);
                     }
                 }
                 instr->get_user_list()->clear();
@@ -196,7 +196,6 @@ void SCCP::do_sccp()
                     for (auto edge : edges)
                     {
                         edge->set_val(consti);
-                        consti->user_list_push_back(edge);
                     }
                 }
                 else
@@ -206,7 +205,6 @@ void SCCP::do_sccp()
                     for (auto edge : edges)
                     {
                         edge->set_val(constf);
-                        constf->user_list_push_back(edge);
                     }
                 }
                 phi->get_user_list()->clear();

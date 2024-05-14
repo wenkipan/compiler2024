@@ -34,16 +34,6 @@ public:
     void caculatepostorder();
     void update_dead_block();
     void search(BasicBlock *n);
-    void PassRun(Module *m)
-    {
-        for (auto func : *m->get_funcs())
-        {
-            if (func->get_isExternal())
-                continue;
-            DCE s;
-            s.run(func);
-        }
-    }
 };
 
 // delete unreachableblock

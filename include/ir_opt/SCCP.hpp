@@ -97,6 +97,7 @@ class SCCP
     std::queue<Edge *> cfg_worklist;
     std::queue<Edge *> ssa_worklist;
     Edge *fakeedge;
+    BasicBlock *fakeBlock;
 
 public:
     void run(Function *func);
@@ -111,16 +112,6 @@ public:
     void print();
     void do_sccp_drop_unexecuted_blocks();
     Lattice get_lattice_from_map(Value *);
-    void PassRun(Module *m)
-    {
-        for (auto func : *m->get_funcs())
-        {
-            if (func->get_isExternal())
-                continue;
-            SCCP s;
-            s.run(func);
-        }
-    }
 };
 
 // (1) Initialize the FlowWorkList to contain the edges exiting the start node of

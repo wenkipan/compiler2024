@@ -197,28 +197,20 @@ PostDomTree::PostDomTree(Function *f)
         {
             auto post_bb = blockmap.find(BB)->second;
             auto post_userbb = blockmap.find((BasicBlock *)edge->get_user())->second;
-            Edge *newedge = new Edge(post_bb, post_userbb);
-            post_bb->value_list_push_back(newedge);
-            post_userbb->user_list_push_back(newedge);
+            new Edge(post_bb, post_userbb);
         }
     }
     exit = new BasicBlock(parent);
     parent->get_blocks()->push_back(exit);
     BasicBlock *post_ret = blockmap.find(f->get_retBB())->second;
-    Edge *newedge = new Edge(post_ret, exit);
-    exit->user_list_push_back(newedge);
-    post_ret->value_list_push_back(newedge);
+    new Edge(post_ret, exit);
 
     entry = new BasicBlock(parent);
     parent->get_blocks()->push_back(entry);
     BasicBlock *post_entry = blockmap.find(f->get_entryBB())->second;
-    Edge *newedg2 = new Edge(entry, post_entry);
-    entry->value_list_push_back(newedg2);
-    post_entry->user_list_push_back(newedg2);
+    new Edge(entry, post_entry);
 
-    Edge *edge3 = new Edge(entry, exit);
-    entry->value_list_push_back(edge3);
-    exit->user_list_push_back(edge3);
+    new Edge(entry, exit);
 
     parent->set_entryBB(exit);
     pdt = new DomTree(parent);

@@ -90,7 +90,6 @@ bool SimplifyCFG::merge_single_predecessor_block()
         pred->get_user_list()->at(0)->drop(); // also dealed BB value_list
         for (auto edge : *BB->get_user_list())
         {
-            pred->get_user_list()->push_back(edge);
             edge->set_val(pred);
         }
         BB->get_user_list()->clear();
@@ -114,7 +113,7 @@ void SimplifyCFG::eliminate_single_predecessor_phi()
             if (p->get_value_list()->size() == 1)
             {
                 philist.push(p);
-                assert(p->get_user_list()->size() == 0);
+                // assert(p->get_user_list()->size() == 0);
             }
         }
     }
@@ -128,7 +127,6 @@ void SimplifyCFG::eliminate_single_predecessor_phi()
         phi->get_value_list()->at(0)->drop();
         for (auto useredge : *phi->get_user_list())
         { // v   ->  useredge->get_user()
-            v->user_list_push_back(useredge);
             useredge->set_val(v);
         }
         phi->get_user_list()->clear();

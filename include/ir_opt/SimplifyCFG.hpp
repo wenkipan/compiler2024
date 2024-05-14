@@ -1,4 +1,5 @@
 #pragma once
+#include "ir/Module.hpp"
 #include <ir/ir.hpp>
 #include <unordered_set>
 class SimplifyCFG
@@ -13,14 +14,4 @@ public:
     bool merge_single_predecessor_block();
     void eliminate_single_br_block();
     void eliminate_single_predecessor_phi();
-    void PassRun(Module *m)
-    {
-        for (auto func : *m->get_funcs())
-        {
-            if (func->get_isExternal())
-                continue;
-            SimplifyCFG s;
-            s.run(func);
-        }
-    }
 };

@@ -26,5 +26,16 @@ public:
         _pass->PassRun(p_module);
         delete _pass;
     }
+    template <typename Pass>
+    void FuncRun()
+    {
+        for (auto func : *p_module->get_funcs())
+        {
+            if (func->get_isExternal())
+                continue;
+            Pass pass;
+            pass.run(func);
+        }
+    }
     ~Manager();
 };

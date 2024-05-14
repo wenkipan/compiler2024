@@ -47,11 +47,11 @@ int main(int argc, char *argv[])
     delete p_program;
     // IR
     manager->printModule();
-    manager->printModule("O0");
     manager->run<Mem2Reg>();
-    manager->run<SimplifyCFG>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
     manager->printModule();
-    manager->printModule("O1");
 
     // 2lir
 
