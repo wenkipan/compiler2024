@@ -113,16 +113,20 @@ void Mem2Reg::analysisAlloca(Alloca *alloc)
 
 void Mem2Reg::work(Function *Func)
 {
+    std::vector<Alloca *> dropList;
     for (auto it = Allocas.begin(); it != Allocas.end(); it++)
     {
         Alloca *AI = *it;
         if (AI->get_user_list()->empty())
         {
             AI->drop();
-            it = Allocas.erase(it);
+            dropList.push_back(*it);
         }
-        analysisAlloca(AI);
+        else
+            analysisAlloca(AI);
     }
+    for (auto it : dropList)
+        Allocas.erase(it);
     std::set<BasicBlock *> PhiSet;
     std::vector<BasicBlock *> W;
     PHINode *phi;
