@@ -31,4 +31,5 @@ public:
     void analysisAlloca(Alloca *alloc);
     void work(Function *Func);
     bool run(Function *Func);
+    void PassRun(Module *p_module);
 };

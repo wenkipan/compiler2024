@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
     // IR
     manager->printModule();
     manager->printModule("O0");
-
     manager->run<Mem2Reg>();
     manager->printModule();
     manager->printModule("O1");

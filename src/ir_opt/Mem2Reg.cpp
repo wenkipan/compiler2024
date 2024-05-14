@@ -279,3 +279,13 @@ bool Mem2Reg::run(Function *Func)
     }
     return true;
 }
+
+void Mem2Reg::PassRun(Module *p_module)
+{
+    for (Function *Func : (*p_module->get_funcs()))
+    {
+        if (Func->get_isExternal())
+            continue;
+        this->run(Func);
+    }
+}

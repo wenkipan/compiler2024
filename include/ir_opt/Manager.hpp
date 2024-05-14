@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ir/ir.hpp>
 #include <ir_opt/DCE.hpp>
 #include <ir_opt/Mem2Reg.hpp>
 
@@ -20,14 +21,8 @@ public:
     void run()
     {
         Pass *_pass = new Pass;
-        for (Function *Func : (*p_module->get_funcs()))
-        {
-            if (Func->get_isExternal())
-                continue;
-            _pass->run(Func);
-        }
+        _pass->PassRun(p_module);
         delete _pass;
     }
-
     ~Manager();
 };
