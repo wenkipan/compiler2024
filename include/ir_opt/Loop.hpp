@@ -1,0 +1,119 @@
+#pragma once
+
+#include <ir/ir.hpp>
+#include <set>
+
+class NaLoop
+{
+    BasicBlock *entryBB;
+    std::set<BasicBlock *> *BBs;
+
+public:
+    NaLoop(BasicBlock *_entry);
+    ~NaLoop();
+
+    BasicBlock *get_entryBB() { return entryBB; }
+    std::set<BasicBlock *> *get_BBs() { return BBs; };
+
+    bool is_InBBs(BasicBlock *_BB);
+    void addBB(BasicBlock *_BB) { BBs->insert(_BB); }
+};
+
+class Loop
+{
+    Loop *parent = nullptr;
+    int lpDepth = 0;
+    std::set<Loop *> *lpsons;
+
+    BasicBlock *header = nullptr;
+    std::set<BasicBlock *> *BBs;
+    std::set<BasicBlock *> *nwBBs;
+    std::set<BasicBlock *> *enters;
+    std::set<BasicBlock *> *latchs;
+    std::set<BasicBlock *> *exitings;
+    std::set<BasicBlock *> *exits;
+
+    // step
+    bool is_stepSet = false;
+    bool is_timeSet = false;
+    int lpTimes = -1;
+    Value *lpPhi = nullptr;
+    Value *lpCal = nullptr;
+    Value *lpStep = nullptr;
+    Value *lpInit = nullptr;
+    Value *lpEnd = nullptr;
+    Value *lpCmp = nullptr;
+
+public:
+    Loop();
+    ~Loop();
+
+    void set_depth(int _d) { lpDepth = _d; }
+    void set_parent(Loop *_fa) { parent = _fa; }
+
+    Loop *get_parent() { return parent; }
+    int get_lpDepth() { return lpDepth; }
+    std::set<Loop *> *get_lpsons() { return lpsons; }
+
+    void set_header(BasicBlock *_header) { header = _header; }
+
+    BasicBlock *get_header() { return header; }
+    std::set<BasicBlock *> *get_BBs() { return BBs; }
+    std::set<BasicBlock *> *get_nwBBs() { return nwBBs; }
+    std::set<BasicBlock *> *get_enters() { return enters; }
+    std::set<BasicBlock *> *get_latchs() { return latchs; }
+    std::set<BasicBlock *> *get_exitings() { return exitings; }
+    std::set<BasicBlock *> *get_exits() { return exits; }
+
+    bool get_stepSet() { return is_stepSet; };
+    bool get_timeSet() { return is_timeSet; };
+    int get_lptimes() { return lpTimes; }
+    Value *get_lpPhi() { return lpPhi; }
+    Value *get_lpCal() { return lpCal; }
+    Value *get_lpStep() { return lpStep; }
+    Value *get_lpInit() { return lpInit; }
+    Value *get_lpEnd() { return lpEnd; }
+    Value *get_lpCmp() { return lpCmp; }
+};
+
+class LoopNode
+{
+    Loop *fa = nullptr;
+    int lpdepth = 0;
+
+    bool isHead = false;
+    bool isExit = false;
+    bool isEntry = false;
+    bool isLatch = false;
+    bool isExiting = false;
+
+public:
+    void add_depth() { lpdepth++; }
+    void set_depth(int _d) { lpdepth = _d; }
+    void set_loop(Loop *_loop) { fa = _loop; }
+
+    Loop *get_loop() { return fa; }
+    int get_depth() { return lpdepth; }
+    bool is_head() { return isHead; }
+    bool is_exit() { return isExit; }
+    bool is_entry() { return isEntry; }
+    bool is_latch() { return isLatch; }
+    bool is_exiting() { return isExiting; }
+};
+
+class Loop_Analysis
+{
+    std::unordered_map<Function *, Loop *> *LoopInfo;
+    std::unordered_map<BasicBlock *, LoopNode *> *BBmap;
+
+public:
+    Loop_Analysis();
+    ~Loop_Analysis();
+
+    void buildnest(Loop *nwloop, int nwlevel, std::unordered_map<BasicBlock *, Loop *> &_map);
+    void FuncAnalysis(Function *p_func);
+    void PassRun(Module *p_module);
+
+    std::unordered_map<Function *, Loop *> *get_LoopInfo() { return LoopInfo; }
+    std::unordered_map<BasicBlock *, LoopNode *> *get_BBmap() { return BBmap; }
+};

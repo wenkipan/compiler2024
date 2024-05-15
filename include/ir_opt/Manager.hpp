@@ -2,6 +2,7 @@
 
 #include <ir/ir.hpp>
 #include <ir_opt/DCE.hpp>
+#include <ir_opt/Loop.hpp>
 #include <ir_opt/Mem2Reg.hpp>
 #include <ir_opt/SCCP.hpp>
 #include <ir_opt/DCE.hpp>
