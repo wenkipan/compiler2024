@@ -622,7 +622,9 @@ void PHINode::print()
     int num = valueMap->size();
     for (auto it : *valueMap)
     {
-        printf(" [ %%%d, %%b%d]", it.second->get_ID(), it.first->get_ID());
+        printf(" [ ");
+        it.second->print_ID();
+        printf(", %%b%d]", it.first->get_ID());
         num--;
         if (num)
             printf(",");
