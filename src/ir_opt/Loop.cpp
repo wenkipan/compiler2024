@@ -3,6 +3,13 @@
 #include <iostream>
 #include <stack>
 
+bool Loop::is_simple()
+{
+    if (latchs->size() == 1 && exitings->size() == 1)
+        return true;
+    return false;
+}
+
 bool NaLoop::is_InBBs(BasicBlock *_BB)
 {
     if (BBs->find(_BB) != BBs->end())
@@ -57,6 +64,45 @@ void _lpprint(Loop *nwloop)
         printf("Depth %d. fa header b%d\n", nwloop->get_lpDepth(), nwloop->get_parent()->get_header()->get_ID());
     for (Loop *_son : (*nwloop->get_lpsons()))
         _lpprint(_son);
+}
+
+static inline void _loopBBssAdd(Loop *nwloop, BasicBlock *BB, BasicBlock *nwBB)
+{
+    if (BB == nwloop->get_header())
+        nwloop->get_latchs()->insert(nwBB);
+    else if (nwloop->get_BBs()->find(BB) == nwloop->get_BBs()->end())
+        nwloop->get_exitings()->insert(nwBB), nwloop->get_exits()->insert(BB);
+}
+
+void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
+{
+
+    for (Loop *_son : (*nwloop->get_lpsons()))
+        loop_BBsAdd(_son);
+    if (!nwloop->get_lpDepth())
+        return;
+    for (auto *_edge : (*nwloop->get_header()->get_value_list()))
+    {
+        BasicBlock *p_BB = (BasicBlock *)_edge->get_val();
+        nwloop->get_enters()->insert(p_BB);
+    }
+    for (BasicBlock *_BB : (*nwloop->get_nwBBs()))
+    {
+        Instrution *p_branch = _BB->get_last_instrution();
+        switch (p_branch->get_Instrtype())
+        {
+        case InstrutionEnum::Jmp:
+            _loopBBssAdd(nwloop, ((Jmp *)p_branch)->get_nextBB(), _BB);
+            break;
+        case InstrutionEnum::Branch:
+            _loopBBssAdd(nwloop, ((Branch *)p_branch)->get_trueBB(), _BB);
+            _loopBBssAdd(nwloop, ((Branch *)p_branch)->get_falseBB(), _BB);
+            break;
+        default:
+            assert(0);
+            break;
+        }
+    }
 }
 
 void Loop_Analysis::FuncAnalysis(Function *p_func)
@@ -129,6 +175,7 @@ void Loop_Analysis::FuncAnalysis(Function *p_func)
     }
     LoopInfo->insert({p_func, lproot});
     std::cout << p_func->get_name() << std::endl;
+    loop_BBsAdd(lproot);
     _lpprint(lproot);
 }
 

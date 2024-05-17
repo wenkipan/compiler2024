@@ -26,6 +26,7 @@ class Loop
     std::set<Loop *> *lpsons;
 
     BasicBlock *header = nullptr;
+    BasicBlock *prevHeader = nullptr;
     std::set<BasicBlock *> *BBs;
     std::set<BasicBlock *> *nwBBs;
     std::set<BasicBlock *> *enters;
@@ -50,10 +51,20 @@ public:
 
     void set_depth(int _d) { lpDepth = _d; }
     void set_parent(Loop *_fa) { parent = _fa; }
+    void set_ifStep(bool _val) { is_stepSet = _val; }
+    void set_ifTimes(bool _val) { is_timeSet = _val; }
+    void set_Times(int _num) { lpTimes = _num; }
+    void set_lpPhi(Value *_val) { lpPhi = _val; }
+    void set_lpCal(Value *_val) { lpCal = _val; }
+    void set_lpStep(Value *_val) { lpStep = _val; }
+    void set_lpInit(Value *_val) { lpInit = _val; }
+    void set_lpEnd(Value *_val) { lpEnd = _val; }
+    void set_lpCmp(Value *_val) { lpCmp = _val; }
 
     Loop *get_parent() { return parent; }
     int get_lpDepth() { return lpDepth; }
     std::set<Loop *> *get_lpsons() { return lpsons; }
+    bool is_simple();
 
     void set_header(BasicBlock *_header) { header = _header; }
 
@@ -110,6 +121,7 @@ public:
     Loop_Analysis();
     ~Loop_Analysis();
 
+    void loop_BBsAdd(Loop *nwloop);
     void buildnest(Loop *nwloop, int nwlevel, std::unordered_map<BasicBlock *, Loop *> &_map);
     void FuncAnalysis(Function *p_func);
     void PassRun(Module *p_module);
