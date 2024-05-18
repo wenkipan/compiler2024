@@ -34,12 +34,12 @@ public:
         is_i = 1;
         i = _i;
     }
-    Lattice(Lat _lat, int _is_i, float f)
+    Lattice(Lat _lat, int _is_i, float _f)
     {
         lat = _lat;
         assert(!_is_i);
         is_i = 0;
-        i = f;
+        f = _f;
     }
     // Lattice &operator=(const Lattice &a)
     // {

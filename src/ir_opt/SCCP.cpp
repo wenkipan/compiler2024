@@ -173,6 +173,13 @@ void SCCP::do_sccp()
                 instr->get_user_list()->clear();
                 break;
             case Lattice::Lat::NAC:
+                if (is_a<Assign>(instr))
+                {
+                    edges = *instr->get_user_list();
+                    for (auto edge : edges)
+                        edge->set_val(instr->get_value_list()->at(0)->get_val());
+                    instr->get_user_list()->clear();
+                }
                 break;
             default:
                 assert(0);
