@@ -6,9 +6,9 @@ bool SimplifyCFG::run(Function *f)
     function = f;
     bool deal = false;
     elimate_no_predesessor_block();
-    deal = deal | merge_single_predecessor_block();
-    // eliminate_single_br_block();
     eliminate_single_predecessor_phi();
+    // eliminate_single_br_block();
+    deal = deal | merge_single_predecessor_block();
     return deal;
 }
 void SimplifyCFG::elimate_no_predesessor_block()
@@ -82,6 +82,7 @@ bool SimplifyCFG::merge_single_predecessor_block()
             BasicBlock *succ = (BasicBlock *)succedge->get_user();
             for (auto succphi : *succ->get_phinodes())
             {
+                // succphi->print();
                 succphi->get_valueMap()->emplace(pred, succphi->get_valueMap()->find(BB)->second);
                 succphi->get_valueMap()->erase(BB);
             }

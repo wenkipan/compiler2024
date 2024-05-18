@@ -65,7 +65,7 @@ void SCCP::run(Function *func)
             }
         }
     }
-    delete fakeedge;
+    fakeedge->drop();
     delete fakeBlock;
     // print();
     do_sccp();
@@ -158,6 +158,7 @@ void SCCP::do_sccp()
                     for (auto edge : edges)
                     {
                         edge->set_val(consti);
+                        // edge->get_user()->print();
                     }
                 }
                 else
@@ -251,11 +252,15 @@ void SCCP::do_sccp_drop_unexecuted_blocks()
                 if (condlattice.i)
                 {
                     assert(executed_edge_map.find(edges[1])->second == false);
+                    for (auto phi : *falsebb->get_phinodes())
+                        phi->eraseIncoming(BB);
                     new Jmp((BasicBlock *)truebb, BB);
                 }
                 else
                 {
                     assert(executed_edge_map.find(edges[0])->second == false);
+                    for (auto phi : *truebb->get_phinodes())
+                        phi->eraseIncoming(BB);
                     new Jmp((BasicBlock *)falsebb, BB);
                 }
                 break;
@@ -309,7 +314,7 @@ void SCCP::visit_phi(PHINode *phi)
         if (executed_block_map[bb] == false)
             continue;
 
-        Lattice lat_for_value = get_lattice_from_map(kv.second);
+        Lattice lat_for_value = get_lattice_from_map(kv.second->get_val());
         tmp.phi_insersect(tmp, lat_for_value);
     }
     if (is_lat_lower(latticemap.find(phi)->second.lat, tmp.lat))

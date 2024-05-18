@@ -54,6 +54,15 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
+    printf("SCCP begin\n");
+    manager->FuncRun<SCCP>();
+    manager->printModule();
+    printf("DCE begin\n");
+    manager->FuncRun<DCE>();
+    manager->printModule();
+    manager->FuncRun<SimplifyCFG>();
+    // manager->run<Loop_Analysis>();
+    manager->printModule();
     manager->printModule("O1");
 
     // 2lir

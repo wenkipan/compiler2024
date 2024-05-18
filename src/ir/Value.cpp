@@ -1,3 +1,4 @@
+#include "ir/Instrution.hpp"
 #include <ir/Value.hpp>
 #include <algorithm>
 #include <ir/Edge.hpp>
@@ -111,6 +112,13 @@ void Value::drop()
     for (Edge *edge : *user_list)
     {
         assert(edge->get_val() == this);
+        if (is_a<PHINode>(edge->get_user()))
+            for (auto &kv : *((PHINode *)edge->get_user())->get_valueMap())
+                if (kv.second == edge)
+                {
+                    ((PHINode *)edge->get_user())->get_valueMap()->erase(kv.first);
+                    break;
+                }
         auto tmp = edge->get_user()->get_value_list();
         tmp->erase(remove(tmp->begin(), tmp->end(), edge), tmp->end());
         delete edge;

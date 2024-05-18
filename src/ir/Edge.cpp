@@ -1,3 +1,4 @@
+#include "ir/BasicBlock.hpp"
 #include <ir/Instrution.hpp>
 #include <ir/Edge.hpp>
 #include <algorithm>
@@ -10,6 +11,16 @@ Edge::Edge(Value *_user, Value *_val)
 }
 void Edge::drop()
 {
+    // maintain phi valuemap
+    if (is_a<PHINode>(user))
+    {
+        for (auto &kv : *((PHINode *)user)->get_valueMap())
+            if (kv.second == this)
+            {
+                ((PHINode *)user)->get_valueMap()->erase(kv.first);
+                break;
+            }
+    }
     auto tmp = value->get_user_list();
     tmp->erase(remove(tmp->begin(), tmp->end(), this), tmp->end());
 
@@ -31,21 +42,20 @@ void Edge::set_user(Value *RepVal)
     user = RepVal;
     if (is_a<PHINode>(user))
     {
-        assert(is_a<Instrution>(this->value));
-        ((PHINode *)user)->get_valueMap()->emplace(((Instrution *)this->value)->get_parent(), this->value);
+        assert(0);
     }
     user->value_list_push_back(this);
 }
 void Edge::set_val(Value *RepVal)
 {
-    if (is_a<PHINode>(user))
-    {
-        for (auto kv : *((PHINode *)user)->get_valueMap())
-        {
-            if (kv.second == this->value)
-                kv.second = RepVal;
-        }
-    }
+    // if (is_a<PHINode>(user))
+    // {
+    //     for (auto &kv : *((PHINode *)user)->get_valueMap())
+    //     {
+    //         if (kv.second == this->value)
+    //             kv.second = this;
+    //     }
+    // }
     value = RepVal;
     value->user_list_push_back(this);
 }

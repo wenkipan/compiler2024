@@ -604,14 +604,22 @@ void PHINode::addIncoming(Value *val, BasicBlock *BB)
     // Edge *edge = new Edge(this, val);
     // this->value_list_push_back(edge);
     // val->user_list_push_back(edge);
-    new Edge(this, val);
-    valueMap->insert({BB, val});
+    Edge *t = new Edge(this, val);
+    valueMap->insert({BB, t});
 }
-
+void PHINode::eraseIncoming(BasicBlock *BB)
+{
+    for (auto &kv : *valueMap)
+        if (kv.first == BB)
+        {
+            kv.second->drop();
+            break;
+        }
+}
 PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush)
     : Instrution(_BB, InstrutionEnum::PHINode, basic_type, notPush)
 {
-    valueMap = new std::unordered_map<BasicBlock *, Value *>();
+    valueMap = new std::unordered_map<BasicBlock *, Edge *>();
 }
 
 void PHINode::print()
@@ -623,7 +631,7 @@ void PHINode::print()
     for (auto it : *valueMap)
     {
         printf(" [ ");
-        it.second->print_ID();
+        it.second->get_val()->print_ID();
         printf(", %%b%d]", it.first->get_ID());
         num--;
         if (num)

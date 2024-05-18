@@ -134,13 +134,14 @@ public:
 };
 class PHINode : public Instrution
 {
-    std::unordered_map<BasicBlock *, Value *> *valueMap;
+    std::unordered_map<BasicBlock *, Edge *> *valueMap;
 
 public:
     PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush);
-    std::unordered_map<BasicBlock *, Value *> *get_valueMap() { return valueMap; }
+    std::unordered_map<BasicBlock *, Edge *> *get_valueMap() { return valueMap; }
     ~PHINode();
     void addIncoming(Value *val, BasicBlock *BB);
+    void eraseIncoming(BasicBlock *BB);
     void print();
     void drop();
 };

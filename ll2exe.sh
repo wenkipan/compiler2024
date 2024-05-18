@@ -15,8 +15,8 @@ function process_files {
 
             # 将 .ll 文件转换为 .bc 文件
            # script -c "llvm-as $file -o $output_file"  
-           echo "Processing file: $file" 1>>error.log
-           llvm-as "$file" -o "$output_file" 1>>error.log 2>>error.log
+            echo "Processing file: $file" 1>>error.log
+            llvm-as "$file" -o "$output_file" 1>>error.log 2>>error.log
 
             output_file1="${output_file%.bc}.s" 
 

@@ -27,23 +27,9 @@ void BasicBlock::drop()
     for (auto instr : *instrutions)
         instr->drop();
     // erase succBB phi income
-    for (auto succedge : *this->get_user_list())
-    {
-        BasicBlock *succ = (BasicBlock *)succedge->get_user();
+    for (auto succ : successors(this))
         for (auto phi : *succ->get_phinodes())
-        {
-            Value *phiincome = phi->get_valueMap()->find(this)->second;
-            for (auto i : *phi->get_value_list())
-            {
-                if (i->get_val() == phiincome)
-                {
-                    i->drop();
-                    break;
-                }
-            }
-            phi->get_valueMap()->erase(this);
-        }
-    }
+            phi->eraseIncoming(this);
     //  erase from cfg(value drop)
     Value::drop();
     delete this;
