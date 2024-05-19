@@ -84,7 +84,8 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
     for (auto *_edge : (*nwloop->get_header()->get_value_list()))
     {
         BasicBlock *p_BB = (BasicBlock *)_edge->get_val();
-        nwloop->get_enters()->insert(p_BB);
+        if (nwloop->get_BBs()->find(p_BB) == nwloop->get_BBs()->end())
+            nwloop->get_enters()->insert(p_BB);
     }
     for (BasicBlock *_BB : (*nwloop->get_nwBBs()))
     {
@@ -103,6 +104,27 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
             break;
         }
     }
+    return;
+    printf("HEAD b%d:", nwloop->get_header()->get_ID());
+    printf("\nenters: ");
+    for (BasicBlock *_BB : *nwloop->get_enters())
+        printf("b%d, ", _BB->get_ID());
+    printf("\nBBs: ");
+    for (BasicBlock *_BB : *nwloop->get_BBs())
+        printf("b%d, ", _BB->get_ID());
+    printf("\nnwBBs: ");
+    for (BasicBlock *_BB : *nwloop->get_nwBBs())
+        printf("b%d, ", _BB->get_ID());
+    printf("\nlatchs: ");
+    for (BasicBlock *_BB : *nwloop->get_latchs())
+        printf("b%d, ", _BB->get_ID());
+    printf("\nexitings: ");
+    for (BasicBlock *_BB : *nwloop->get_exitings())
+        printf("b%d, ", _BB->get_ID());
+    printf("\nexits: ");
+    for (BasicBlock *_BB : *nwloop->get_exits())
+        printf("b%d, ", _BB->get_ID());
+    putchar('\n');
 }
 
 void Loop_Analysis::FuncAnalysis(Function *p_func)

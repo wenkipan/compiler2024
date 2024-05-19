@@ -26,7 +26,6 @@ class Loop
     std::set<Loop *> *lpsons;
 
     BasicBlock *header = nullptr;
-    BasicBlock *prevHeader = nullptr;
     std::set<BasicBlock *> *BBs;
     std::set<BasicBlock *> *nwBBs;
     std::set<BasicBlock *> *enters;
