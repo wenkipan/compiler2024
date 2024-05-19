@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
     manager->printModule();
     //  manager->printModule("O0");
     manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
     manager->printModule();
