@@ -9,6 +9,15 @@ Edge::Edge(Value *_user, Value *_val)
     value->user_list_push_back(this);
     user->value_list_push_back(this);
 }
+
+void Edge::reset_user(Value *_user)
+{
+    std::vector<Edge *> *_edges = this->user->get_value_list();
+    _edges->erase(remove(_edges->begin(), _edges->end(), this), _edges->end());
+    this->user = _user;
+    _user->value_list_push_back(this);
+}
+
 void Edge::drop()
 {
     // maintain phi valuemap

@@ -15,5 +15,8 @@ public:
     void set_val(Value *RepVal);
     void set_user(Value *RepUser);
     void drop();
+
+    void reset_user(Value *_user);
+
     friend void drop_all_edges(std::queue<Edge *> q);
 };

@@ -2,6 +2,58 @@
 #include <ir_opt/DomTree.hpp>
 #include <iostream>
 #include <stack>
+#include <algorithm>
+
+void Loop::createPrevHeader(Loop *loop)
+{
+    BasicBlock *header = loop->get_header();
+    BasicBlock *prev = header->get_func()->block_addnewBB();
+    std::set<BasicBlock *> *_enters = loop->get_enters();
+    for (auto _phi : *header->get_phinodes())
+    {
+        std::unordered_map<BasicBlock *, Edge *> *_map = _phi->get_valueMap();
+        PHINode *newPhi = new PHINode(prev, _phi->get_type()->get_type(), true);
+        prev->Insert_Phi(newPhi);
+        std::queue<std::pair<Edge *, BasicBlock *>> edges;
+        for (auto it : *_map)
+        {
+            if (loop->get_BBs()->find(it.first) != loop->get_BBs()->end())
+                continue;
+            edges.push(std::make_pair(it.second, it.first));
+        }
+        while (!edges.empty())
+        {
+            newPhi->addIncoming(edges.front().first->get_val(), edges.front().second);
+            edges.front().first->drop();
+            edges.pop();
+        }
+        _phi->addIncoming(newPhi, prev);
+    }
+    std::vector<Edge *> *_edges;
+    for (BasicBlock *BB : *_enters)
+    {
+        Instrution *p_branch = BB->get_last_instrution();
+        switch (p_branch->get_Instrtype())
+        {
+        case InstrutionEnum::Jmp:
+        case InstrutionEnum::Branch:
+            _edges = header->get_value_list();
+            for (auto it : *_edges)
+            {
+                if (it->get_val() != BB)
+                    continue;
+                it->reset_user(prev);
+                break;
+            }
+            break;
+        default:
+            assert(0);
+            break;
+        }
+    }
+    prev->Set_jmp(header);
+    loop->set_prevHead(prev);
+}
 
 bool Loop::is_simple()
 {
@@ -104,6 +156,7 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
             break;
         }
     }
+    nwloop->createPrevHeader(nwloop);
     return;
     printf("HEAD b%d:", nwloop->get_header()->get_ID());
     printf("\nenters: ");

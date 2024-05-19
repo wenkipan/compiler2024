@@ -26,6 +26,7 @@ class Loop
     std::set<Loop *> *lpsons;
 
     BasicBlock *header = nullptr;
+    BasicBlock *prevHeader = nullptr;
     std::set<BasicBlock *> *BBs;
     std::set<BasicBlock *> *nwBBs;
     std::set<BasicBlock *> *enters;
@@ -48,6 +49,9 @@ public:
     Loop();
     ~Loop();
 
+    void createPrevHeader(Loop *loop);
+
+    void set_prevHead(BasicBlock *_BB) { prevHeader = _BB; }
     void set_depth(int _d) { lpDepth = _d; }
     void set_parent(Loop *_fa) { parent = _fa; }
     void set_ifStep(bool _val) { is_stepSet = _val; }
@@ -68,6 +72,7 @@ public:
     void set_header(BasicBlock *_header) { header = _header; }
 
     BasicBlock *get_header() { return header; }
+    BasicBlock *get_prev() { return prevHeader; }
     std::set<BasicBlock *> *get_BBs() { return BBs; }
     std::set<BasicBlock *> *get_nwBBs() { return nwBBs; }
     std::set<BasicBlock *> *get_enters() { return enters; }
