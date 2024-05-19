@@ -303,11 +303,13 @@ Value *GenFunction::ast2ir_exp_call_gen(p_ast_exp p_exp)
     {
         p_ast_param p_param = list_entry(p_node, ast_param, node);
         Value *p_op = ast2ir_exp_gen(p_param->p_exp);
+        /*
         if (p_param->is_stck_ptr)
         {
             new Unary(InstrutionEnum::AddSP, p_op, curBB);
             curBB->Ins_popBack();
         }
+        */
         ((Call *)p_instr)->params_pushback(p_op);
     }
     curBB->Ins_pushBack((Instrution *)p_instr);
