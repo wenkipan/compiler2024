@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     manager->run<GlobalVariableopt>();
     manager->printModule();
     manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
     manager->printModule();
@@ -57,6 +58,7 @@ int main(int argc, char *argv[])
     manager->FuncRun<SCCP>();
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
+    manager->run<LCSSA>();
     manager->printModule();
     // manager->run<Loop_Analysis>();
     manager->FuncRun<GVN>();
