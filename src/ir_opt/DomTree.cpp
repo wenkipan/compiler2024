@@ -95,6 +95,13 @@ DomTreeNode *DomTree::Query_uni(DomTreeNode *u)
     return u->uni = res;
 }
 
+void DomTree::make_deep(DomTreeNode *u, int dep)
+{
+    u->deep = dep;
+    for (auto v : *(u->idoms))
+        make_deep(v, dep + 1);
+}
+
 void DomTree::MakeDom()
 {
     BasicBlock *enter = parent->get_entryBB();
@@ -138,6 +145,7 @@ void DomTree::MakeDom()
         for (DomTreeNode *v : *(u->doms))
             f->doms->insert(v);
     }
+    make_deep(get_DomTreeNode(parent->get_entryBB()), 1);
 }
 
 BasicBlock *DomTree::get_idom(BasicBlock *BB)
@@ -145,6 +153,11 @@ BasicBlock *DomTree::get_idom(BasicBlock *BB)
     if (BB_map_Dom->find(BB)->second->Idom == nullptr)
         return nullptr;
     return BB_map_Dom->find(BB)->second->Idom->parent;
+}
+
+int DomTree::get_deep(BasicBlock *BB)
+{
+    return get_DomTreeNode(BB)->deep;
 }
 
 bool DomTree::is_dom(BasicBlock *A, BasicBlock *B)

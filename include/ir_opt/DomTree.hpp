@@ -18,7 +18,7 @@ class DomTreeNode
     DomTreeNode *uni;
     DomTreeNode *mn;
     std::vector<DomTreeNode *> *sdom_graph;
-    int dfn;
+    int dfn, deep;
 
 public:
     DomTreeNode(BasicBlock *BB);
@@ -36,6 +36,7 @@ class DomTree
     Function *parent;
     std::vector<DomTreeNode *> *order;
     int timer;
+    void make_deep(DomTreeNode *u, int dep);
 
 public:
     DomTree(Function *Func);
@@ -52,6 +53,7 @@ public:
     void dfs(DomTreeNode *u);
     DomTreeNode *Query_uni(DomTreeNode *u);
     BasicBlock *get_idom(BasicBlock *BB);
+    int get_deep(BasicBlock *BB);
     bool is_dom(BasicBlock *A, BasicBlock *B);
     int get_dfn(BasicBlock *BB) { return get_DomTreeNode(BB)->dfn; }
     void get_DF();
