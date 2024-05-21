@@ -4,11 +4,19 @@
 #include <stack>
 #include <algorithm>
 
+static void _insertPrevHeader(BasicBlock *BB, Loop *loop)
+{
+    if (loop == nullptr || loop->get_header() == nullptr)
+        return;
+    loop->get_BBs()->insert(BB);
+    _insertPrevHeader(BB, loop->get_parent());
+}
+
 void Loop::createPrevHeader(Loop *loop)
 {
     BasicBlock *header = loop->get_header();
     BasicBlock *prev = header->get_func()->block_addnewBB();
-    std::set<BasicBlock *> *_enters = loop->get_enters();
+    std::vector<Edge *> *_Edges = header->get_value_list();
     for (auto _phi : *header->get_phinodes())
     {
         std::unordered_map<BasicBlock *, Edge *> *_map = _phi->get_valueMap();
@@ -29,9 +37,13 @@ void Loop::createPrevHeader(Loop *loop)
         }
         _phi->addIncoming(newPhi, prev);
     }
+
     std::vector<Edge *> *_edges;
-    for (BasicBlock *BB : *_enters)
+    for (auto it : *_Edges)
     {
+        BasicBlock *BB = (BasicBlock *)(it->get_val());
+        if (loop->get_BBs()->find(BB) != loop->get_BBs()->end())
+            continue;
         Instrution *p_branch = BB->get_last_instrution();
         switch (p_branch->get_Instrtype())
         {
@@ -53,6 +65,10 @@ void Loop::createPrevHeader(Loop *loop)
     }
     prev->Set_jmp(header);
     loop->set_prevHead(prev);
+    Loop *_fa = loop->get_parent();
+    _fa->get_nwBBs()->insert(prev);
+    _fa->get_BBs()->insert(prev);
+    _insertPrevHeader(prev, _fa->get_parent());
 }
 
 bool Loop::is_simple()
@@ -139,6 +155,7 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
         if (nwloop->get_BBs()->find(p_BB) == nwloop->get_BBs()->end())
             nwloop->get_enters()->insert(p_BB);
     }
+    nwloop->createPrevHeader(nwloop);
     for (BasicBlock *_BB : (*nwloop->get_nwBBs()))
     {
         Instrution *p_branch = _BB->get_last_instrution();
@@ -156,8 +173,11 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
             break;
         }
     }
-    nwloop->createPrevHeader(nwloop);
-    return;
+    LoopNode *newNode = new LoopNode();
+    newNode->set_loop(nwloop->get_parent());
+    newNode->set_depth(nwloop->get_parent()->get_lpDepth());
+    BBmap->insert({nwloop->get_prev(), newNode});
+    // return;
     printf("HEAD b%d:", nwloop->get_header()->get_ID());
     printf("\nenters: ");
     for (BasicBlock *_BB : *nwloop->get_enters())
