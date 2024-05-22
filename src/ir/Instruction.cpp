@@ -69,15 +69,23 @@ void Instrution::insertInstr(BasicBlock *_BB, int pos)
 {
     std::vector<Instrution *> *_instrs = this->get_parent()->get_instrutions();
     if (_instrs->back() == this)
+    {
         _instrs->pop_back();
+        if (_BB == parent)
+            pos--;
+    }
     else
     {
+        int p = 0;
         for (auto it = _instrs->begin(); it != _instrs->end(); it++)
             if (*it == this)
             {
                 _instrs->erase(it);
                 break;
+                p++;
             }
+        if (pos > p && _BB == parent)
+            pos--;
     }
     this->parent = _BB;
     _instrs = _BB->get_instrutions();
