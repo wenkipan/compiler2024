@@ -16,7 +16,7 @@ void Loop::createPrevHeader(Loop *loop)
 {
     BasicBlock *header = loop->get_header();
     BasicBlock *prev = header->get_func()->block_addnewBB();
-    std::vector<Edge *> *_Edges = header->get_value_list();
+
     for (auto _phi : *header->get_phinodes())
     {
         std::unordered_map<BasicBlock *, Edge *> *_map = _phi->get_valueMap();
@@ -38,31 +38,22 @@ void Loop::createPrevHeader(Loop *loop)
         _phi->addIncoming(newPhi, prev);
     }
 
-    std::vector<Edge *> *_edges;
-    for (auto it : *_Edges)
+    bool flag = true;
+    while (flag)
     {
-        BasicBlock *BB = (BasicBlock *)(it->get_val());
-        if (loop->get_BBs()->find(BB) != loop->get_BBs()->end())
-            continue;
-        Instrution *p_branch = BB->get_last_instrution();
-        switch (p_branch->get_Instrtype())
+        flag = false;
+        std::vector<Edge *> *_Edges = header->get_value_list();
+        for (auto it : *_Edges)
         {
-        case InstrutionEnum::Jmp:
-        case InstrutionEnum::Branch:
-            _edges = header->get_value_list();
-            for (auto it : *_edges)
-            {
-                if (it->get_val() != BB)
-                    continue;
-                it->reset_user(prev);
-                break;
-            }
-            break;
-        default:
-            assert(0);
+            BasicBlock *BB = (BasicBlock *)(it->get_val());
+            if (loop->get_BBs()->find(BB) != loop->get_BBs()->end())
+                continue;
+            it->reset_user(prev);
+            flag = true;
             break;
         }
     }
+
     prev->Set_jmp(header);
     loop->set_prevHead(prev);
     Loop *_fa = loop->get_parent();
@@ -149,13 +140,13 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
         loop_BBsAdd(_son);
     if (!nwloop->get_lpDepth())
         return;
+    nwloop->createPrevHeader(nwloop);
     for (auto *_edge : (*nwloop->get_header()->get_value_list()))
     {
         BasicBlock *p_BB = (BasicBlock *)_edge->get_val();
         if (nwloop->get_BBs()->find(p_BB) == nwloop->get_BBs()->end())
             nwloop->get_enters()->insert(p_BB);
     }
-    nwloop->createPrevHeader(nwloop);
     for (BasicBlock *_BB : (*nwloop->get_nwBBs()))
     {
         Instrution *p_branch = _BB->get_last_instrution();
