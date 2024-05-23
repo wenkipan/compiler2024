@@ -68,6 +68,7 @@ public:
     int get_lpDepth() { return lpDepth; }
     std::set<Loop *> *get_lpsons() { return lpsons; }
     bool is_simple();
+    bool is_BBinLoop(BasicBlock *_BB);
 
     void set_header(BasicBlock *_header) { header = _header; }
 

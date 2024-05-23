@@ -69,6 +69,13 @@ bool Loop::is_simple()
     return false;
 }
 
+bool Loop::is_BBinLoop(BasicBlock *_BB)
+{
+    if (BBs->find(_BB) == BBs->end())
+        return false;
+    return true;
+}
+
 bool NaLoop::is_InBBs(BasicBlock *_BB)
 {
     if (BBs->find(_BB) != BBs->end())
@@ -188,6 +195,7 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
     printf("\nexits: ");
     for (BasicBlock *_BB : *nwloop->get_exits())
         printf("b%d, ", _BB->get_ID());
+    putchar('\n');
     putchar('\n');
 }
 
