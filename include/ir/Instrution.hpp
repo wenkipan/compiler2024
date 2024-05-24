@@ -138,6 +138,7 @@ class PHINode : public Instrution
 public:
     PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush);
     std::unordered_map<BasicBlock *, Edge *> *get_valueMap() { return valueMap; }
+    BasicBlock *get_edge_income_block(Edge *);
     ~PHINode();
     void addIncoming(Value *val, BasicBlock *BB);
     void eraseIncoming(BasicBlock *BB);
@@ -220,6 +221,7 @@ public:
     Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
     Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }
 
+    bool isCond();
     void print();
 };
 class Binary : public Instrution

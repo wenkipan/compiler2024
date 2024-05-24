@@ -6,6 +6,7 @@ bool SimplifyCFG::run(Function *f)
     function = f;
     bool deal = false;
     elimate_no_predesessor_block();
+
     eliminate_single_predecessor_phi();
     // eliminate_single_br_block();
     deal = deal | merge_single_predecessor_block();
@@ -38,6 +39,7 @@ void SimplifyCFG::elimate_no_predesessor_block()
     {
         BasicBlock *BB = worklist.front();
         worklist.pop();
+        // BB->print();
         BB->drop();
     }
 }

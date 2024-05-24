@@ -8,6 +8,8 @@
 #include <ir_opt/DCE.hpp>
 #include <ir_opt/SimplifyCFG.hpp>
 #include <ir_opt/GlobalVariableopt.hpp>
+#include <ir_opt/GVN.hpp>
+#include <ir_opt/GCM.hpp>
 class Module;
 
 class Manager

@@ -49,6 +49,7 @@ DomTree::~DomTree()
 
 DomTreeNode *DomTree::get_DomTreeNode(BasicBlock *BB)
 {
+    assert(BB_map_Dom->find(BB) != BB_map_Dom->end());
     return BB_map_Dom->find(BB)->second;
 }
 

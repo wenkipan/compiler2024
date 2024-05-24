@@ -260,6 +260,16 @@ Cmp::Cmp(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
     new Edge(this, _src2);
 }
 
+bool Cmp::isCond()
+{
+    if (this->get_user_list()->size() == 1)
+    {
+        assert(is_a<Instrution>(this->get_user_list()->at(0)->get_user()));
+        if (((Instrution *)this->get_user_list()->at(0)->get_user())->isBranch())
+            return true;
+    }
+    return false;
+}
 Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
     : Instrution(_parent, type,
                  (_src1->get_type()->get_type() == TypeEnum::I1 || _src2->get_type()->get_type() == TypeEnum::I1)
@@ -626,6 +636,14 @@ PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush)
     : Instrution(_BB, InstrutionEnum::PHINode, basic_type, notPush)
 {
     valueMap = new std::unordered_map<BasicBlock *, Edge *>();
+}
+
+BasicBlock *PHINode::get_edge_income_block(Edge *e)
+{
+    for (auto kv : *valueMap)
+        if (kv.second == e)
+            return kv.first;
+    assert(0);
 }
 
 void PHINode::print()
