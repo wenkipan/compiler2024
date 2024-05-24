@@ -20,16 +20,16 @@ void BasicBlock::drop()
     // erase from function
     auto blocks = parent->get_blocks();
     blocks->erase(remove(blocks->begin(), blocks->end(), this), blocks->end());
-    // erase phi
-    for (auto phi : *phinodes)
-        phi->drop();
-    // erase its instr
-    for (auto instr : *instrutions)
-        instr->drop();
     // erase succBB phi income
     for (auto succ : successors(this))
         for (auto phi : *succ->get_phinodes())
             phi->eraseIncoming(this);
+    // erase phi
+    for (auto phi : *phinodes)
+        phi->Value::drop();
+    // erase its instr
+    for (auto instr : *instrutions)
+        instr->Value::drop();
     //  erase from cfg(value drop)
     Value::drop();
     delete this;
