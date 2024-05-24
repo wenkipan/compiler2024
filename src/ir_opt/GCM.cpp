@@ -1,6 +1,6 @@
-#include "ir_opt/Loop.hpp"
 #include "util/print_for_py.hpp"
 #include <ir_opt/GCM.hpp>
+#include <util/RPO.hpp>
 static inline int getnestdepth(BasicBlock *b, Loop_Analysis *tree)
 {
     if (tree->get_BBmap()->find(b) == tree->get_BBmap()->end())
@@ -44,7 +44,7 @@ void GCM::init(Function *func)
             printf(" %d\n", getnestdepth(BB, nesttree));
         }
         f->print();
-        print_for_py(f);
+        // print_for_py(f);
     }
 
     for (auto BB : *f->get_blocks())
@@ -60,8 +60,8 @@ void GCM::run(Function *func)
     init(func);
     if (debug)
         printf("EARLY\n");
-    init_visit_with_pinned();
     // schedule_early
+    init_visit_with_pinned();
     for (auto BB : *f->get_blocks())
     {
         for (auto instr : *BB->get_instrs())
@@ -71,6 +71,8 @@ void GCM::run(Function *func)
                     if (is_a<Instrution>(valedge->get_val()))
                         schedule_early((Instrution *)valedge->get_val());
                 }
+            else
+                schedule_early(instr);
         for (auto phi : *BB->get_phinodes())
             for (auto valedge : *phi->get_value_list())
             {
@@ -82,8 +84,8 @@ void GCM::run(Function *func)
     visited.clear();
     if (debug)
         printf("LATE\n");
-    init_visit_with_pinned();
     // schedule_late
+    init_visit_with_pinned();
     for (auto BB : *f->get_blocks())
     {
         for (auto instr : *BB->get_instrs())
@@ -93,6 +95,8 @@ void GCM::run(Function *func)
                     assert(is_a<Instrution>(useredge->get_user()));
                     schedule_late((Instrution *)useredge->get_user());
                 }
+            else
+                schedule_late(instr);
         for (auto phi : *BB->get_phinodes())
             for (auto useredge : *phi->get_user_list())
             {
@@ -219,7 +223,6 @@ void GCM::schedule_late(Instrution *instr)
         instr->print();
     }
     set_scheduleBB(instr, best);
-    // schedule_to_block(instr, best);
 }
 BasicBlock *GCM::find_LCA(BasicBlock *a, BasicBlock *b)
 {
@@ -252,7 +255,7 @@ void GCM::schedule_to_block(Instrution *instr, BasicBlock *b)
 void GCM::move_instr_to_best()
 {
     std::queue<Instrution *> work;
-    for (auto BB : *f->get_blocks())
+    for (auto BB : RPO(f))
         for (auto instr : *BB->get_instrs())
             if (get_scheduleBB(instr) != BB)
                 work.emplace(instr);

@@ -46,13 +46,13 @@ int main(int argc, char *argv[])
     p_program->program_variable_print();
     delete p_program;
     // IR
-    manager->printModule();
     // manager->printModule("O0");
     manager->run<GlobalVariableopt>();
     manager->printModule();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
+    manager->printModule();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<SCCP>();
     manager->FuncRun<DCE>();
@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
     // manager->run<Loop_Analysis>();
     manager->FuncRun<GVN>();
     manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
     manager->printModule();
 
     manager->FuncRun<GCM>();
@@ -69,6 +70,7 @@ int main(int argc, char *argv[])
 
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
     // 2lir
     // module->lowerIR();
     // module->print();

@@ -63,7 +63,6 @@ Value *const_fold_unary(Unary *instr)
 }
 Value *const_fold_binary(Binary *instr)
 {
-    // TODO: something like multiply 0
     Value *src1 = instr->get_src1();
     Value *src2 = instr->get_src2();
     Constant *a = nullptr;
@@ -74,13 +73,13 @@ Value *const_fold_binary(Binary *instr)
         switch (instr->get_Instrtype())
         {
         case InstrutionEnum::IADD:
-            a = new ConstantI32(i1 + i2);
+            a = new ConstantI32(i1 + i2); //+0
             break;
         case InstrutionEnum::ISUB:
-            a = new ConstantI32(i1 - i2);
+            a = new ConstantI32(i1 - i2); //-0
             break;
         case InstrutionEnum::IMUL:
-            a = new ConstantI32(i1 * i2);
+            a = new ConstantI32(i1 * i2); //*0
             break;
         case InstrutionEnum::IDIV:
             a = new ConstantI32(i1 / i2);
@@ -99,13 +98,13 @@ Value *const_fold_binary(Binary *instr)
         switch (instr->get_Instrtype())
         {
         case InstrutionEnum::FADD:
-            a = new ConstantF32(f1 + f2);
+            a = new ConstantF32(f1 + f2); //+0
             break;
         case InstrutionEnum::FSUB:
-            a = new ConstantF32(f1 - f2);
+            a = new ConstantF32(f1 - f2); //-0
             break;
         case InstrutionEnum::FMUL:
-            a = new ConstantF32(f1 * f2);
+            a = new ConstantF32(f1 * f2); //*0
             break;
         case InstrutionEnum::FDIV:
             a = new ConstantF32(f1 / f2);
