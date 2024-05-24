@@ -11,6 +11,7 @@
 #include <ir_opt/GVN.hpp>
 #include <ir_opt/GCM.hpp>
 #include <ir_opt/SCEV.hpp>
+#include <ir_opt/loopVarReduce.hpp>
 
 class Manager
 {

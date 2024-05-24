@@ -39,7 +39,7 @@ std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
         {InstrutionEnum::FGE, "fcmp oge"},
         {InstrutionEnum::AddSP, "SP +"}};
 
-void Instrution::replaceInstr(BasicBlock *_BB, int pos)
+void Instrution::replaceInstr(BasicBlock *_BB, int pos) // 适用新建在末尾的指令使用或者非相同块的指令替换，否则迭代器失效
 {
     std::vector<Instrution *> *_instrs = this->get_parent()->get_instrutions();
     if (_instrs->back() == this)

@@ -446,9 +446,8 @@ void SCEV::LoopSCEVGen(Loop *lproot)
 
 void SCEV::PassRun(Module *_module)
 {
-    Loop_Analysis *_Loop = new Loop_Analysis();
+    _Loop = new Loop_Analysis();
     _Loop->PassRun(_module);
-    _module->print();
     for (Function *p_func : *_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())
@@ -456,7 +455,6 @@ void SCEV::PassRun(Module *_module)
         LoopSCEVGen(_Loop->get_LoopInfo()->find(p_func)->second);
     }
     print();
-    delete _Loop;
 }
 
 SCEVEXP::SCEVEXP()
@@ -478,5 +476,6 @@ SCEV::~SCEV()
 {
     for (auto it : *SCEVMAP)
         delete it.second;
+    delete _Loop;
     delete SCEVMAP;
 }

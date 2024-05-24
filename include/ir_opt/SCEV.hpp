@@ -30,6 +30,7 @@ class SCEV
 {
 public:
     std::unordered_map<Value *, SCEVEXP *> *SCEVMAP;
+    Loop_Analysis *_Loop = nullptr;
 
     void PassRun(Module *_module);
     void LoopSCEVGen(Loop *lproot);
