@@ -22,7 +22,7 @@ Value *const_fold(Instrution *instr)
     { // TODO: call with all-const can be folded
         return nullptr;
     }
-    else if (instr->isLoad())
+    else if (instr->isLoad() || instr->isStore())
     { // TODO: wait memryssa
         return nullptr;
     }
@@ -30,7 +30,7 @@ Value *const_fold(Instrution *instr)
     { // already done in SCCP,maybe can do this here
         return nullptr;
     }
-    else if (instr->isAlloca() || instr->isStore() || instr->isReturn() || instr->isJmp())
+    else if (instr->isAlloca() || instr->isReturn() || instr->isJmp())
     {
         return nullptr;
     }

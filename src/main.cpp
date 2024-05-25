@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
-    // manager->printModule("O1");
     // manager->run<Loop_Analysis>();
     manager->FuncRun<GVN>();
     manager->FuncRun<DCE>();
@@ -71,9 +70,10 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
-    // 2lir
-    // module->lowerIR();
-    // module->print();
+    manager->printModule("O1");
+    //  2lir
+    //  module->lowerIR();
+    //  module->print();
 
     delete manager;
     return 0;

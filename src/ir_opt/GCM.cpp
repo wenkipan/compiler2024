@@ -1,3 +1,4 @@
+#include "ir/BasicBlock.hpp"
 #include "util/print_for_py.hpp"
 #include <ir_opt/GCM.hpp>
 #include <util/RPO.hpp>
@@ -110,7 +111,7 @@ void GCM::run(Function *func)
 }
 bool GCM::ispinned(Instrution *instr)
 {
-    if (instr->isPHINode() || instr->isReturn() || instr->isBranch() || instr->isJmp())
+    if (instr->isPHINode() || instr->isReturn() || instr->isBranch() || instr->isJmp() || instr->isAlloca())
         return true;
     if (instr->isLoad() || instr->isStore()) // TODO need memery info
         return true;
@@ -254,6 +255,8 @@ void GCM::schedule_to_block(Instrution *instr, BasicBlock *b)
 }
 void GCM::move_instr_to_best()
 {
+    std::unordered_map<BasicBlock *, int> insertpos;
+
     std::queue<Instrution *> work;
     for (auto BB : RPO(f))
         for (auto instr : *BB->get_instrs())
@@ -265,7 +268,20 @@ void GCM::move_instr_to_best()
         Instrution *i = work.front();
         work.pop();
         BasicBlock *best = get_scheduleBB(i);
-        i->insertInstr(best, best->get_instrs()->size() - 1);
+        if (domtree->get_deep(i->get_parent()) < domtree->get_deep(best))
+        {
+            if (insertpos.find(best) == insertpos.end())
+                insertpos.emplace(best, 0);
+            i->insertInstr(best, insertpos[best]);
+            (insertpos[best])++;
+        }
+        else
+        {
+            if (best->get_last_instrution()->isBranch())
+                i->insertInstr(best, best->get_instrs()->size() - 2);
+            else
+                i->insertInstr(best, best->get_instrs()->size() - 1);
+        }
     }
 }
 void GCM::maintain_branch_cond()
@@ -279,6 +295,7 @@ void GCM::maintain_branch_cond()
             // BB->print();
             if (cond != instrs[instrs.size() - 2])
             {
+                assert(0);
                 assert(is_a<Instrution>(cond));
                 ((Instrution *)cond)->insertInstr(BB, instrs.size() - 1);
             }
