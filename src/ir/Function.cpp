@@ -91,7 +91,7 @@ void Function::ResetID(bool _flag)
             {
                 p_instr->reset_ID(curID - voidCnt);
                 ++curID;
-                if (p_instr->get_type()->get_type() == TypeEnum::Void)
+                if (p_instr->get_type()->get_type() == TypeEnum::Void || p_instr->get_Instrtype() == InstrutionEnum::Ret)
                     ++voidCnt;
             }
         }
