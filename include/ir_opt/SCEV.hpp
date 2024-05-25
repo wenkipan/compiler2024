@@ -32,8 +32,10 @@ public:
     std::unordered_map<Value *, SCEVEXP *> *SCEVMAP;
     Loop_Analysis *_Loop = nullptr;
 
+    void SetStep();
     void PassRun(Module *_module);
     void LoopSCEVGen(Loop *lproot);
+    void LoopSetStep(Loop *loop);
 
     std::unordered_map<Value *, SCEVEXP *> *get_map() { return SCEVMAP; }
     SCEVEXP *find_exp(Value *_val);

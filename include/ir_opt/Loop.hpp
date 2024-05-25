@@ -36,12 +36,8 @@ class Loop
 
     // step
     bool is_stepSet = false;
-    bool is_timeSet = false;
-    int lpTimes = -1;
-    Value *lpPhi = nullptr;
-    Value *lpCal = nullptr;
+    bool is_pos2 = false;
     Value *lpStep = nullptr;
-    Value *lpInit = nullptr;
     Value *lpEnd = nullptr;
     Value *lpCmp = nullptr;
 
@@ -55,12 +51,8 @@ public:
     void set_depth(int _d) { lpDepth = _d; }
     void set_parent(Loop *_fa) { parent = _fa; }
     void set_ifStep(bool _val) { is_stepSet = _val; }
-    void set_ifTimes(bool _val) { is_timeSet = _val; }
-    void set_Times(int _num) { lpTimes = _num; }
-    void set_lpPhi(Value *_val) { lpPhi = _val; }
-    void set_lpCal(Value *_val) { lpCal = _val; }
+    void set_pos2(bool _val) { is_pos2 = _val; }
     void set_lpStep(Value *_val) { lpStep = _val; }
-    void set_lpInit(Value *_val) { lpInit = _val; }
     void set_lpEnd(Value *_val) { lpEnd = _val; }
     void set_lpCmp(Value *_val) { lpCmp = _val; }
 
@@ -81,13 +73,9 @@ public:
     std::set<BasicBlock *> *get_exitings() { return exitings; }
     std::set<BasicBlock *> *get_exits() { return exits; }
 
-    bool get_stepSet() { return is_stepSet; };
-    bool get_timeSet() { return is_timeSet; };
-    int get_lptimes() { return lpTimes; }
-    Value *get_lpPhi() { return lpPhi; }
-    Value *get_lpCal() { return lpCal; }
+    bool get_stepSet() { return is_stepSet; }
+    bool get_pos() { return is_pos2; }
     Value *get_lpStep() { return lpStep; }
-    Value *get_lpInit() { return lpInit; }
     Value *get_lpEnd() { return lpEnd; }
     Value *get_lpCmp() { return lpCmp; }
 };

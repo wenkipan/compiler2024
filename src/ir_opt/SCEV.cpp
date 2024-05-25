@@ -1,5 +1,60 @@
 #include <ir_opt/SCEV.hpp>
 
+static bool inline _isInVar(Value *_val, Loop *loop)
+{
+    if (is_a<Constant>(_val) || loop->get_BBs()->find(((Instrution *)_val)->get_parent()) == loop->get_BBs()->end())
+        return true;
+    return false;
+}
+
+void SCEV::LoopSetStep(Loop *loop)
+{
+    for (Loop *_son : (*loop->get_lpsons()))
+        LoopSetStep(_son);
+    if (!loop->get_lpDepth())
+        return;
+    if (!loop->is_simple())
+        return;
+
+    BasicBlock *_latch = (*loop->get_latchs()->begin());
+    BasicBlock *_exiting = (*loop->get_exitings()->begin());
+    assert(_latch && _exiting);
+    Branch *p_branch = nullptr;
+    assert((p_branch = dynamic_cast<Branch *>(_exiting->get_last_instrution())));
+    Cmp *p_cmp = nullptr;
+    assert((p_cmp = dynamic_cast<Cmp *>(p_branch->get_cond())));
+    SCEVEXP *p_exp = nullptr;
+    if (_isInVar(p_cmp->get_src1(), loop) && (p_exp = find_exp(p_cmp->get_src2())) != nullptr)
+    {
+        loop->set_pos2(true);
+        loop->set_lpStep(p_cmp->get_src2());
+        loop->set_lpEnd(p_cmp->get_src1());
+    }
+    else if ((p_exp = find_exp(p_cmp->get_src1())) != nullptr && _isInVar(p_cmp->get_src2(), loop))
+    {
+        loop->set_lpStep(p_cmp->get_src1());
+        loop->set_lpEnd(p_cmp->get_src2());
+    }
+    else
+        return;
+    loop->set_ifStep(true);
+    loop->set_lpCmp(p_cmp);
+    return;
+    putchar('\n');
+    p_cmp->print();
+    printf("   ");
+    p_exp->print();
+    putchar('\n');
+}
+
+void SCEV::SetStep()
+{
+    printf("loopStep\n");
+    for (auto it : (*_Loop->get_LoopInfo()))
+        LoopSetStep(it.second);
+    printf("loopStep Finish\n");
+}
+
 void SCEVEXP::print()
 {
     int cnt = 0;
@@ -41,13 +96,6 @@ void SCEV::print()
         it.second->print();
         putchar('\n');
     }
-}
-
-static bool inline _isInVar(Value *_val, Loop *loop)
-{
-    if (is_a<Constant>(_val) || loop->get_BBs()->find(((Instrution *)_val)->get_parent()) == loop->get_BBs()->end())
-        return true;
-    return false;
 }
 
 SCEVEXP *SCEV::find_exp(Value *_val)
@@ -454,6 +502,7 @@ void SCEV::PassRun(Module *_module)
             continue;
         LoopSCEVGen(_Loop->get_LoopInfo()->find(p_func)->second);
     }
+    SetStep();
     print();
 }
 
