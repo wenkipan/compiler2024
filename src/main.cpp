@@ -57,6 +57,9 @@ int main(int argc, char *argv[])
     manager->printModule();
     manager->run<Loop_Analysis>();
     manager->printModule();
+    manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
+
     manager->printModule("O1");
     // 2lir
 

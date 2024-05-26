@@ -12,6 +12,6 @@ public:
     bool run(Function *f);
     void elimate_no_predesessor_block();
     bool merge_single_predecessor_block();
-    void eliminate_single_br_block();
+    void eliminate_single_br_block(Function *f);
     void eliminate_single_predecessor_phi();
 };

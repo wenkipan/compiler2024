@@ -1,5 +1,6 @@
-#include "ir/BasicBlock.hpp"
 #include <ir_opt/SimplifyCFG.hpp>
+#include <system_error>
+#include <unordered_map>
 
 bool SimplifyCFG::run(Function *f)
 {
@@ -7,7 +8,7 @@ bool SimplifyCFG::run(Function *f)
     bool deal = false;
     elimate_no_predesessor_block();
     eliminate_single_predecessor_phi();
-    // eliminate_single_br_block();
+    // eliminate_single_br_block(f);
     deal = deal | merge_single_predecessor_block();
     return deal;
 }
@@ -102,8 +103,68 @@ bool SimplifyCFG::merge_single_predecessor_block()
     }
     return flag;
 }
-void SimplifyCFG::eliminate_single_br_block()
+void SimplifyCFG::eliminate_single_br_block(Function *f)
 {
+    std::queue<BasicBlock *> work;
+    for (auto BB : *f->get_blocks())
+    {
+        auto instrs = *BB->get_instrs();
+        if (instrs.size() == 1 && instrs[0]->isJmp())
+        {
+            assert(BB->get_user_list()->size() == 1);
+            work.emplace(BB);
+        }
+    }
+    // change to the pre head queue you created
+    while (!work.empty())
+    {
+        BasicBlock *BB = work.front();
+        work.pop();
+        BasicBlock *succ = (BasicBlock *)BB->get_user_list()->at(0)->get_user();
+        // for total empty BB
+        if (BB->get_phinodes()->size() == 0)
+        {
+            for (auto preedge : *BB->get_value_list())
+            {
+                preedge->set_user(succ);
+                for (auto succphi : *succ->get_phinodes())
+                {
+                    auto it = succphi->get_valueMap()->find(BB);
+                    if (it != succphi->get_valueMap()->end())
+                    {
+                        succphi->addIncoming(it->second->get_val(), (BasicBlock *)preedge->get_val());
+                    }
+                }
+            }
+            BB->get_value_list()->clear();
+            BB->drop();
+            continue;
+        }
+
+        std::unordered_map<PHINode *, PHINode *> pair;
+        for (auto BBphi : *BB->get_phinodes())
+            if (BBphi->get_user_list()->size() == 1) // for loop anay it can be assert
+                for (auto succphi : *succ->get_phinodes())
+                    if (BBphi->get_user_list()->at(0)->get_user() == succphi)
+                    {
+                        pair.emplace(succphi, BBphi);
+                        break;
+                    }
+        if (pair.size() == BB->get_phinodes()->size())
+        {
+            for (auto succphi : *succ->get_phinodes()) // add preBB income to succphi
+            {
+                auto it = pair.find(succphi);
+                assert(it != pair.end());
+                for (auto &kv : *it->second->get_valueMap())
+                    succphi->addIncoming(kv.second->get_val(), kv.first);
+            }
+            for (auto preedge : *BB->get_value_list()) // change preBB br target
+                preedge->set_user(succ);
+            BB->get_value_list()->clear();
+            BB->drop();
+        }
+    }
 }
 void SimplifyCFG::eliminate_single_predecessor_phi()
 {
