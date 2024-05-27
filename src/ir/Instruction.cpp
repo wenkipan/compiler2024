@@ -3,7 +3,6 @@
 #include <ir/Constant.hpp>
 #include <iostream>
 #include <vector>
-#include <algorithm>
 
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{
@@ -153,6 +152,11 @@ Alloca::Alloca(BasicBlock *_parent, TypeEnum type)
 
 Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
     : Instrution(_perant, InstrutionEnum::Alloca, p_var)
+{
+}
+
+Alloca::Alloca(BasicBlock *_parent, Type *_type)
+    : Instrution(_parent, InstrutionEnum::Alloca, _type, false)
 {
 }
 

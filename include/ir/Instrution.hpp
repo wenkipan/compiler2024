@@ -2,7 +2,6 @@
 
 #include <ir/User.hpp>
 #include <unordered_map>
-#include <queue>
 
 class BasicBlock;
 
@@ -208,6 +207,7 @@ class Alloca : public Instrution
 public:
     Alloca(BasicBlock *_perant, p_symbol_var p_var);
     Alloca(BasicBlock *_parent, TypeEnum type);
+    Alloca(BasicBlock *_parent, Type *_type);
 
     void print();
 };
