@@ -68,11 +68,34 @@ void SCEV::LoopSetStep(Loop *loop)
     assert((p_branch = dynamic_cast<Branch *>(_exiting->get_last_instrution())));
     Cmp *p_cmp = nullptr;
     assert((p_cmp = dynamic_cast<Cmp *>(p_branch->get_cond())));
+    int cmpType = 0;
+
+    switch (p_cmp->get_Instype())
+    {
+    case InstrutionEnum::IGT:
+    case InstrutionEnum::FGT:
+        cmpType = 0;
+        break;
+    case InstrutionEnum::IGE:
+    case InstrutionEnum::FGE:
+        cmpType = 1;
+        break;
+    case InstrutionEnum::ILT:
+    case InstrutionEnum::FLT:
+        cmpType = 2;
+        break;
+    case InstrutionEnum::ILE:
+    case InstrutionEnum::FLE:
+        cmpType = 3;
+        break;
+    default:
+        return;
+    }
     SCEVEXP *p_exp = nullptr;
     if (_isInVar(p_cmp->get_src1(), loop) && (p_exp = find_exp(p_cmp->get_src2())) != nullptr)
     {
 
-        loop->set_pos2(true);
+        cmpType = (cmpType + 2) % 4;
         loop->set_lpStep(_getPhi(p_cmp->get_src2()));
         loop->set_lpEnd(p_cmp->get_src1());
     }
@@ -83,9 +106,14 @@ void SCEV::LoopSetStep(Loop *loop)
     }
     else
         return;
+
+    if (!(*p_exp->get_dims())[2].empty() || !(*p_exp->get_dims())[3].empty() || !(*p_exp->get_dims())[4].empty())
+        return;
+
     loop->set_ifStep(true);
     loop->set_lpCmp(p_cmp);
-    // return;
+    loop->set_cmpType(cmpType);
+    return;
     putchar('\n');
     p_cmp->print();
     printf("   ");
@@ -271,8 +299,12 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
             _scev = new SCEVEXP();
             for (int i = 0; i < 4; ++i)
                 (*_scev->get_dims())[i] = dims[i];
-            for (auto it : dims[1])
-                (*_scev->get_dims())[0].emplace_back(it);
+            for (int i = 1; i < 4; ++i)
+            {
+                for (auto it : dims[i])
+                    (*_scev->get_dims())[i - 1].emplace_back(it);
+            }
+
             _this->get_map()->insert({p_instr, _scev});
             break;
         default:
@@ -404,6 +436,7 @@ void SCEV::LoopSCEVGen(Loop *lproot)
         // target = _PHIAnalysis(lproot, this);
         target = target | PHIAnalysis(lproot, this);
         std::set<BasicBlock *> *_BBs = lproot->get_nwBBs();
+        BasicBlock *_fa = nullptr;
         for (BasicBlock *_BB : *_BBs)
         {
             std::vector<Instrution *> *instrs = _BB->get_instrutions();
@@ -428,6 +461,9 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                         flag = false;
                     if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && _isInVar(p_instr->get_src2(), lproot))
                     {
+                        _fa = ((Instrution *)p_instr->get_src1())->get_parent();
+                        if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -441,6 +477,9 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     }
                     else if (_isInVar(p_instr->get_src1(), lproot) && (p_exp = find_exp(p_instr->get_src2())) != nullptr)
                     {
+                        _fa = ((Instrution *)p_instr->get_src2())->get_parent();
+                        if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -549,6 +588,7 @@ void SCEV::PassRun(Module *_module)
         LoopSCEVGen(_Loop->get_LoopInfo()->find(p_func)->second);
     }
     SetStep();
+    _module->print();
     print();
 }
 

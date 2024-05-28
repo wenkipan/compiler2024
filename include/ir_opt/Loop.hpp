@@ -35,11 +35,13 @@ class Loop
     std::set<BasicBlock *> *exits;
 
     // step
-    bool is_stepSet = false;
-    bool is_pos2 = false;
+    bool _is_stepSet = false;
+    int _cmpType;
     Value *lpStep = nullptr;
     Value *lpEnd = nullptr;
     Value *lpCmp = nullptr;
+    Value *_step1 = nullptr;
+    Value *_step2 = nullptr;
 
 public:
     Loop();
@@ -50,11 +52,12 @@ public:
     void set_prevHead(BasicBlock *_BB) { prevHeader = _BB; }
     void set_depth(int _d) { lpDepth = _d; }
     void set_parent(Loop *_fa) { parent = _fa; }
-    void set_ifStep(bool _val) { is_stepSet = _val; }
-    void set_pos2(bool _val) { is_pos2 = _val; }
+    void set_ifStep(bool _val) { _is_stepSet = _val; }
+    void set_cmpType(int _x) { _cmpType = _x; }
     void set_lpStep(Value *_val) { lpStep = _val; }
     void set_lpEnd(Value *_val) { lpEnd = _val; }
     void set_lpCmp(Value *_val) { lpCmp = _val; }
+    void set_calSetp(Value *_val1, Value *_val2) { _step1 = _val1, _step2 = _val2; }
 
     Loop *get_parent() { return parent; }
     int get_lpDepth() { return lpDepth; }
@@ -73,11 +76,12 @@ public:
     std::set<BasicBlock *> *get_exitings() { return exitings; }
     std::set<BasicBlock *> *get_exits() { return exits; }
 
-    bool get_stepSet() { return is_stepSet; }
-    bool get_pos() { return is_pos2; }
+    bool is_stepSet() { return _is_stepSet; }
+    int get_cmpType() { return _cmpType; }
     Value *get_lpStep() { return lpStep; }
     Value *get_lpEnd() { return lpEnd; }
     Value *get_lpCmp() { return lpCmp; }
+    Value *get_calStep(bool _flag) { return _flag ? _step2 : _step1; }
 };
 
 class LoopNode
