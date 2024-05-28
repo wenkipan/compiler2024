@@ -15,6 +15,7 @@ public:
     ~GlobalVariable() override;
 
     bool check_const() { return is_const; }
+    Constant *get_init() { return init; }
 
     void print() override;
     void llvm_print();

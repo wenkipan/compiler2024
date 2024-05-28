@@ -23,6 +23,7 @@ public:
     void llvm_print(Type *_type) override;
 
     std::vector<int> get_i32() { return i32; }
+    int get_i32_at(int pos);
 };
 
 class ConstantF32 : public Constant
@@ -38,6 +39,7 @@ public:
     void llvm_print(Type *_type) override;
 
     std::vector<float> get_f32() { return f32; }
+    float get_f32_at(int pos);
 };
 
 class ConstantStr : public Constant

@@ -30,7 +30,7 @@ public:
     bool isStr();
     bool isI32();
     bool isF32();
-    bool isArray();
+    bool isArray() { return type == TypeEnum::Array; }
 
     TypeEnum get_type();
 

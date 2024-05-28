@@ -67,25 +67,19 @@ void Instrution::replaceInstr(BasicBlock *_BB, int pos)
 void Instrution::insertInstr(BasicBlock *_BB, int pos)
 {
     std::vector<Instrution *> *_instrs = this->get_parent()->get_instrutions();
-    if (_instrs->back() == this)
+
+    int p = 0;
+    for (auto it = _instrs->begin(); it != _instrs->end(); it++, p++)
     {
-        _instrs->pop_back();
-        if (_BB == parent)
-            pos--;
+        if (*it == this)
+        {
+            _instrs->erase(it);
+            break;
+        }
     }
-    else
-    {
-        int p = 0;
-        for (auto it = _instrs->begin(); it != _instrs->end(); it++)
-            if (*it == this)
-            {
-                _instrs->erase(it);
-                break;
-                p++;
-            }
-        if (pos > p && _BB == parent)
-            pos--;
-    }
+    if (pos >= p && _BB == parent)
+        pos--;
+
     this->parent = _BB;
     _instrs = _BB->get_instrutions();
     _instrs->insert(_instrs->begin() + pos, this);

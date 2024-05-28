@@ -53,12 +53,14 @@ int main(int argc, char *argv[])
     manager->run<Mem2Reg>();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
+    manager->FuncRun<SCCP>();
+    manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
     manager->run<Loop_Analysis>();
     manager->printModule();
-    manager->printModule("O1");
-    // 2lir
+    // manager->printModule("O1");
+    //  2lir
 
     // module->lowerIR();
     // module->print();

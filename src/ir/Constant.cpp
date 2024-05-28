@@ -16,6 +16,11 @@ ConstantI32::ConstantI32(I32CONST_t _I32)
     : Constant(TypeEnum::I32), i32(1, _I32)
 {
 }
+int ConstantI32::get_i32_at(int pos)
+{
+    assert(pos < i32.size() && pos >= 0);
+    return i32[pos];
+}
 
 ConstantF32::ConstantF32(p_symbol_init p_init)
     : Constant(TypeEnum::Array)
@@ -27,6 +32,11 @@ ConstantF32::ConstantF32(p_symbol_init p_init)
 ConstantF32::ConstantF32(F32CONST_t _F32)
     : Constant(TypeEnum::F32), f32(1, _F32)
 {
+}
+float ConstantF32::get_f32_at(int pos)
+{
+    assert(pos < f32.size() && pos >= 0);
+    return f32[pos];
 }
 
 ConstantStr::ConstantStr(const char *_str)

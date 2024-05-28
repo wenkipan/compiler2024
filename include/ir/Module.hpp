@@ -27,6 +27,7 @@ public:
     void lowerIR();
 
     std::vector<Function *> *get_funcs();
+    std::vector<GlobalVariable *> *get_globals() { return global_variables; }
 
     void GenerSet();
 
