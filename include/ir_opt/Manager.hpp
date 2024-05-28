@@ -7,6 +7,7 @@
 #include <ir_opt/SCCP.hpp>
 #include <ir_opt/DCE.hpp>
 #include <ir_opt/SimplifyCFG.hpp>
+#include <ir_opt/GlobalVariableopt.hpp>
 class Module;
 
 class Manager
