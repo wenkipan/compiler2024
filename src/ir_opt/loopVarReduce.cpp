@@ -25,89 +25,22 @@ void loopVarReduce::Reduce(Loop *loop, DomTree &_domtree)
             if (!(*dims)[2].empty() || !(*dims)[3].empty() || !(*dims)[4].empty())
                 continue;
             assert(!(*dims)[0].empty());
-            Value *src1 = nullptr;
+            Instrution *p_branch = prevBB->get_last_instrution();
+            prevBB->Ins_popBack();
+            Value *src1 = p_exp->get_scr(0, prevBB);
+            Value *src2 = p_exp->get_scr(1, prevBB);
+            assert(src1->get_type()->get_type() == src2->get_type()->get_type());
             int flag = 0;
-            if ((*dims)[0][0].first->get_type()->get_type() == TypeEnum::I32)
-                src1 = new ConstantI32(0), flag = 0;
-            else if ((*dims)[0][0].first->get_type()->get_type() == TypeEnum::F32)
-                src1 = new ConstantF32(0.0), flag = 5;
-            else
-                assert(0);
-            _BB->get_func()->value_pushBack(src1);
-            Instrution *p_branch = nullptr;
-            Instrution *p_instr = nullptr;
-            for (auto &i : (*dims)[0])
-            {
-
-                switch (i.second)
-                {
-                case SCEVType::ADD:
-                    p_branch = prevBB->get_last_instrution();
-                    prevBB->get_instrs()->pop_back();
-                    p_instr = new Binary((InstrutionEnum)(24 + flag), src1, i.first, prevBB);
-                    prevBB->get_instrs()->emplace_back(p_branch);
-                    break;
-                case SCEVType::SUB:
-                    p_branch = prevBB->get_last_instrution();
-                    prevBB->get_instrs()->pop_back();
-                    p_instr = new Binary((InstrutionEnum)(25 + flag), src1, i.first, prevBB);
-                    prevBB->get_instrs()->emplace_back(p_branch);
-                    break;
-                case SCEVType::MUL:
-                    p_branch = prevBB->get_last_instrution();
-                    prevBB->get_instrs()->pop_back();
-                    p_instr = new Binary((InstrutionEnum)(26 + flag), src1, i.first, prevBB);
-                    prevBB->get_instrs()->emplace_back(p_branch);
-                    break;
-                default:
-                    break;
-                }
-                src1 = (Value *)p_instr;
-            }
-            Value *src2 = nullptr;
-            assert((*dims)[0][0].first->get_type()->get_type() == (*dims)[1][0].first->get_type()->get_type());
-            if ((*dims)[1][0].first->get_type()->get_type() == TypeEnum::I32)
-                src2 = new ConstantI32(0);
-            else if ((*dims)[1][0].first->get_type()->get_type() == TypeEnum::F32)
-                src2 = new ConstantF32(0.0);
-            else
-                assert(0);
-            _BB->get_func()->value_pushBack(src2);
-            for (auto &i : (*dims)[1])
-            {
-
-                switch (i.second)
-                {
-                case SCEVType::ADD:
-                    p_branch = prevBB->get_last_instrution();
-                    prevBB->get_instrs()->pop_back();
-                    p_instr = new Binary((InstrutionEnum)(24 + flag), src2, i.first, prevBB);
-                    prevBB->get_instrs()->emplace_back(p_branch);
-                    break;
-                case SCEVType::SUB:
-                    p_branch = prevBB->get_last_instrution();
-                    prevBB->get_instrs()->pop_back();
-                    p_instr = new Binary((InstrutionEnum)(25 + flag), src2, i.first, prevBB);
-                    prevBB->get_instrs()->emplace_back(p_branch);
-                    break;
-                case SCEVType::MUL:
-                    p_branch = prevBB->get_last_instrution();
-                    prevBB->get_instrs()->pop_back();
-                    p_instr = new Binary((InstrutionEnum)(26 + flag), src2, i.first, prevBB);
-                    prevBB->get_instrs()->emplace_back(p_branch);
-                    break;
-                default:
-                    break;
-                }
-                src2 = (Value *)p_instr;
-            }
+            if (src1->get_type()->get_type() == TypeEnum::F32)
+                flag = 5;
+            prevBB->Ins_pushBack(p_branch);
             PHINode *_phi = new PHINode(loop->get_header(), src1->get_type()->get_type(), true);
             _BB->Insert_Phi(_phi);
             (*instrs)[i]->replaceAllUses(_phi);
             _phi->addIncoming(src1, prevBB);
             p_branch = _latch->get_last_instrution();
             _latch->get_instrs()->pop_back();
-            p_instr = new Binary((InstrutionEnum)(24 + flag), _phi, src2, _latch);
+            Instrution *p_instr = new Binary((InstrutionEnum)(24 + flag), _phi, src2, _latch);
             _latch->get_instrs()->emplace_back(p_branch);
             _phi->addIncoming(p_instr, _latch);
         }

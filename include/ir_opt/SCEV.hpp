@@ -19,6 +19,8 @@ public:
     SCEVEXP();
     ~SCEVEXP();
 
+    Value *get_scr(int i, BasicBlock *_BB);
+
     void set_mul(bool _flag) { _mul = _flag; }
     void print();
 

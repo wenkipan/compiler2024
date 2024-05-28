@@ -1,10 +1,55 @@
 #include <ir_opt/SCEV.hpp>
 
+Value *SCEVEXP::get_scr(int i, BasicBlock *_BB)
+{
+    Value *re = nullptr;
+    int flag = 0;
+    assert(!(*dims)[i].empty());
+    if ((*dims)[i][0].first->get_type()->get_type() == TypeEnum::I32)
+        re = new ConstantI32(0), flag = 0;
+    else if ((*dims)[i][0].first->get_type()->get_type() == TypeEnum::F32)
+        re = new ConstantF32(0.0), flag = 5;
+    else
+        assert(0);
+    _BB->get_func()->value_pushBack(re);
+    Instrution *p_instr = nullptr;
+    for (auto &it : (*dims)[i])
+    {
+        switch (it.second)
+        {
+        case SCEVType::ADD:
+            p_instr = new Binary((InstrutionEnum)(24 + flag), re, it.first, _BB);
+            break;
+        case SCEVType::SUB:
+            p_instr = new Binary((InstrutionEnum)(25 + flag), re, it.first, _BB);
+            break;
+        case SCEVType::MUL:
+            p_instr = new Binary((InstrutionEnum)(26 + flag), re, it.first, _BB);
+            break;
+        default:
+            break;
+        }
+        re = (Value *)p_instr;
+    }
+    return re;
+}
+
 static bool inline _isInVar(Value *_val, Loop *loop)
 {
     if (is_a<Constant>(_val) || loop->get_BBs()->find(((Instrution *)_val)->get_parent()) == loop->get_BBs()->end())
         return true;
     return false;
+}
+
+static inline Value *_getPhi(Value *_val)
+{
+    for (auto it : (*_val->get_user_list()))
+    {
+        if (((Instrution *)it->get_user())->get_Instrtype() == InstrutionEnum::PHINode)
+            return it->get_user();
+    }
+    assert(0);
+    return nullptr;
 }
 
 void SCEV::LoopSetStep(Loop *loop)
@@ -26,24 +71,25 @@ void SCEV::LoopSetStep(Loop *loop)
     SCEVEXP *p_exp = nullptr;
     if (_isInVar(p_cmp->get_src1(), loop) && (p_exp = find_exp(p_cmp->get_src2())) != nullptr)
     {
+
         loop->set_pos2(true);
-        loop->set_lpStep(p_cmp->get_src2());
+        loop->set_lpStep(_getPhi(p_cmp->get_src2()));
         loop->set_lpEnd(p_cmp->get_src1());
     }
     else if ((p_exp = find_exp(p_cmp->get_src1())) != nullptr && _isInVar(p_cmp->get_src2(), loop))
     {
-        loop->set_lpStep(p_cmp->get_src1());
+        loop->set_lpStep(_getPhi(p_cmp->get_src1()));
         loop->set_lpEnd(p_cmp->get_src2());
     }
     else
         return;
     loop->set_ifStep(true);
     loop->set_lpCmp(p_cmp);
-    return;
+    // return;
     putchar('\n');
     p_cmp->print();
     printf("   ");
-    p_exp->print();
+    find_exp(loop->get_lpStep())->print();
     putchar('\n');
 }
 
