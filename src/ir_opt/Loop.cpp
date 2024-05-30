@@ -2,7 +2,6 @@
 #include <ir_opt/DomTree.hpp>
 #include <iostream>
 #include <stack>
-#include <algorithm>
 
 static void _insertPrevHeader(BasicBlock *BB, Loop *loop)
 {

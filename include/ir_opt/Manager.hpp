@@ -13,6 +13,7 @@
 #include <ir_opt/SCEV.hpp>
 #include <ir_opt/loopVarReduce.hpp>
 #include <ir_opt/loopVarMove.hpp>
+#include <ir_opt/loopDrop.hpp>
 
 class Manager
 {
