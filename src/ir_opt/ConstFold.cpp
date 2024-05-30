@@ -1,4 +1,7 @@
+#include "ir/Constant.hpp"
+#include "ir/Value.hpp"
 #include <ir_opt/ConstFold.hpp>
+#include <type_traits>
 
 Value *const_fold(Instrution *instr)
 {
@@ -15,7 +18,7 @@ Value *const_fold(Instrution *instr)
         return const_fold_Cmp((Cmp *)instr);
     }
     else if (instr->isGEP())
-    { // GEP can be fold but our GEP seems need loop analysis
+    { // GEP can be folded but i keep it Decompose utill opt like GVN was done
         return nullptr;
     }
     else if (instr->isCall())
@@ -61,66 +64,212 @@ Value *const_fold_unary(Unary *instr)
     instr->replaceAllUses(a);
     return a;
 }
+template <typename ConstX32, typename basic>
+static Value *get_replace_value_when_src1_const(Binary *instr)
+{
+    Value *src1 = instr->get_src1();
+    Value *src2 = instr->get_src2();
+    Value *a = nullptr;
+    basic i = ((ConstX32 *)src1)->get_32_at(0);
+    if (i == (basic)0)
+    {
+        switch (instr->get_Instrtype())
+        {
+        case InstrutionEnum::IADD: //  0+a
+        case InstrutionEnum::FADD:
+            a = src2;
+            break;
+        case InstrutionEnum::IMUL:
+        case InstrutionEnum::FMUL:
+            a = new ConstX32((basic)0); // 0*a
+            break;
+        case InstrutionEnum::IDIV:
+        case InstrutionEnum::FDIV:
+            a = new ConstX32((basic)0); // 0/a
+            break;
+        default:
+            break;
+        }
+    }
+    else if (i == (basic)1)
+    {
+        switch (instr->get_Instrtype())
+        {
+        case InstrutionEnum::IMUL: // 1*a
+        case InstrutionEnum::FMUL:
+            a = src2;
+            break;
+        default:
+            break;
+        }
+    }
+    return a;
+}
+template <typename ConstX32, typename basic>
+static Value *get_replace_value_when_src2_const(Binary *instr)
+{
+    Value *src1 = instr->get_src1();
+    Value *src2 = instr->get_src2();
+    Value *a = nullptr;
+    basic i = ((ConstX32 *)src2)->get_32_at(0);
+    if (i == (basic)0)
+    {
+        switch (instr->get_Instrtype())
+        {
+        case InstrutionEnum::IADD: // a+0
+        case InstrutionEnum::FADD:
+            a = src1;
+            break;
+        case InstrutionEnum::ISUB: // a-0
+        case InstrutionEnum::FSUB:
+            a = src1;
+            break;
+        case InstrutionEnum::IMUL: // a*0
+        case InstrutionEnum::FMUL:
+            a = new ConstX32((basic)0);
+            break;
+            break;
+        default:
+            break;
+        }
+    }
+    else if (i == (basic)1)
+    {
+        switch (instr->get_Instrtype())
+        {
+        case InstrutionEnum::IMUL: //  a*1
+        case InstrutionEnum::FMUL:
+            a = src1;
+            break;
+        case InstrutionEnum::IDIV: // a/1
+        case InstrutionEnum::FDIV:
+            a = src1;
+            break;
+        default:
+            break;
+        }
+    }
+    return a;
+}
+template <typename ConstX32, typename basic>
+static Value *get_replace_value_when_both_const(Binary *instr)
+{
+    Value *src1 = instr->get_src1();
+    Value *src2 = instr->get_src2();
+    Value *a = nullptr;
+    basic i1 = ((ConstX32 *)src1)->get_32_at(0);
+    basic i2 = ((ConstX32 *)src2)->get_32_at(0);
+    switch (instr->get_Instrtype())
+    {
+    case InstrutionEnum::IADD:
+    case InstrutionEnum::FADD:
+        a = new ConstX32(i1 + i2); // a+0 0+a
+        break;
+    case InstrutionEnum::ISUB:
+    case InstrutionEnum::FSUB:
+        a = new ConstX32(i1 - i2); // a-0
+        break;
+    case InstrutionEnum::IMUL:
+    case InstrutionEnum::FMUL:
+        a = new ConstX32(i1 * i2); // a*0 0*a 1*a a*1
+        break;
+    case InstrutionEnum::IDIV:
+    case InstrutionEnum::FDIV:
+        a = new ConstX32(i1 / i2); // a/1 ,0/a
+        break;
+    case InstrutionEnum::IMOD:
+        if (std::is_same<ConstX32, ConstantF32>::value)
+            assert(1);
+        a = new ConstX32((int)i1 % (int)i2); // warning it s risky
+        break;
+    default:
+        assert(0);
+    }
+    assert(a);
+    return a;
+}
 Value *const_fold_binary(Binary *instr)
 {
     Value *src1 = instr->get_src1();
     Value *src2 = instr->get_src2();
-    Constant *a = nullptr;
+    Value *a = nullptr;
     if (is_a<ConstantI32>(src1) && is_a<ConstantI32>(src2))
     {
-        int i1 = ((ConstantI32 *)src1)->get_i32()[0];
-        int i2 = ((ConstantI32 *)src2)->get_i32()[0];
-        switch (instr->get_Instrtype())
-        {
-        case InstrutionEnum::IADD:
-            a = new ConstantI32(i1 + i2); //+0
-            break;
-        case InstrutionEnum::ISUB:
-            a = new ConstantI32(i1 - i2); //-0
-            break;
-        case InstrutionEnum::IMUL:
-            a = new ConstantI32(i1 * i2); //*0
-            break;
-        case InstrutionEnum::IDIV:
-            a = new ConstantI32(i1 / i2);
-            break;
-        case InstrutionEnum::IMOD:
-            a = new ConstantI32(i1 % i2);
-            break;
-        default:
-            assert(0);
-        }
+        a = get_replace_value_when_both_const<ConstantI32, int>(instr);
+    }
+    else if (is_a<ConstantI32>(src1))
+    {
+        a = get_replace_value_when_src1_const<ConstantI32, int>(instr);
+    }
+    else if (is_a<ConstantI32>(src2))
+    {
+        a = get_replace_value_when_src2_const<ConstantI32, int>(instr);
     }
     else if (is_a<ConstantF32>(src1) && is_a<ConstantF32>(src2))
     {
-        float f1 = ((ConstantF32 *)src1)->get_f32()[0];
-        float f2 = ((ConstantF32 *)src2)->get_f32()[0];
-        switch (instr->get_Instrtype())
-        {
-        case InstrutionEnum::FADD:
-            a = new ConstantF32(f1 + f2); //+0
-            break;
-        case InstrutionEnum::FSUB:
-            a = new ConstantF32(f1 - f2); //-0
-            break;
-        case InstrutionEnum::FMUL:
-            a = new ConstantF32(f1 * f2); //*0
-            break;
-        case InstrutionEnum::FDIV:
-            a = new ConstantF32(f1 / f2);
-            break;
-        default:
-            assert(0);
-        }
+        a = get_replace_value_when_both_const<ConstantF32, float>(instr);
+    }
+    else if (is_a<ConstantF32>(src1))
+    {
+        a = get_replace_value_when_src1_const<ConstantF32, float>(instr);
+    }
+    else if (is_a<ConstantF32>(src2))
+    {
+        a = get_replace_value_when_src2_const<ConstantF32, float>(instr);
     }
     else
         return nullptr;
 
-    assert(a);
-    instr->get_BB()->get_func()->value_pushBack(a);
-    instr->replaceAllUses(a);
+    if (a)
+    {
+        if (is_a<Constant>(a))
+            instr->get_BB()->get_func()->value_pushBack(a);
+        instr->replaceAllUses(a);
+    }
     return a;
 }
+
+template <typename ConstX32, typename basic>
+static Constant *get_replace_value_cmp(Cmp *instr)
+{
+    Value *src1 = instr->get_src1();
+    Value *src2 = instr->get_src2();
+    Constant *a;
+    basic i1 = ((ConstX32 *)src1)->get_32_at(0);
+    basic i2 = ((ConstX32 *)src2)->get_32_at(0);
+    switch (instr->get_Instrtype())
+    {
+    case InstrutionEnum::IEQ:
+    case InstrutionEnum::FEQ:
+        a = new ConstantI32(i1 == i2);
+        break;
+    case InstrutionEnum::INEQ:
+    case InstrutionEnum::FNEQ:
+        a = new ConstantI32(i1 != i2);
+        break;
+    case InstrutionEnum::IGT:
+    case InstrutionEnum::FGT:
+        a = new ConstantI32(i1 > i2);
+        break;
+    case InstrutionEnum::IGE:
+    case InstrutionEnum::FGE:
+        a = new ConstantI32(i1 >= i2);
+        break;
+    case InstrutionEnum::ILT:
+    case InstrutionEnum::FLT:
+        a = new ConstantI32(i1 < i2);
+        break;
+    case InstrutionEnum::ILE:
+    case InstrutionEnum::FLE:
+        a = new ConstantI32(i1 <= i2);
+        break;
+    default:
+        assert(0);
+    }
+    assert(a);
+    return a;
+}
+
 Value *const_fold_Cmp(Cmp *instr)
 {
     Value *src1 = instr->get_src1();
@@ -128,64 +277,17 @@ Value *const_fold_Cmp(Cmp *instr)
     Constant *a = nullptr;
     if (is_a<ConstantI32>(src1) && is_a<ConstantI32>(src2))
     {
-        int i1 = ((ConstantI32 *)src1)->get_i32()[0];
-        int i2 = ((ConstantI32 *)src2)->get_i32()[0];
-        switch (instr->get_Instrtype())
-        {
-        case InstrutionEnum::IEQ:
-            a = new ConstantF32(i1 == i2);
-            break;
-        case InstrutionEnum::INEQ:
-            a = new ConstantF32(i1 != i2);
-            break;
-        case InstrutionEnum::IGT:
-            a = new ConstantF32(i1 > i2);
-            break;
-        case InstrutionEnum::IGE:
-            a = new ConstantF32(i1 >= i2);
-            break;
-        case InstrutionEnum::ILT:
-            a = new ConstantF32(i1 < i2);
-            break;
-        case InstrutionEnum::ILE:
-            a = new ConstantF32(i1 <= i2);
-            break;
-        default:
-            assert(0);
-        }
+        a = get_replace_value_cmp<ConstantI32, int>(instr);
     }
     else if (is_a<ConstantF32>(src1) && is_a<ConstantF32>(src2))
     {
-        int f1 = ((ConstantF32 *)src1)->get_f32()[0];
-        int f2 = ((ConstantF32 *)src2)->get_f32()[0];
-        switch (instr->get_Instrtype())
-        {
-        case InstrutionEnum::FEQ:
-            a = new ConstantF32(f1 == f2);
-            break;
-        case InstrutionEnum::FNEQ:
-            a = new ConstantF32(f1 != f2);
-            break;
-        case InstrutionEnum::FGT:
-            a = new ConstantF32(f1 > f2);
-            break;
-        case InstrutionEnum::FGE:
-            a = new ConstantF32(f1 >= f2);
-            break;
-        case InstrutionEnum::FLT:
-            a = new ConstantF32(f1 < f2);
-            break;
-        case InstrutionEnum::FLE:
-            a = new ConstantF32(f1 <= f2);
-            break;
-        default:
-            assert(0);
-        }
+        a = get_replace_value_cmp<ConstantF32, float>(instr);
     }
     else
         return nullptr;
 
     assert(a);
+    assert(is_a<Constant>(a));
     instr->get_BB()->get_func()->value_pushBack(a);
     instr->replaceAllUses(a);
     return a;

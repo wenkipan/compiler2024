@@ -29,7 +29,7 @@ static Constant *get_GV_const(GlobalVariable *gv)
         if (gv->get_init())
         {
             assert(is_a<ConstantI32>(gv->get_init()));
-            c = new ConstantI32(((ConstantI32 *)gv->get_init())->get_i32_at(0));
+            c = new ConstantI32(((ConstantI32 *)gv->get_init())->get_32_at(0));
         }
         else
             c = new ConstantI32(0);
@@ -39,7 +39,7 @@ static Constant *get_GV_const(GlobalVariable *gv)
         if (gv->get_init())
         {
             assert(is_a<ConstantF32>(gv->get_init()));
-            c = new ConstantF32(((ConstantF32 *)gv->get_init())->get_f32_at(0));
+            c = new ConstantF32(((ConstantF32 *)gv->get_init())->get_32_at(0));
         }
         else
             c = new ConstantF32(0.0);

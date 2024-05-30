@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
-
     manager->FuncRun<GCM>();
     manager->printModule();
 
