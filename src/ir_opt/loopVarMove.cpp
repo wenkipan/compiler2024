@@ -11,6 +11,8 @@ static bool inline _check(Value *p_val, Loop *loop)
         p_instr = (Instrution *)edge->get_user();
         if (!loop->is_BBinLoop(p_instr->get_parent()))
             continue;
+        if (p_instr->isCmp() && loop->get_lpCmp() == p_instr)
+            continue;
         if (p_instr->get_Instrtype() != InstrutionEnum::PHINode)
             return true;
         else if (p_instr->get_user_list()->size() != 1)
@@ -92,21 +94,19 @@ static inline void _initStep(bool &flag, Loop *loop, SCEV *scev)
 static inline void _replace(Value *_instr, Value *newInstr, Loop *loop)
 {
     std::vector<Edge *> *edges = _instr->get_user_list();
-    Edge *p_edge = nullptr;
-    int cnt = 0;
+    std::vector<Edge *> nw;
     for (Edge *edge : *edges)
     {
         if (loop->is_BBinLoop(((Instrution *)(edge->get_user()))->get_parent()))
         {
-            assert(is_a<PHINode>(edge->get_user()));
-            assert(++cnt < 2);
-            p_edge = edge;
+            nw.push_back(edge);
             continue;
         }
         edge->set_val(newInstr);
     }
     _instr->get_user_list()->clear();
-    _instr->get_user_list()->emplace_back(p_edge);
+    for (Edge *p_edge : nw)
+        _instr->get_user_list()->emplace_back(p_edge);
 }
 
 void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
@@ -135,8 +135,10 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
         SCEVEXP *p_exp = nullptr;
         for (Instrution *_instr : (*instrs))
         {
+            _instr->print();
             if ((p_exp = _scev->find_exp(_instr)) == nullptr || _check(_instr, loop))
                 continue;
+
             _initStep(init, loop, _scev);
             Value *p_step = loop->get_calStep(is_under);
             std::vector<std::vector<std::pair<Value *, SCEVType>>> *dims = p_exp->get_dims();
