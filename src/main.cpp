@@ -61,7 +61,16 @@ int main(int argc, char *argv[])
     manager->FuncRun<SCCP>();
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
-    manager->printModule("O0");
+    // manager->printModule("O0");
+    manager->printModule();
+    manager->run<loopVarReduce>();
+    manager->printModule();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->FuncRun<SCCP>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+
     manager->printModule();
     // manager->run<Loop_Analysis>();
     manager->FuncRun<GVN>();

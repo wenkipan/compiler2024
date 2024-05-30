@@ -13,6 +13,8 @@ enum class SCEVType
 class SCEVEXP
 {
     bool _mul = false;
+    bool _ifmod = false;
+    Value *_mod = nullptr;
     std::vector<std::vector<std::pair<Value *, SCEVType>>> *dims;
 
 public:
@@ -22,9 +24,12 @@ public:
     Value *get_scr(int i, BasicBlock *_BB);
 
     void set_mul(bool _flag) { _mul = _flag; }
+    void set_mod(Value *_val) { _ifmod = true, _mod = _val; }
     void print();
 
     bool is_mul() { return _mul; }
+    bool is_mod() { return _ifmod; }
+    Value *get_mod() { return _mod; }
     std::vector<std::vector<std::pair<Value *, SCEVType>>> *get_dims() { return dims; }
 };
 

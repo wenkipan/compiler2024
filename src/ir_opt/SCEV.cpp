@@ -159,6 +159,11 @@ void SCEVEXP::print()
         }
         ++cnt;
     }
+    if (_mod != nullptr)
+    {
+        printf("; mod ");
+        _mod->print_ID();
+    }
 }
 
 void SCEV::print()
@@ -205,6 +210,8 @@ void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pai
             dims[1].emplace_back(std::make_pair(_binary->get_src1(), SCEVType::ADD));
         else if ((p_exp = _this->find_exp(_binary->get_src1())) != nullptr)
         {
+            if (p_exp->is_mod())
+                flags += 3000;
             for (int i = 0; i < 4; ++i)
             {
                 dims[i + 1].insert(dims[i + 1].end(), (*p_exp->get_dims())[i].begin(), (*p_exp->get_dims())[i].end());
@@ -219,6 +226,8 @@ void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pai
             dims[1].emplace_back(std::make_pair(_binary->get_src2(), flag ? SCEVType::SUB : SCEVType::ADD));
         else if ((p_exp = _this->find_exp(_binary->get_src2())) != nullptr)
         {
+            if (p_exp->is_mod())
+                flags += 3000;
             for (int i = 0; i < 4; ++i)
             {
                 if (!flag)
@@ -233,7 +242,7 @@ void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pai
                     else if (it.second == SCEVType::SUB)
                         dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::ADD));
                     else
-                        assert(0);
+                        flags += 3000;
                 }
             }
             if (!(*p_exp->get_dims())[4].empty())
@@ -278,12 +287,22 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
         Binary *_binary = (Binary *)p_instr;
         SCEVEXP *_scev;
         int bits = 0;
+        Value *_mod = nullptr;
         std::vector<std::vector<std::pair<Value *, SCEVType>>> dims(5, std::vector<std::pair<Value *, SCEVType>>());
         for (int i = 0; i < 5; ++i)
             dims[i].clear();
         dims[0].push_back(std::make_pair(_phi->get_valueMap()->find(prev)->second->get_val(), SCEVType::ADD));
         switch (p_instr->get_Instrtype())
         {
+        case InstrutionEnum::IMOD:
+            // p_instr->print();
+            if (_isInVar(_binary->get_src2(), loop) && _this->find_exp(_binary->get_src1()) == nullptr)
+            {
+                _mod = _binary->get_src2();
+                if (!is_a<Binary>(_binary->get_src1()))
+                    break;
+                _binary = (Binary *)_binary->get_src1();
+            }
         case InstrutionEnum::IADD:
         case InstrutionEnum::ISUB:
         case InstrutionEnum::FADD:
@@ -292,11 +311,15 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
             if (!bits || bits >= 2000)
                 break;
             _scev = new SCEVEXP();
+            if (_mod != nullptr)
+                _scev->set_mod(_mod);
             for (int i = 0; i < 4; ++i)
                 (*_scev->get_dims())[i] = dims[i];
             re = true;
             _this->get_map()->insert({_phi, _scev});
             _scev = new SCEVEXP();
+            if (_mod != nullptr)
+                _scev->set_mod(_mod);
             for (int i = 0; i < 4; ++i)
                 (*_scev->get_dims())[i] = dims[i];
             for (int i = 1; i < 4; ++i)
@@ -304,7 +327,6 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
                 for (auto it : dims[i])
                     (*_scev->get_dims())[i - 1].emplace_back(it);
             }
-
             _this->get_map()->insert({p_instr, _scev});
             break;
         default:
@@ -450,6 +472,23 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                 std::vector<std::vector<std::pair<Value *, SCEVType>>> *dims = nullptr;
                 switch (_instr->get_Instrtype())
                 {
+                case InstrutionEnum::IMOD:
+                    p_instr = (Binary *)_instr;
+                    if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && _isInVar(p_instr->get_src2(), lproot))
+                    {
+                        _fa = ((Instrution *)p_instr->get_src1())->get_parent();
+                        if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                            break;
+                        target = true;
+                        _scev = new SCEVEXP();
+                        dims = _scev->get_dims();
+                        for (int i = 0; i < 5; ++i)
+                            (*dims)[i] = (*p_exp->get_dims())[i];
+                        _scev->set_mod(p_instr->get_src2());
+                        SCEVMAP->insert({_instr, _scev});
+                        _scev->set_mul(p_exp->is_mul());
+                    }
+                    break;
                 case InstrutionEnum::IADD:
                 case InstrutionEnum::ISUB:
                 case InstrutionEnum::FADD:
@@ -461,6 +500,8 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                         flag = false;
                     if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && _isInVar(p_instr->get_src2(), lproot))
                     {
+                        if (p_exp->is_mod())
+                            break;
                         _fa = ((Instrution *)p_instr->get_src1())->get_parent();
                         if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                             break;
@@ -477,6 +518,8 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     }
                     else if (_isInVar(p_instr->get_src1(), lproot) && (p_exp = find_exp(p_instr->get_src2())) != nullptr)
                     {
+                        if (p_exp->is_mod())
+                            break;
                         _fa = ((Instrution *)p_instr->get_src2())->get_parent();
                         if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                             break;
@@ -503,8 +546,10 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                         (*dims)[0].emplace_back(std::make_pair(p_instr->get_src1(), SCEVType::ADD));
                         SCEVMAP->insert({_instr, _scev});
                     }
-                    else if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && (p_exp2 = find_exp(p_instr->get_src1())) != nullptr)
+                    else if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && (p_exp2 = find_exp(p_instr->get_src2())) != nullptr)
                     {
+                        if (p_exp->is_mod() || p_exp2->is_mod())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -521,6 +566,8 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     p_instr = (Binary *)_instr;
                     if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && _isInVar(p_instr->get_src2(), lproot))
                     {
+                        if (p_exp->is_mod())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -536,6 +583,8 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     }
                     else if (_isInVar(p_instr->get_src1(), lproot) && (p_exp = find_exp(p_instr->get_src2())) != nullptr)
                     {
+                        if (p_exp->is_mod())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -553,6 +602,8 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                 case InstrutionEnum::MINUS:
                     if ((p_exp = find_exp(_instr)) == nullptr)
                         break;
+                    if (p_exp->is_mod())
+                        break;
                     _scev = new SCEVEXP();
                     dims = _scev->get_dims();
                     for (int i = 0; i < 5; ++i)
@@ -568,6 +619,7 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                         }
                     }
                     SCEVMAP->insert({_instr, _scev});
+                    _scev->set_mul(p_exp->is_mul());
                     break;
                 default:
                     break;

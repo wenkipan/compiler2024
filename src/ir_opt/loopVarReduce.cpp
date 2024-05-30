@@ -16,8 +16,7 @@ void loopVarReduce::Reduce(Loop *loop, DomTree &_domtree)
             continue;
         std::vector<Instrution *> *instrs = _BB->get_instrs();
         SCEVEXP *p_exp = nullptr;
-        int _size = instrs->size();
-        for (int i = 0; i < _size; ++i)
+        for (int i = 0; i < instrs->size(); ++i)
         {
             if ((p_exp = _SCEV->find_exp((*instrs)[i])) == nullptr || !p_exp->is_mul())
                 continue;
@@ -29,18 +28,30 @@ void loopVarReduce::Reduce(Loop *loop, DomTree &_domtree)
             prevBB->Ins_popBack();
             Value *src1 = p_exp->get_scr(0, prevBB);
             Value *src2 = p_exp->get_scr(1, prevBB);
+
             assert(src1->get_type()->get_type() == src2->get_type()->get_type());
             int flag = 0;
             if (src1->get_type()->get_type() == TypeEnum::F32)
                 flag = 5;
+            src1 = new Binary((InstrutionEnum)(25 + flag), src1, src2, prevBB);
             prevBB->Ins_pushBack(p_branch);
             PHINode *_phi = new PHINode(loop->get_header(), src1->get_type()->get_type(), true);
             _BB->Insert_Phi(_phi);
-            (*instrs)[i]->replaceAllUses(_phi);
             _phi->addIncoming(src1, prevBB);
             p_branch = _latch->get_last_instrution();
             _latch->get_instrs()->pop_back();
             Instrution *p_instr = new Binary((InstrutionEnum)(24 + flag), _phi, src2, _latch);
+            p_instr->insertInstr(loop->get_header(), 0);
+            if (_BB == loop->get_header())
+                ++i;
+            if (p_exp->is_mod())
+            {
+                p_instr = new Binary(InstrutionEnum::IMOD, p_instr, p_exp->get_mod(), _latch);
+                p_instr->insertInstr(loop->get_header(), 1);
+                if (_BB == loop->get_header())
+                    ++i;
+            }
+            (*instrs)[i]->replaceAllUses(p_instr);
             _latch->get_instrs()->emplace_back(p_branch);
             _phi->addIncoming(p_instr, _latch);
         }

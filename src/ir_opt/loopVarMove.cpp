@@ -152,7 +152,11 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
                 if (src0->get_type()->get_type() == TypeEnum::F32)
                     flag = 5;
                 Instrution *p_instr1 = new Binary((InstrutionEnum)(26 + flag), p_step, src1, prev);
+                if (p_exp->is_mod())
+                    p_instr1 = new Binary(InstrutionEnum::IMOD, p_instr1, p_exp->get_mod(), prev);
                 Instrution *p_instr2 = new Binary((InstrutionEnum)(24 + flag), p_instr1, src0, prev);
+                if (p_exp->is_mod())
+                    p_instr2 = new Binary(InstrutionEnum::IMOD, p_instr2, p_exp->get_mod(), prev);
                 _replace(_instr, p_instr2, loop);
             }
             else if ((*dims)[3].empty())
@@ -165,7 +169,11 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
                 if (src0->get_type()->get_type() == TypeEnum::F32)
                     flag = 5;
                 Instrution *p_instr1 = new Binary((InstrutionEnum)(26 + flag), p_step, src1, prev);
+                if (p_exp->is_mod())
+                    p_instr1 = new Binary(InstrutionEnum::IMOD, p_instr1, p_exp->get_mod(), prev);
                 Instrution *p_instr2 = new Binary((InstrutionEnum)(24 + flag), p_instr1, src0, prev);
+                if (p_exp->is_mod())
+                    p_instr2 = new Binary(InstrutionEnum::IMOD, p_instr2, p_exp->get_mod(), prev);
                 Value *const1 = new ConstantI32(1);
                 prev->get_func()->value_pushBack(const1);
                 Instrution *p_instr3 = new Binary((InstrutionEnum)(25 + flag), p_step, const1, prev);
@@ -173,10 +181,14 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
                 Value *const2 = new ConstantI32(2);
                 prev->get_func()->value_pushBack(const2);
                 p_instr3 = new Binary((InstrutionEnum)(27 + flag), p_instr3, const2, prev);
+                if (p_exp->is_mod())
+                    p_instr3 = new Binary(InstrutionEnum::IMOD, p_instr3, p_exp->get_mod(), prev);
                 if (flag)
                     p_instr3 = new Unary(InstrutionEnum::I2F, p_instr3, prev);
                 p_instr3 = new Binary((InstrutionEnum)(26 + flag), src2, p_instr3, prev);
                 p_instr3 = new Binary((InstrutionEnum)(24 + flag), p_instr2, p_instr3, prev);
+                if (p_exp->is_mod())
+                    p_instr3 = new Binary(InstrutionEnum::IMOD, p_instr3, p_exp->get_mod(), prev);
                 _replace(_instr, p_instr3, loop);
             }
         }
