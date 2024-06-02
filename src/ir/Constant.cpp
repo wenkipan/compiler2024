@@ -16,6 +16,10 @@ ConstantI32::ConstantI32(I32CONST_t _I32)
     : Constant(TypeEnum::I32), i32(1, _I32)
 {
 }
+ConstantI32::ConstantI32(ConstantI32 *ci32)
+    : Constant(TypeEnum::I32), i32(ci32->get_i32())
+{
+}
 int ConstantI32::get_32_at(int pos)
 {
     assert(pos < i32.size() && pos >= 0);
@@ -33,6 +37,11 @@ ConstantF32::ConstantF32(F32CONST_t _F32)
     : Constant(TypeEnum::F32), f32(1, _F32)
 {
 }
+ConstantF32::ConstantF32(ConstantF32 *cf32)
+    : Constant(TypeEnum::F32), f32(cf32->get_f32())
+{
+}
+
 float ConstantF32::get_32_at(int pos)
 {
     assert(pos < f32.size() && pos >= 0);

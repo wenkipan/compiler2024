@@ -14,6 +14,7 @@ class Param : public Value
 public:
     static int CurID;
     Param(Type *_type);
+    Param(Type *_type, bool _flag);
     ~Param();
 
     std::vector<Instrution *> *get_loads() { return loads; }
@@ -35,6 +36,7 @@ class Function : public GlobalValue
 
 public:
     Function(p_symbol_func _p_func);
+    Function(std::string _name);
     Function();
     ~Function() override;
 

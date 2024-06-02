@@ -11,6 +11,12 @@ Param::Param(Type *_type)
 {
 }
 
+Param::Param(Type *_type, bool _flag)
+    : Value(_type, _flag),
+      loads(new std::vector<Instrution *>)
+{
+}
+
 Param::~Param()
 {
     delete loads;
@@ -59,7 +65,15 @@ Function::Function(p_symbol_func _p_func)
       blocks(new std::vector<BasicBlock *>)
 {
 }
-
+Function::Function(std::string _name)
+    : GlobalValue(_name),
+      currentbblabel(0),
+      params(new std::vector<Param *>),
+      values(new std::vector<Value *>),
+      entry_block(nullptr),
+      blocks(new std::vector<BasicBlock *>)
+{
+}
 Function::Function()
     : GlobalValue(),
       currentbblabel(0),
