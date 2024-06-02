@@ -17,6 +17,7 @@ class ConstantI32 : public Constant
 public:
     ConstantI32(p_symbol_init p_init);
     ConstantI32(I32CONST_t _I32);
+    ConstantI32(ConstantI32 *ci32);
     ~ConstantI32() override;
 
     void print_ID() override;
@@ -33,6 +34,7 @@ class ConstantF32 : public Constant
 public:
     ConstantF32(p_symbol_init p_init);
     ConstantF32(F32CONST_t _F32);
+    ConstantF32(ConstantF32 *cf32);
     ~ConstantF32() override;
 
     void print_ID() override;

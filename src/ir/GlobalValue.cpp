@@ -8,6 +8,11 @@ GlobalValue::GlobalValue(p_symbol_var p_var)
 }
 GlobalValue::GlobalValue()
     : User() {}
+GlobalValue::GlobalValue(std::string _name)
+    : User()
+{
+    name = _name;
+}
 GlobalValue::GlobalValue(p_symbol_func p_func)
     : User(p_func)
 {

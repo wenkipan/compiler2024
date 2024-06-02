@@ -22,7 +22,7 @@ Value *const_fold(Instrution *instr)
         return nullptr;
     }
     else if (instr->isCall())
-    { // TODO: call with all-const can be folded
+    { // TODO: call with all-const can be folded //update: inline can do this
         return nullptr;
     }
     else if (instr->isLoad() || instr->isStore())

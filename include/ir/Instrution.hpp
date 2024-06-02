@@ -186,7 +186,7 @@ public:
     Load(Value *p_val, bool _is_stack_ptr, BasicBlock *_parent);
 
     Value *get_addr() { return (*this->get_value_list())[0]->get_val(); }
-
+    bool get_is_stack_prt() { return is_stack_ptr; }
     void print();
 };
 class Store : public Instrution // p_addr p_src

@@ -1,4 +1,5 @@
 #include "ir/Instrution.hpp"
+#include "ir/Type.hpp"
 #include <ir/Value.hpp>
 #include <algorithm>
 #include <ir/Edge.hpp>
@@ -18,10 +19,18 @@ Value::Value(TypeEnum basic_type)
     type = new Type(basic_type);
 }
 
-Value::Value(Type *_type, bool _ele) // gep and load
+Value::Value(Type *_type, bool _ele) // gep and load and param
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
+
+    if (_type->get_type() == TypeEnum::I32 || _type->get_type() == TypeEnum::F32)
+    {
+        assert(!_ele);
+        type = new Type(_type->get_type());
+        return;
+    }
+
     assert(_type->get_type() == TypeEnum::Ptr);
     Ptr *_ptr = (Ptr *)_type;
     if (!_ele)
