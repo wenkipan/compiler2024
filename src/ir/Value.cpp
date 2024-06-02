@@ -1,4 +1,5 @@
 #include "ir/Instrution.hpp"
+#include "ir/Type.hpp"
 #include <ir/Value.hpp>
 #include <algorithm>
 #include <ir/Edge.hpp>
@@ -33,6 +34,14 @@ Value::Value(Type *_type, bool _ele) // gep and load, alloca copy
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
+
+    if (_type->get_type() == TypeEnum::I32 || _type->get_type() == TypeEnum::F32)
+    {
+        assert(!_ele);
+        type = new Type(_type->get_type());
+        return;
+    }
+
     assert(_type->get_type() == TypeEnum::Ptr);
     Ptr *_ptr = (Ptr *)_type;
     if (!_ele)

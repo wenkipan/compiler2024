@@ -70,10 +70,11 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
-    manager->printModule("O1");
-    //  2lir
-    //  module->lowerIR();
-    //  module->print();
+    // manager->run<Inline>();
+    //  manager->printModule("O1");
+    //    2lir
+    //    module->lowerIR();
+    //    module->print();
 
     delete manager;
     return 0;
