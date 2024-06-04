@@ -468,6 +468,7 @@ void GEP::print()
 
 void Ret::print()
 {
+    assert(this->get_parent() == this->get_parent()->get_func()->get_retBB());
     printf("    ret ");
     std::vector<Edge *> *p_in = this->get_value_list();
     this->get_type()->print();
