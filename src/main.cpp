@@ -1,3 +1,4 @@
+#include "ir_opt/Inline.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -68,6 +69,15 @@ int main(int argc, char *argv[])
     manager->printModule();
 
     manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
+    puts("inline");
+    manager->run<Inline>();
+    manager->printModule();
+    puts("DCE");
+    manager->FuncRun<DCE>();
+    manager->printModule();
+    puts("cfg");
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
     // manager->run<Inline>();

@@ -74,7 +74,7 @@ Function *IRCopy::copy_func(Function *f)
         {
             newfunc->set_entryBB(newBB);
         }
-        else if (BB == f->get_retBB())
+        if (BB == f->get_retBB())
         {
             newfunc->set_retBB(newBB);
         }
@@ -100,7 +100,6 @@ Function *IRCopy::copy_func(Function *f)
             Value *newinstr = nullptr;
             Value *a = nullptr;
             Value *b = nullptr;
-            instr->print();
             if (instr->isAlloca())
                 newinstr = new Alloca(newBB, instr->get_type());
             else if (instr->isGEP())
@@ -158,14 +157,18 @@ Function *IRCopy::copy_func(Function *f)
             emplace_val(instr, newinstr);
         }
     }
-    for (auto param : *newfunc->get_params())
-        param->print();
-    for (auto bb : *newfunc->get_blocks())
+    if (0)
     {
-        bb->print();
+        for (auto param : *newfunc->get_params())
+            param->print();
+        printf("\n");
+        for (auto bb : *newfunc->get_blocks())
+        {
+            bb->print();
+        }
+        newfunc->get_retBB()->print();
+        puts("fdones");
     }
-    delete newfunc;
-    puts("fdones");
     dealingf = nullptr;
     return newfunc;
 }

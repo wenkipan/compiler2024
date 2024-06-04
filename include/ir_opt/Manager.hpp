@@ -10,7 +10,7 @@
 #include <ir_opt/GlobalVariableopt.hpp>
 #include <ir_opt/GVN.hpp>
 #include <ir_opt/GCM.hpp>
-// #include <ir_opt/Inline.hpp>
+#include <ir_opt/Inline.hpp>
 class Module;
 
 class Manager
