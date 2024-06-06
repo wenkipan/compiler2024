@@ -22,6 +22,12 @@ Value::Value(Type *_type, bool _ele) // gep and load
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
+    if (_type->get_type() != TypeEnum::Ptr) // add: type gen ptr
+    {
+        assert(_ele == false);
+        type = new Ptr(_type);
+        return;
+    }
     assert(_type->get_type() == TypeEnum::Ptr);
     Ptr *_ptr = (Ptr *)_type;
     if (!_ele)
