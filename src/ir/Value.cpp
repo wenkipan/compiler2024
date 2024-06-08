@@ -19,6 +19,8 @@ Value::Value(TypeEnum basic_type)
 }
 
 Value::Value(Type *_type, int is_copy)
+    : value_list(new std::vector<Edge *>),
+      user_list(new std::vector<Edge *>)
 {
     assert(is_copy == 0);
     type = new Ptr(_type);
