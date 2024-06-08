@@ -121,6 +121,15 @@ Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type
     p_func->value_pushBack((Value *)this);
 }
 
+Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, Type *_type, int is_copy)
+    : User(_type, is_copy), parent(_BB), instr_type(type)
+{
+    _BB->Ins_pushBack(this);
+    Function *p_func = _BB->get_func();
+    assert(p_func != nullptr);
+    p_func->value_pushBack((Value *)this);
+}
+
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var)
     : User(p_var), parent(_BB), instr_type(type)
 {
@@ -147,6 +156,12 @@ Alloca::Alloca(BasicBlock *_parent, TypeEnum type)
 Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
     : Instrution(_perant, InstrutionEnum::Alloca, p_var)
 {
+}
+
+Alloca::Alloca(BasicBlock *_parent, Type *_type, int is_copy)
+    : Instrution(_parent, InstrutionEnum::Alloca, _type, is_copy)
+{
+    assert(is_copy == 0);
 }
 
 Alloca::Alloca(BasicBlock *_parent, Type *_type)

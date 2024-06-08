@@ -18,16 +18,16 @@ Value::Value(TypeEnum basic_type)
     type = new Type(basic_type);
 }
 
-Value::Value(Type *_type, bool _ele) // gep and load
+Value::Value(Type *_type, int is_copy)
+{
+    assert(is_copy == 0);
+    type = new Ptr(_type);
+}
+
+Value::Value(Type *_type, bool _ele) // gep and load, alloca copy
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-    if (_type->get_type() != TypeEnum::Ptr) // add: type gen ptr
-    {
-        assert(_ele == false);
-        type = new Ptr(_type);
-        return;
-    }
     assert(_type->get_type() == TypeEnum::Ptr);
     Ptr *_ptr = (Ptr *)_type;
     if (!_ele)

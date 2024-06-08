@@ -26,6 +26,11 @@ User::User(Type *p_array, bool _ele)
 {
 }
 
+User::User(Type *p_array, int is_copy)
+    : Value(p_array, is_copy)
+{
+}
+
 User::~User()
 {
 }

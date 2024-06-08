@@ -72,6 +72,7 @@ public:
     Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type, bool notPush);
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
     Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array, bool _ele);
+    Instrution(BasicBlock *_BB, InstrutionEnum type, Type *_type, int is_copy);
     ~Instrution() override;
 
     void replaceInstr(BasicBlock *_BB, int pos);
@@ -209,6 +210,7 @@ public:
     Alloca(BasicBlock *_perant, p_symbol_var p_var);
     Alloca(BasicBlock *_parent, TypeEnum type);
     Alloca(BasicBlock *_parent, Type *_type);
+    Alloca(BasicBlock *_perant, Type *_type, int is_copy);
 
     void print();
 };
