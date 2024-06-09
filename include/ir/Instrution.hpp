@@ -96,9 +96,14 @@ public:
     bool isCmp() { return instr_type >= InstrutionEnum::CmpBegin && instr_type < InstrutionEnum::CmpEnd; }
     bool isBinary() { return instr_type >= InstrutionEnum::BinaryBegin && instr_type < InstrutionEnum::BinaryEnd; }
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
+    bool isIBinary() { return instr_type >= InstrutionEnum::IADD && instr_type <= InstrutionEnum::IMOD; }
 
     BasicBlock *get_parent() { return parent; }
     InstrutionEnum get_Instype() { return instr_type; }
+    bool is_commutative();
+    Value *get_operand_at(int pos);
+    void move_before_terminator();
+    int get_pos_of_bb();
 
     void replaceAllUses(Value *RepVal);
     virtual void drop();

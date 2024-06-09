@@ -7,7 +7,7 @@
 
 class GCM
 {
-    int debug = 1;
+    int debug = 0;
     Function *f;
     std::unordered_set<Instrution *> visited;
     BasicBlock *root;
