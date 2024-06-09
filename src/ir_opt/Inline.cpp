@@ -238,7 +238,7 @@ void Inline::do_inline(Function *caller, Function *callee)
                 // create a jmp to gen func entry
                 new Jmp(inlining->get_entryBB(), BB);
 
-                // set param as call valuelist,drop edge
+                // set param to call valuelist,change edge
                 auto itparam = inlining->get_params()->begin();
                 for (auto itVal = instr->get_value_list()->begin() + 1; itVal != instr->get_value_list()->end(); itVal++, itparam++)
                 {
@@ -254,6 +254,7 @@ void Inline::do_inline(Function *caller, Function *callee)
                 if (reti->get_value_list()->size() == 1)
                 {
                     Value *retval = reti->get_value_list()->at(0)->get_val();
+                    reti->get_value_list()->at(0)->drop();
                     instr->replaceAllUses(retval);
                 }
                 else
@@ -279,9 +280,15 @@ void Inline::do_inline(Function *caller, Function *callee)
                 // change value in inlining ,clear inlining vals
                 for (auto val : *inlining->get_Values())
                 {
-                    caller->value_pushBack(val);
+                    if (!is_a<Param>(val))
+                        caller->value_pushBack(val);
                 }
                 inlining->get_Values()->clear();
+                // delete param
+                for (auto it = inlining->get_params()->begin(); it != inlining->get_params()->end(); it++)
+                {
+                    delete (*it);
+                }
                 delete inlining;
 
                 return;

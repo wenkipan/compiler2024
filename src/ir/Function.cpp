@@ -34,7 +34,7 @@ Function::Function(p_symbol_func p_func)
     list_for_each(p_node, &p_func->param)
     {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        Param *p_param = new Param(p_var);
+        Param *p_param = (p_var);
         params->emplace_back(p_param);
         values.emplace_back(p_param);
         Value *p_vreg = new Value(p_param->get_type());

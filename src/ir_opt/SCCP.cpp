@@ -105,6 +105,7 @@ void SCCP::init()
     for (auto value : *function->get_Values())
         if (latticemap.find(value) == latticemap.end())
         {
+            // value->print();
             assert(!is_a<Param>(value));
             if (is_a<ConstantI32>(value))
             { // what about a array??

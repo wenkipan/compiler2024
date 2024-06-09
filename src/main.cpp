@@ -49,7 +49,6 @@ int main(int argc, char *argv[])
     // IR
     // manager->printModule("O0");
     manager->run<GlobalVariableopt>();
-    manager->printModule();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->printModule();
@@ -64,10 +63,7 @@ int main(int argc, char *argv[])
     manager->FuncRun<GVN>();
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
     manager->FuncRun<GCM>();
-    manager->printModule();
-
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
@@ -78,6 +74,23 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->printModule();
     puts("cfg");
+    manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
+    puts("SCCP");
+    manager->FuncRun<SCCP>();
+    manager->printModule();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
+    // manager->run<Loop_Analysis>();
+    manager->FuncRun<GVN>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
+    manager->FuncRun<GCM>();
+    manager->printModule();
+
+    manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->printModule();
     // manager->run<Inline>();

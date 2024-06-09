@@ -44,8 +44,8 @@ void GCM::init(Function *func)
             BB->print_ID();
             printf(" %d\n", getnestdepth(BB, nesttree));
         }
-        f->print();
-        // print_for_py(f);
+        // f->print();
+        //  print_for_py(f);
     }
 
     for (auto BB : *f->get_blocks())
@@ -175,8 +175,11 @@ void GCM::schedule_late(Instrution *instr)
 {
     if (visited.find(instr) != visited.end())
         return;
-    printf("222222");
-    instr->print();
+    if (debug)
+    {
+        printf("222222");
+        instr->print();
+    }
     visited.emplace(instr);
     BasicBlock *lca = nullptr;
     for (auto edge : *instr->get_user_list())
