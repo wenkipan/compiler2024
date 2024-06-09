@@ -102,6 +102,52 @@ void Instrution::removeInstr()
     this->parent = nullptr;
 }
 
+bool Instrution::is_commutative()
+{
+    if (this->get_Instrtype() == InstrutionEnum::IADD ||
+        this->get_Instrtype() == InstrutionEnum::FADD)
+        return true;
+    if (this->get_Instrtype() == InstrutionEnum::IMUL ||
+        this->get_Instrtype() == InstrutionEnum::FMUL)
+        return true;
+    // TODO:bit
+    return false;
+}
+Value *Instrution::get_operand_at(int pos)
+{
+    assert(this->get_value_list()->size() > pos);
+    return get_value_list()->at(pos)->get_val();
+}
+
+void Instrution::move_before_terminator()
+{
+    int pos = get_parent()->get_instrs()->size() - 1;
+    if (get_parent()->get_last_instrution()->isBranch())
+        pos--;
+    insertInstr(get_parent(), pos);
+}
+// include instr and phinode, plz read before use
+int Instrution::get_pos_of_bb()
+{
+    if (is_a<PHINode>(this))
+    {
+        auto vec = get_parent()->get_phinodes();
+        for (int i = 0; i < vec->size(); i++)
+        {
+            if (vec->at(i) == this)
+                return i;
+        }
+    }
+    auto vec = get_parent()->get_instrutions();
+    for (int i = 0; i < vec->size(); i++)
+    {
+        if (vec->at(i) == this)
+            return i;
+    }
+
+    assert(0);
+}
+
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type)
     : User(basic_type), parent(_BB), instr_type(type)
 {
