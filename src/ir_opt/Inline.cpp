@@ -6,7 +6,6 @@
 #include <ostream>
 #include <unordered_set>
 #include <algorithm>
-#include <vector>
 
 //
 CallGraphNode::CallGraphNode(Function *f)
@@ -20,7 +19,7 @@ CallGraphNode::CallGraphNode(Function *f)
 }
 bool CallGraph::can_inline(CallGraphNode *n)
 {
-    if (n->instr_num > 5000) // magic number dont ask me ask hujj-nb
+    if (n->instr_num > 500) // magic number dont ask me ask hujj-nb
         return false;
     if (n->recursive)
         return false;
@@ -175,7 +174,6 @@ void Inline::run(Module *m)
     //         }
     //     }
     // }
-    std::set<Function *> delelist;
     for (auto v : PO(m))
     {
         CallGraphNode *cgnode = (CallGraphNode *)v;
@@ -189,20 +187,7 @@ void Inline::run(Module *m)
                 do_inline(caller, cgnode->link_f);
                 // tmp
             }
-            delelist.emplace(cgnode->link_f);
         }
-    }
-    for (auto f : delelist)
-    {
-        for (auto it = m->get_funcs()->begin(); it != m->get_funcs()->end(); it++)
-        {
-            if (*it == f)
-            {
-                m->get_funcs()->erase(it);
-                break;
-            }
-        }
-        delete f;
     }
     delete CG;
 }
