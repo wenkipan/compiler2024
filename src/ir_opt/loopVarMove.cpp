@@ -51,6 +51,7 @@ static inline void _initStep(bool &flag, Loop *loop, SCEV *scev)
     Instrution *p_instr = nullptr;
     Constant *const1 = nullptr;
     int _type = loop->get_cmpType();
+    Value *p_offset = nullptr;
     switch (_type)
     {
     case 1:
@@ -61,7 +62,14 @@ static inline void _initStep(bool &flag, Loop *loop, SCEV *scev)
         prev->get_func()->value_pushBack(const1);
         End = new Binary(is_F32 == true ? InstrutionEnum::FSUB : InstrutionEnum::ISUB, End, const1, prev);
     case 0:
+        if (is_F32)
+            const1 = new ConstantF32(1.0);
+        else
+            const1 = new ConstantI32(1);
+        prev->get_func()->value_pushBack(const1);
+        p_offset = new Binary(is_F32 == true ? InstrutionEnum::FADD : InstrutionEnum::IADD, src1, const1, prev);
         p_instr = new Binary(is_F32 == true ? InstrutionEnum::FSUB : InstrutionEnum::ISUB, End, src0, prev);
+        p_instr = new Binary(is_F32 == true ? InstrutionEnum::FADD : InstrutionEnum::IADD, p_instr, p_offset, prev);
         p_instr = new Binary(is_F32 == true ? InstrutionEnum::FDIV : InstrutionEnum::IDIV, p_instr, src1, prev);
         break;
 
@@ -73,7 +81,14 @@ static inline void _initStep(bool &flag, Loop *loop, SCEV *scev)
         prev->get_func()->value_pushBack(const1);
         End = new Binary(is_F32 == true ? InstrutionEnum::FADD : InstrutionEnum::IADD, End, const1, prev);
     case 2:
+        if (is_F32)
+            const1 = new ConstantF32(1.0);
+        else
+            const1 = new ConstantI32(1);
+        prev->get_func()->value_pushBack(const1);
+        p_offset = new Binary(is_F32 == true ? InstrutionEnum::FSUB : InstrutionEnum::ISUB, src1, const1, prev);
         p_instr = new Binary(is_F32 == true ? InstrutionEnum::FSUB : InstrutionEnum::ISUB, End, src0, prev);
+        p_instr = new Binary(is_F32 == true ? InstrutionEnum::FADD : InstrutionEnum::IADD, p_instr, p_offset, prev);
         p_instr = new Binary(is_F32 == true ? InstrutionEnum::FDIV : InstrutionEnum::IDIV, p_instr, src1, prev);
         break;
     default:
