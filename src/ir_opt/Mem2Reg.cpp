@@ -58,8 +58,8 @@ bool Mem2Reg::rewriteSingleStoreAlloca(Alloca *alloc)
 
 bool Mem2Reg::isPromote(Alloca *alloc)
 {
-    if (dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::Ptr && dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::F32 && dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::I32)
-        return false;
+    // if (dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::F32 and dynamic_cast<Ptr *>(alloc->get_type())->get_btype()->get_type() != TypeEnum::I32)
+    //   return false;
     for (Edge *edge : *(alloc->get_user_list()))
     {
         User *user = (User *)(edge->get_user());
