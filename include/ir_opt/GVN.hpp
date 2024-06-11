@@ -4,7 +4,7 @@
 class GVN
 {
 public:
-    int is_debug = 1;
+    int is_debug = 0;
     Function *f;
     std::unordered_map<std::string, Instrution *> hashmap;
     // void init();
