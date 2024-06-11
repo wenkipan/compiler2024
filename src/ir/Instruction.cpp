@@ -509,6 +509,14 @@ void GEP::print()
     Value *p_addr = (*this->get_value_list())[0]->get_val();
     Value *p_offset = (*this->get_value_list())[1]->get_val();
     printf("    %%%d = getelementptr inbounds ", this->get_ID());
+    if (p_addr->get_type()->get_type() != TypeEnum::Ptr)
+    {
+        puts("");
+        p_addr->print();
+        puts("");
+        fflush(stdout);
+        assert(0);
+    }
     assert(p_addr->get_type()->get_type() == TypeEnum::Ptr);
     ((Ptr *)p_addr->get_type())->print_btype();
     printf(", ptr ");
