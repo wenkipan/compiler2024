@@ -11,6 +11,9 @@
 #include <ir_opt/GVN.hpp>
 #include <ir_opt/GCM.hpp>
 #include <ir_opt/LCSSA.hpp>
+#include <ir_opt/LivenessAnalysis.hpp>
+#include <ir_opt/RegisterAlloc.hpp>
+#include <ir_opt/SSARegisterAlloc.hpp>
 class Module;
 
 class Manager

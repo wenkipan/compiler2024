@@ -3,6 +3,8 @@
 void LivenessAnalysis::init()
 {
     int allocaCounter = 0;
+    Vals.clear();
+    ValueIdMap.clear();
     for (auto arg : *(parent->get_params()))
     {
         Value *val = dynamic_cast<Value *>(arg);
@@ -14,19 +16,27 @@ void LivenessAnalysis::init()
         for (auto ins : *(bb->get_instrutions()))
         {
             Value *val = dynamic_cast<Value *>(ins);
-            if (val->get_type()->get_type() != TypeEnum::Void)
+            if (val->get_type()->get_type() != TypeEnum::Void && !dynamic_cast<Alloca *>(ins))
             {
                 ValueIdMap[val] = allocaCounter++;
                 Vals.push_back(val);
             }
         }
     }
+    InSet.clear();
+    OutSet.clear();
+    DefSet.clear();
+    UseSet.clear();
+    InDis.clear();
+    OutDis.clear();
     for (auto bb : BBs)
     {
         InSet.insert(std::make_pair(bb, bit_vector(allocaCounter)));
         OutSet.insert(std::make_pair(bb, bit_vector(allocaCounter)));
         DefSet.insert(std::make_pair(bb, bit_vector(allocaCounter)));
         UseSet.insert(std::make_pair(bb, bit_vector(allocaCounter)));
+        InDis.insert(std::make_pair(bb, std::vector<int>(allocaCounter, INF)));
+        OutDis.insert(std::make_pair(bb, std::vector<int>(allocaCounter, INF)));
     }
 }
 
@@ -37,9 +47,24 @@ bool LivenessAnalysis::work_BB(BasicBlock *bb)
     {
         BasicBlock *v = dynamic_cast<BasicBlock *>(edge->get_user());
         OutSet[bb] = (OutSet[bb] | InSet[v]);
+        for (int i = 0; i < Vals.size(); i++)
+            OutDis[bb][i] = std::min(OutDis[bb][i], InDis[v][i]);
     }
     bit_vector tmp = InSet[bb];
     InSet[bb] = UseSet[bb] | (OutSet[bb] & ~DefSet[bb]);
+    for (int i = 0; i < Vals.size(); i++)
+        InDis[bb][i] = OutDis[bb][i] + bb->get_instrs()->size();
+    for (int i = 0; i < bb->get_instrs()->size(); i++)
+    {
+        for (Edge *edge : *(bb->get_instrs()->at(i)->get_value_list()))
+        {
+            Value *val = edge->get_val();
+            if (ValueIdMap.find(val) != ValueIdMap.end())
+            {
+                InDis[bb][ValueIdMap[val]] = std::min(InDis[bb][ValueIdMap[val]], i);
+            }
+        }
+    }
     if (!change && InSet[bb] != tmp)
         change = true;
     return change;
@@ -52,11 +77,11 @@ void LivenessAnalysis::DefAndUseAnalysis()
         for (auto phi : *(bb->get_phinodes()))
         {
             Value *val = dynamic_cast<Value *>(phi);
-            for (auto edge : *(phi->get_value_list()))
+            for (auto it : *(phi->get_valueMap()))
             {
-                Value *tmp = edge->get_val();
+                Value *tmp = it.second->get_val();
                 if (ValueIdMap.find(tmp) != ValueIdMap.end() && !DefSet[bb].at(ValueIdMap[tmp]))
-                    UseSet[bb].set(ValueIdMap[tmp], true);
+                    OutSet[it.first].set(ValueIdMap[tmp], true);
             }
             if (ValueIdMap.find(val) != ValueIdMap.end())
                 DefSet[bb].set(ValueIdMap[val], true);
@@ -92,6 +117,8 @@ void LivenessAnalysis::dfs(BasicBlock *u)
 void LivenessAnalysis::run(Function *func)
 {
     parent = func;
+    BBs.clear();
+    vis.clear();
     dfs(func->get_entryBB());
     init();
     DefAndUseAnalysis();
@@ -104,7 +131,7 @@ void LivenessAnalysis::run(Function *func)
             change |= work_BB(bb);
         }
     }
-    for (auto bb : BBs)
+    /*for (auto bb : BBs)
     {
         bb->print();
         for (auto val : Vals)
@@ -112,5 +139,5 @@ void LivenessAnalysis::run(Function *func)
             printf("%d %d : ", InSet[bb].at(ValueIdMap[val]), OutSet[bb].at(ValueIdMap[val]));
             val->print();
         }
-    }
+    }*/
 }

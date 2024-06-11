@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-    // freopen("in.txt", "r", stdin);
+    freopen("in.txt", "r", stdin);
     // freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
@@ -48,9 +48,7 @@ int main(int argc, char *argv[])
     // IR
     // manager->printModule("O0");
     manager->run<GlobalVariableopt>();
-    manager->printModule();
     manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
     manager->printModule();
@@ -60,21 +58,11 @@ int main(int argc, char *argv[])
     manager->FuncRun<SimplifyCFG>();
     manager->run<LCSSA>();
     manager->printModule();
-    // manager->run<Loop_Analysis>();
-    manager->FuncRun<GVN>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
+    manager->FuncRun<SSARegisterAlloc>();
     manager->printModule();
-    manager->FuncRun<GCM>();
-    manager->printModule();
-
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
-    manager->printModule("O1");
-    //  2lir
-    //  module->lowerIR();
-    //  module->print();
+    //   2lir
+    //   module->lowerIR();
+    //   module->print();
 
     delete manager;
     return 0;

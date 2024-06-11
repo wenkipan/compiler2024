@@ -22,4 +22,5 @@ public:
     bit_vector operator~();
     bool operator==(bit_vector bv);
     bool operator!=(bit_vector bv);
+    int size() { return num; }
 };
