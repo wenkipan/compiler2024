@@ -15,7 +15,10 @@ Value::Value(TypeEnum basic_type)
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-    type = new Type(basic_type);
+    if (basic_type == TypeEnum::Ptr)
+        type = new Ptr(basic_type);
+    else
+        type = new Type(basic_type);
 }
 
 Value::Value(Type *_type, int is_copy)

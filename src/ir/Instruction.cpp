@@ -695,7 +695,7 @@ void Assign::print()
     printf("    %%%d = ", this->get_ID());
     Value *p_src = get_src();
     Type *p_type = get_type();
-    assert(p_type->get_type() == TypeEnum::I32 || p_type->get_type() == TypeEnum ::F32);
+    assert(p_type->get_type() == TypeEnum::I32 || p_type->get_type() == TypeEnum ::F32 || p_type->get_type() == TypeEnum::Ptr);
     if (p_type->get_type() == TypeEnum::I32)
     {
         printf("add nsw i32 ");
@@ -707,5 +707,11 @@ void Assign::print()
         printf("fadd float  ");
         p_src->print_ID();
         printf(", 0.000000e+00\n");
+    }
+    else if (p_type->get_type() == TypeEnum::Ptr)
+    {
+        printf("ptr todo");
+        p_src->print_ID();
+        printf("\n");
     }
 }
