@@ -31,6 +31,7 @@ Value *SCEVEXP::get_scr(int i, BasicBlock *_BB)
         }
         re = (Value *)p_instr;
     }
+
     return re;
 }
 
@@ -322,11 +323,7 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
                 _scev->set_mod(_mod);
             for (int i = 0; i < 4; ++i)
                 (*_scev->get_dims())[i] = dims[i];
-            for (int i = 1; i < 4; ++i)
-            {
-                for (auto it : dims[i])
-                    (*_scev->get_dims())[i - 1].emplace_back(it);
-            }
+            _scev->set_ToPhi(_phi);
             _this->get_map()->insert({p_instr, _scev});
             break;
         default:

@@ -100,10 +100,7 @@ static inline void _initStep(bool &flag, Loop *loop, SCEV *scev)
     const1 = new ConstantI32(1);
     prev->get_func()->value_pushBack(const1);
     Instrution *p_sub1 = new Binary(InstrutionEnum::ISUB, p_instr, const1, prev);
-    const1 = new ConstantI32(1);
-    prev->get_func()->value_pushBack(const1);
-    Instrution *p_sub2 = new Binary(InstrutionEnum::ISUB, p_sub1, const1, prev);
-    loop->set_calSetp(p_sub1, p_sub2);
+    loop->set_calSetp(p_instr, p_sub1);
 }
 
 static inline void _replace(Value *_instr, Value *newInstr, Loop *loop)
@@ -150,12 +147,13 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
         SCEVEXP *p_exp = nullptr;
         for (Instrution *_instr : (*instrs))
         {
-            _instr->print();
             if ((p_exp = _scev->find_exp(_instr)) == nullptr || _check(_instr, loop))
                 continue;
 
             _initStep(init, loop, _scev);
             Value *p_step = loop->get_calStep(is_under);
+            if ((p_exp->get_ToPhi() != nullptr))
+                p_exp = _scev->find_exp(p_exp->get_ToPhi());
             std::vector<std::vector<std::pair<Value *, SCEVType>>> *dims = p_exp->get_dims();
 
             if ((*dims)[1].empty())
