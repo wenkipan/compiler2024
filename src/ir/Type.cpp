@@ -38,6 +38,29 @@ void Type::reset(TypeEnum _type)
 {
     type = _type;
 }
+static inline Type *_newbtype(Type *_type)
+{
+    Type *re;
+    switch (_type->get_type())
+    {
+    case TypeEnum::Array:
+        re = new ArrayType(_type);
+        break;
+    case TypeEnum::Ptr:
+        re = new Ptr(_newbtype(((Ptr *)_type)->get_btype()));
+        break;
+    case TypeEnum::F32:
+    case TypeEnum::I32:
+    case TypeEnum::I1:
+    case TypeEnum::Void:
+        re = new Type(_type->get_type());
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    return re;
+}
 
 Ptr::Ptr(Type *_ptr) // 复制指针
     : Type(TypeEnum::Ptr)
@@ -48,7 +71,7 @@ Ptr::Ptr(Type *_ptr) // 复制指针
         b_type = new ArrayType(_ptr);
         break;
     case TypeEnum::Ptr:
-        b_type = new Ptr(((Ptr *)_ptr)->b_type);
+        b_type = _newbtype(((Ptr *)_ptr)->get_btype());
         break;
     case TypeEnum::I32:
         b_type = new Type(TypeEnum::I32);
