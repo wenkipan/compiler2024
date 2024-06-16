@@ -1,3 +1,5 @@
+#include "ir/Type.hpp"
+#include "ir/Value.hpp"
 #include <ir/User.hpp>
 
 User::User(TypeEnum basic_type)
@@ -30,7 +32,10 @@ User::User(Type *p_array, int is_copy)
     : Value(p_array, is_copy)
 {
 }
-
+User::User(Type *type)
+    : Value(type)
+{
+}
 User::~User()
 {
 }

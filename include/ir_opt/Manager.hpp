@@ -10,6 +10,8 @@
 #include <ir_opt/GlobalVariableopt.hpp>
 #include <ir_opt/GVN.hpp>
 #include <ir_opt/GCM.hpp>
+
+#include <lir/LargeToGlobal.hpp>
 #include <ir_opt/SCEV.hpp>
 #include <ir_opt/loopVarReduce.hpp>
 #include <ir_opt/loopVarMove.hpp>
