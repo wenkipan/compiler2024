@@ -1,3 +1,5 @@
+#include "ir/Constant.hpp"
+#include "ir/Type.hpp"
 #include <ir/GlobalVariable.hpp>
 #include <iostream>
 
@@ -30,7 +32,42 @@ GlobalVariable::GlobalVariable(p_symbol_var p_var)
         break;
     }
 }
+GlobalVariable::GlobalVariable(Type *type, std::string name, std::vector<int> vi, bool isconst)
+    : GlobalValue(type, name), is_init(true), is_const(isconst), init(nullptr)
+{
+    // prpblem!!
+    if (vi.size() == 0)
+    {
+        is_init = false;
+        return;
+    }
 
+    if (type->get_type() == TypeEnum::Ptr)
+        init = new ConstantI32(type, vi);
+    else // single
+    {
+        assert(vi.size() == 1);
+        init = new ConstantI32(vi.at(0));
+    }
+}
+GlobalVariable::GlobalVariable(Type *type, std::string name, std::vector<float> vi, bool isconst)
+    : GlobalValue(type, name), is_init(true), is_const(isconst), init(nullptr)
+{
+    // prpblem!!
+    if (vi.size() == 0)
+    {
+        is_init = false;
+        return;
+    }
+
+    if (type->get_type() == TypeEnum::Ptr)
+        init = new ConstantF32(type, vi);
+    else // single
+    {
+        assert(vi.size() == 1);
+        init = new ConstantF32(vi.at(0));
+    }
+}
 void GlobalVariable::llvm_print()
 {
     assert(this->get_type()->get_type() == TypeEnum::Ptr);

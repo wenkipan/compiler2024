@@ -48,8 +48,6 @@ int main(int argc, char *argv[])
     // IR
     // manager->printModule("O0");
     manager->run<GlobalVariableopt>();
-    manager->printModule();
-    //  manager->printModule("O0");
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();

@@ -45,6 +45,34 @@ Value::Value(Type *_type, int is_copy)
     else
         assert(0);
 }
+Value::Value(Type *type)
+    : value_list(new std::vector<Edge *>),
+      user_list(new std::vector<Edge *>)
+{
+    if (type->get_type() == TypeEnum::Ptr)
+    {
+        this->type = new Ptr(type);
+    }
+    else if (type->get_type() == TypeEnum::I32 || type->get_type() == TypeEnum::F32)
+    {
+        this->type = new Type(type->get_type());
+    }
+    else if (type->get_type() == TypeEnum::Array)
+    {
+        this->type = new ArrayType(type);
+    }
+    else if (type->get_type() == TypeEnum::Void)
+    {
+        this->type = new Type(type->get_type());
+    }
+    else
+    {
+        type->print();
+        printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        fflush(stdout);
+        assert(0);
+    }
+}
 
 Value::Value(Type *_type, bool _ele) // gep and load, alloca copy
     : value_list(new std::vector<Edge *>),

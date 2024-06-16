@@ -4,6 +4,10 @@ Constant::Constant(TypeEnum type)
     : User(type)
 {
 }
+Constant::Constant(Type *ty)
+    : User(ty, true)
+{
+}
 
 ConstantI32::ConstantI32(p_symbol_init p_init)
     : Constant(TypeEnum::Array)
@@ -14,6 +18,10 @@ ConstantI32::ConstantI32(p_symbol_init p_init)
 
 ConstantI32::ConstantI32(I32CONST_t _I32)
     : Constant(TypeEnum::I32), i32(1, _I32)
+{
+}
+ConstantI32::ConstantI32(Type *type, const std::vector<int> &vi)
+    : Constant(type), i32(vi)
 {
 }
 ConstantI32::ConstantI32(ConstantI32 *ci32)
@@ -41,7 +49,10 @@ ConstantF32::ConstantF32(ConstantF32 *cf32)
     : Constant(TypeEnum::F32), f32(cf32->get_f32())
 {
 }
-
+ConstantF32::ConstantF32(Type *type, const std::vector<float> &vi)
+    : Constant(type), f32(vi)
+{
+}
 float ConstantF32::get_32_at(int pos)
 {
     assert(pos < f32.size() && pos >= 0);
