@@ -14,6 +14,7 @@ public:
     User(p_symbol_func p_func);
     User(Type *p_array, bool _ele);
     User(Type *p_array, int is_copy);
+    User(Type *type);
     virtual ~User();
 
     // virtual void print() { assert(0); }

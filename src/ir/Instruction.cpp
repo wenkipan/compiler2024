@@ -82,6 +82,7 @@ void Instrution::insertInstr(BasicBlock *_BB, int pos)
 
     this->parent = _BB;
     _instrs = _BB->get_instrutions();
+    _BB->print();
     _instrs->insert(_instrs->begin() + pos, this);
 }
 

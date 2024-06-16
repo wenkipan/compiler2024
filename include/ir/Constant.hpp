@@ -6,6 +6,7 @@ class Constant : public User
 {
 public:
     Constant(TypeEnum type);
+    Constant(Type *ty);
     virtual ~Constant() override;
     virtual void llvm_print(Type *_type) { assert(0); };
 };
@@ -17,6 +18,7 @@ class ConstantI32 : public Constant
 public:
     ConstantI32(p_symbol_init p_init);
     ConstantI32(I32CONST_t _I32);
+    ConstantI32(Type *type, const std::vector<int> &vi);
     ConstantI32(ConstantI32 *ci32);
     ~ConstantI32() override;
 
@@ -34,6 +36,7 @@ class ConstantF32 : public Constant
 public:
     ConstantF32(p_symbol_init p_init);
     ConstantF32(F32CONST_t _F32);
+    ConstantF32(Type *type, const std::vector<float> &vi);
     ConstantF32(ConstantF32 *cf32);
     ~ConstantF32() override;
 

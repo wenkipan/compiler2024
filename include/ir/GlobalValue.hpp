@@ -8,6 +8,7 @@ class GlobalValue : public User
 
 public:
     GlobalValue();
+    GlobalValue(Type *type, std::string name);
     GlobalValue(p_symbol_var p_var);
     GlobalValue(p_symbol_func p_func);
     GlobalValue(std::string _name);
