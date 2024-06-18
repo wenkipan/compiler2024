@@ -51,38 +51,26 @@ int main(int argc, char *argv[])
     manager->run<GlobalVariableopt>();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
-    manager->printModule();
     manager->run<Mem2Reg>();
     manager->printModule();
     manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<SCCP>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
-    // manager->run<Loop_Analysis>();
-    manager->FuncRun<GVN>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<GCM>();
-    manager->printModule();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
-    printf("THBING\n");
-    manager->FuncRun<THBalancing>();
-    // manager->printModule();
-    printf("DCE\n");
-    manager->FuncRun<DCE>();
-    // manager->printModule();
-    printf("CFG\n");
-    manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
-    manager->FuncRun<GVN>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<GCM>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->printModule();
+    for (int i = 0; i < 3; i++)
+    {
+        manager->FuncRun<SCCP>();
+        manager->FuncRun<DCE>();
+        manager->FuncRun<SimplifyCFG>();
+        manager->FuncRun<GVN>();
+        manager->FuncRun<DCE>();
+        manager->FuncRun<SimplifyCFG>();
+        manager->FuncRun<GCM>();
+        manager->FuncRun<DCE>();
+        manager->FuncRun<SimplifyCFG>();
+        manager->FuncRun<THBalancing>();
+        manager->FuncRun<DCE>();
+        manager->FuncRun<SimplifyCFG>();
+        manager->run<Inline>();
+        manager->printModule();
+    }
     //  2lir
     //  module->lowerIR();
     //  module->print();
