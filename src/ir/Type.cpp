@@ -117,8 +117,13 @@ Ptr::Ptr(TypeEnum _type)
 Ptr::Ptr(Type *_type, int flag)
     : Type(TypeEnum::Ptr)
 {
-    assert(flag == 1 && _type->get_type() == TypeEnum::Ptr);
-    b_type = new Ptr(((Ptr *)_type));
+    assert(flag == 1);
+    if (_type->get_type() == TypeEnum::Ptr)
+        b_type = new Ptr(((Ptr *)_type));
+    else if (_type->get_type() == TypeEnum::Array)
+        b_type = new ArrayType(_type);
+    else
+        b_type = new Type(_type);
 }
 
 Ptr::Ptr(ArrayType *_type)
