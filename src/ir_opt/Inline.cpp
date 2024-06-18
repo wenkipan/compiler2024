@@ -6,6 +6,7 @@
 #include <ostream>
 #include <unordered_set>
 #include <algorithm>
+#include <vector>
 
 //
 CallGraphNode::CallGraphNode(Function *f)
@@ -174,6 +175,7 @@ void Inline::run(Module *m)
     //         }
     //     }
     // }
+    std::set<Function *> delelist;
     for (auto v : PO(m))
     {
         CallGraphNode *cgnode = (CallGraphNode *)v;
@@ -187,7 +189,20 @@ void Inline::run(Module *m)
                 do_inline(caller, cgnode->link_f);
                 // tmp
             }
+            delelist.emplace(cgnode->link_f);
         }
+    }
+    for (auto f : delelist)
+    {
+        for (auto it = m->get_funcs()->begin(); it != m->get_funcs()->end(); it++)
+        {
+            if (*it == f)
+            {
+                m->get_funcs()->erase(it);
+                break;
+            }
+        }
+        delete f;
     }
     delete CG;
 }
