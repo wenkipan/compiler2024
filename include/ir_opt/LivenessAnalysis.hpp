@@ -19,6 +19,7 @@ class LivenessAnalysis
     std::unordered_map<BasicBlock *, std::vector<int>> OutDis;
     std::vector<BasicBlock *> BBs;
     std::vector<Value *> Vals;
+    std::vector<bool> is_float;
     std::unordered_set<BasicBlock *> vis;
     void init();
     bool work_BB(BasicBlock *bb);
