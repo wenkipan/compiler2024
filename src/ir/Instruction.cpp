@@ -121,6 +121,16 @@ Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, TypeEnum basic_type
     p_func->value_pushBack((Value *)this);
 }
 
+Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, Type *_type, int is_copy, bool notPush)
+    : User(_type, is_copy), parent(_BB), instr_type(type)
+{
+    if (!notPush)
+        _BB->Ins_pushBack(this);
+    Function *p_func = _BB->get_func();
+    assert(p_func != nullptr);
+    p_func->value_pushBack((Value *)this);
+}
+
 Instrution::Instrution(BasicBlock *_BB, InstrutionEnum type, Type *_type, int is_copy)
     : User(_type, is_copy), parent(_BB), instr_type(type)
 {
@@ -343,8 +353,9 @@ Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
 }
 
 Unary::Unary(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
-    : Instrution(_parent, type, (type == InstrutionEnum::AddSP ? TypeEnum::I32 : _src1->get_type()->get_type()), notPush)
+    : Instrution(_parent, type, _src1->get_type(), 0, notPush)
 {
+    assert(type != InstrutionEnum::AddSP);
     TypeEnum src_type = _src1->get_type()->get_type();
     switch (type)
     {
@@ -664,7 +675,6 @@ BasicBlock *PHINode::get_edge_income_block(Edge *e)
 
 void PHINode::print()
 {
-
     printf("    %%%d = phi ", this->get_ID());
     this->get_type()->print();
     int num = valueMap->size();

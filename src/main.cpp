@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     // manager->run<Inline>();
     // manager->printModule();
     // manager->run<Inline>();
-    //  manager->printModule("O1");
+    manager->printModule("O1");
     //    2lir
     //    module->lowerIR();
     //    module->print();
