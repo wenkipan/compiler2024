@@ -10,6 +10,7 @@ void LivenessAnalysis::init()
         Value *val = dynamic_cast<Value *>(arg);
         ValueIdMap[val] = allocaCounter++;
         Vals.push_back(val);
+        is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
     }
     for (auto bb : BBs)
     {
@@ -20,6 +21,7 @@ void LivenessAnalysis::init()
             {
                 ValueIdMap[val] = allocaCounter++;
                 Vals.push_back(val);
+                is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
             }
         }
     }

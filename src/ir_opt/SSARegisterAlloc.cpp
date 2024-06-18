@@ -5,7 +5,8 @@ void SSARegisterAlloc::run(Function *p_func)
     p_func->ResetID(false);
     LA.run(p_func);
     vregNum = LA.Vals.size();
-    K = 8;
+    K_R = 13;
+    K_S = 32;
     Spill(p_func);
     RewriteProgram(p_func);
     MakeGraph(p_func);
@@ -13,9 +14,7 @@ void SSARegisterAlloc::run(Function *p_func)
 
 void SSARegisterAlloc::AddEdge(int x, int y)
 {
-    x++;
-    y++;
-    if (x == y || AdjSet.find(std::make_pair(x, y)) != AdjSet.end())
+    if (x == y || LA.is_float[x] != LA.is_float[y] || AdjSet.find(std::make_pair(x, y)) != AdjSet.end())
         return;
     AdjSet.insert(std::make_pair(x, y));
     AdjSet.insert(std::make_pair(y, x));
@@ -64,60 +63,121 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
     }
 }
 
-void SSARegisterAlloc::AssignColor(Function *p_func)
+void SSARegisterAlloc::AssignColor_R(Function *p_func)
 {
-    std::vector<int> next(vregNum << 1), pre(vregNum << 1), w(vregNum), q(vregNum), dy(vregNum);
-    for (int i = 1; i <= vregNum; i++)
+    int n = 0;
+    std::vector<int> id_R;
+    id_R.push_back(-1);
+    for (int i = 0; i < vregNum; i++)
+        if (LA.is_float[i] == 0)
+        {
+            id_R.push_back(i);
+            n++;
+        }
+    std::vector<int> next(n << 1), pre(n << 1), w(n), q(n), dy(n);
+    for (int i = 1; i <= n; i++)
     {
-        color[i - 1] = -1;
-        pre[next[i] = next[vregNum + w[i]]] = i;
-        next[pre[i] = vregNum + w[i]] = i;
+        color[id_R[i]] = -1;
+        pre[next[i] = next[n + w[i]]] = i;
+        next[pre[i] = n + w[i]] = i;
     }
     int now = 0;
-    for (int k = vregNum; k; --k, ++now)
+    for (int k = n; k; --k, ++now)
     {
-        while (!next[vregNum + now])
+        while (!next[n + now])
             --now;
-        int x = next[vregNum + now];
+        int x = next[n + now];
         std::unordered_set<int> color_set;
-        for (auto y : G[x])
-            if (color[y - 1] != -1)
-                color_set.insert(color[y - 1]);
-        for (int i = 0; i < K; i++)
+        for (auto y : G[id_R[x]])
+            if (color[id_R[y]] != -1)
+                color_set.insert(color[id_R[y]]);
+        for (int i = 0; i < K_R; i++)
             if (color_set.find(i) == color_set.end())
             {
-                color[x - 1] = i;
+                color[id_R[x]] = i;
                 break;
             }
-        if (color[x - 1] == -1)
+        if (color[id_R[x]] == -1)
             assert(0);
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
         dy[x] = k;
-        for (auto y : G[x])
+        for (auto y : G[id_R[x]])
             if (!dy[y])
             {
                 pre[next[y]] = pre[y];
                 next[pre[y]] = next[y];
                 ++w[y];
-                pre[next[y] = next[vregNum + w[y]]] = y;
-                next[pre[y] = vregNum + w[y]] = y;
+                pre[next[y] = next[n + w[y]]] = y;
+                next[pre[y] = n + w[y]] = y;
             }
     }
 }
 
-void SSARegisterAlloc::SpillBB(BasicBlock *bb)
+void SSARegisterAlloc::AssignColor_S(Function *p_func)
+{
+    int n = 0;
+    std::vector<int> id_S;
+    id_S.push_back(-1);
+    for (int i = 0; i < vregNum; i++)
+        if (LA.is_float[i] == 1)
+        {
+            id_S.push_back(i);
+            n++;
+        }
+    std::vector<int> next(n << 1), pre(n << 1), w(n), q(n), dy(n);
+    for (int i = 1; i <= n; i++)
+    {
+        color[id_S[i]] = -1;
+        pre[next[i] = next[n + w[i]]] = i;
+        next[pre[i] = n + w[i]] = i;
+    }
+    int now = 0;
+    for (int k = n; k; --k, ++now)
+    {
+        while (!next[n + now])
+            --now;
+        int x = next[n + now];
+        std::unordered_set<int> color_set;
+        for (auto y : G[id_S[x]])
+            if (color[id_S[y]] != -1)
+                color_set.insert(color[id_S[y]]);
+        for (int i = 0; i < K_S; i++)
+            if (color_set.find(i) == color_set.end())
+            {
+                color[id_S[x]] = i;
+                break;
+            }
+        if (color[id_S[x]] == -1)
+            assert(0);
+        pre[next[x]] = pre[x];
+        next[pre[x]] = next[x];
+        q[k] = x;
+        dy[x] = k;
+        for (auto y : G[id_S[x]])
+            if (!dy[y])
+            {
+                pre[next[y]] = pre[y];
+                next[pre[y]] = next[y];
+                ++w[y];
+                pre[next[y] = next[n + w[y]]] = y;
+                next[pre[y] = n + w[y]] = y;
+            }
+    }
+}
+
+void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
 {
     std::set<std::pair<int, int>> I_B;
     for (int i = 0; i < vregNum; i++)
-        if (LA.InSet[bb].at(i))
+        if (LA.InSet[bb].at(i) && LA.is_float[i] == 0)
             I_B.insert(std::make_pair(LA.InDis[bb][i], i));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
     for (auto it : I_B)
     {
-        if (Regs.size() < K)
+        if (Regs.size() < K_R)
         {
             Regs.insert(std::make_pair(-it.first, it.second));
             inReg.insert(it.second);
@@ -132,10 +192,10 @@ void SSARegisterAlloc::SpillBB(BasicBlock *bb)
         std::unordered_set<int> ops;
         for (auto edge : *(ins->get_value_list()))
         {
-            if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end())
+            if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
                 ops.insert(LA.ValueIdMap.at(edge->get_val()));
         }
-        if (ops.size() <= K)
+        if (ops.size() <= K_R)
         {
             for (auto op : ops)
             {
@@ -193,10 +253,120 @@ void SSARegisterAlloc::SpillBB(BasicBlock *bb)
                 Regs.erase(reg);
             }
         }
-        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end())
+        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 0)
         {
             int result = LA.ValueIdMap.at(ins);
-            if (Regs.size() == K)
+            if (Regs.size() == K_R)
+            {
+                inReg.erase(Regs.begin()->second);
+                Regs.erase(Regs.begin());
+            }
+            int tmp = LA.OutDis[bb][result] + bb->get_instrs()->size();
+            for (auto edge : *(LA.Vals[result]->get_user_list()))
+            {
+                Value *use = edge->get_user();
+                if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                {
+                    tmp = std::min(tmp, use->get_ID() - bb->get_instrs()->front()->get_ID());
+                    break;
+                }
+            }
+            Regs.insert(std::make_pair(-tmp, result));
+            inReg.insert(result);
+        }
+    }
+}
+
+void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
+{
+    std::set<std::pair<int, int>> I_B;
+    for (int i = 0; i < vregNum; i++)
+        if (LA.InSet[bb].at(i) && LA.is_float[i] == 1)
+            I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+    std::set<std::pair<int, int>> Regs;
+    std::unordered_set<int> inReg;
+    for (auto it : I_B)
+    {
+        if (Regs.size() < K_S)
+        {
+            Regs.insert(std::make_pair(-it.first, it.second));
+            inReg.insert(it.second);
+        }
+        else
+        {
+            spilledNodes.insert(it.second);
+        }
+    }
+    for (auto ins : *(bb->get_instrs()))
+    {
+        std::unordered_set<int> ops;
+        for (auto edge : *(ins->get_value_list()))
+        {
+            if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
+                ops.insert(LA.ValueIdMap.at(edge->get_val()));
+        }
+        if (ops.size() <= K_S)
+        {
+            for (auto op : ops)
+            {
+                if (inReg.find(op) == inReg.end())
+                {
+                    for (auto it : Regs)
+                    {
+                        if (ops.find(it.second) == ops.end())
+                        {
+                            spilledNodes.insert(it.second);
+                            inReg.erase(it.second);
+                            Regs.erase(it);
+                            break;
+                        }
+                    }
+                    int tmp = LA.OutDis[bb][op] + bb->get_instrs()->size();
+                    for (auto edge : *(LA.Vals[op]->get_user_list()))
+                    {
+                        Value *use = edge->get_user();
+                        if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                        {
+                            tmp = std::min(tmp, use->get_ID() - bb->get_instrs()->front()->get_ID());
+                            break;
+                        }
+                    }
+                    Regs.insert(std::make_pair(-tmp, op));
+                    inReg.insert(op);
+                }
+            }
+        }
+        else
+        {
+            // todo
+        }
+        for (auto reg : Regs)
+        {
+            if (LA.OutSet[bb].at(reg.second))
+                continue;
+            bool live = false;
+            if (spilledNodes.find(reg.second) != spilledNodes.end())
+                live = true;
+            else
+                for (auto edge : *(LA.Vals[reg.second]->get_user_list()))
+                {
+                    Value *use = edge->get_user();
+                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                    {
+                        live = true;
+                        break;
+                    }
+                }
+            if (!live)
+            {
+                inReg.erase(reg.second);
+                Regs.erase(reg);
+            }
+        }
+        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 1)
+        {
+            int result = LA.ValueIdMap.at(ins);
+            if (Regs.size() == K_S)
             {
                 inReg.erase(Regs.begin()->second);
                 Regs.erase(Regs.begin());
@@ -221,7 +391,8 @@ void SSARegisterAlloc::Spill(Function *p_func)
 {
     for (auto bb : *(p_func->get_blocks()))
     {
-        SpillBB(bb);
+        SpillBB_R(bb);
+        SpillBB_S(bb);
     }
 }
 
