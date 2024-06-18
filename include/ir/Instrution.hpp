@@ -73,6 +73,7 @@ public:
     Instrution(BasicBlock *_BB, InstrutionEnum type, p_symbol_var p_var);
     Instrution(BasicBlock *_BB, InstrutionEnum type, Type *p_array, bool _ele);
     Instrution(BasicBlock *_BB, InstrutionEnum type, Type *_type, int is_copy);
+    Instrution(BasicBlock *_BB, InstrutionEnum type, Type *_type, int is_copy, bool notPush);
     ~Instrution() override;
 
     void replaceInstr(BasicBlock *_BB, int pos);

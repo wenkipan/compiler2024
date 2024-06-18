@@ -27,7 +27,19 @@ Value::Value(Type *_type, int is_copy)
       user_list(new std::vector<Edge *>)
 {
     if (is_copy == 0)
-        type = new Ptr(_type);
+    {
+        if (_type->get_type() == TypeEnum::Ptr)
+        {
+            type = new Ptr(_type);
+        }
+
+        else if (_type->get_type() == TypeEnum::Array)
+            assert(0);
+        else
+        {
+            type = new Type(_type);
+        }
+    }
     else if (is_copy == 1)
         type = new Ptr(_type, is_copy);
     else
