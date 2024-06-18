@@ -26,8 +26,12 @@ Value::Value(Type *_type, int is_copy)
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-    assert(is_copy == 0);
-    type = new Ptr(_type);
+    if (is_copy == 0)
+        type = new Ptr(_type);
+    else if (is_copy == 1)
+        type = new Ptr(_type, is_copy);
+    else
+        assert(0);
 }
 
 Value::Value(Type *_type, bool _ele) // gep and load, alloca copy

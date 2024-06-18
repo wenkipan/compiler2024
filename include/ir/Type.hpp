@@ -76,6 +76,7 @@ public:
     Ptr(Type *_type);
     Ptr(ArrayType *_type);
     Ptr(p_symbol_type p_var);
+    Ptr(Type *_type, int flag);
     Ptr(Ptr *_ptr);
     ~Ptr() override;
 
