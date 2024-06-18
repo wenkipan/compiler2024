@@ -30,6 +30,7 @@ Value::Value(Type *_type, int is_copy)
     {
         if (_type->get_type() == TypeEnum::Ptr)
         {
+            assert(0);
             type = new Ptr(_type);
         }
 
