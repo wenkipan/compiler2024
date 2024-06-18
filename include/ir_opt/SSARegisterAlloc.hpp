@@ -10,7 +10,7 @@
 
 class SSARegisterAlloc
 {
-    int K;
+    int K_R, K_S;
     LivenessAnalysis LA;
     int vregNum;
     std::unordered_map<int, int> color;
@@ -22,9 +22,11 @@ class SSARegisterAlloc
 public:
     void run(Function *p_func);
     void Spill(Function *p_func);
-    void SpillBB(BasicBlock *bb);
+    void SpillBB_R(BasicBlock *bb);
+    void SpillBB_S(BasicBlock *bb);
     void RewriteProgram(Function *p_func);
     void MakeGraph(Function *p_func);
     void AddEdge(int x, int y);
-    void AssignColor(Function *p_func);
+    void AssignColor_R(Function *p_func);
+    void AssignColor_S(Function *p_func);
 };
