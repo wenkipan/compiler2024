@@ -3,7 +3,7 @@
 #include "ir/Value.hpp"
 #include <ir_opt/THBalancing.hpp>
 #include <vector>
-
+#include <iostream>
 static inline int is_root(Instrution *i)
 {
     if (i->get_user_list()->size() > 1)
@@ -17,7 +17,10 @@ int THBalancing::get_rank(Value *i)
 }
 void THBalancing::set_rank(Value *i, int r)
 {
-    rank.emplace(i, r);
+    if (rank.find(i) != rank.end())
+        rank.find(i)->second = r;
+    else
+        rank.emplace(i, r);
 }
 static inline int is_leaf(Instrution *root, Value *var, BasicBlock *bb)
 {
@@ -86,7 +89,7 @@ void THBalancing::Flatten(Instrution *root, Value *var, std::priority_queue<Valu
             var->print();
             printf("\n");
         }
-        rank.emplace(var, 0);
+        set_rank(var, 0);
         q.push(var);
     }
     else if (rootset.find((Instrution *)var) != rootset.end()) // var is a root
@@ -110,7 +113,8 @@ void THBalancing::Flatten(Instrution *root, Value *var, std::priority_queue<Valu
             var->print();
             printf("\n");
         }
-        rank.emplace(var, 1);
+        set_rank(var, 1);
+        std::cout << get_rank(var);
         q.push(var);
     }
     else // recur
@@ -122,8 +126,12 @@ void THBalancing::Flatten(Instrution *root, Value *var, std::priority_queue<Valu
 }
 Instrution *THBalancing::rebuild(Instrution *root, std::priority_queue<Value *, std::vector<Value *>, decltype(rankcmp)> &q)
 {
-    printf("rebuildroot:");
-    root->print();
+    if (if_debug)
+    {
+
+        printf("rebuildroot:");
+        root->print();
+    }
     while (!q.empty())
     {
         Value *NL = q.top();
@@ -144,14 +152,14 @@ Instrution *THBalancing::rebuild(Instrution *root, std::priority_queue<Value *, 
         {
             root->replaceAllUses(NT);
             rootset.emplace(NT); // careful,reuse rootset for recursive
-            rank.emplace(NT, 1);
+            set_rank(NT, 1);
             return NT;
         }
 
         if (is_a<Constant>(NL) && is_a<Constant>(NR))
-            rank.emplace(NT, 0);
+            set_rank(NT, 0);
         else
-            rank.emplace(NT, get_rank(NL) + get_rank(NR));
+            set_rank(NT, get_rank(NL) + get_rank(NR));
 
         if (!q.empty())
         {

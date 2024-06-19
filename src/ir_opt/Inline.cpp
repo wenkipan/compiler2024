@@ -20,7 +20,7 @@ CallGraphNode::CallGraphNode(Function *f)
 }
 bool CallGraph::can_inline(CallGraphNode *n)
 {
-    if (n->instr_num > 500) // magic number dont ask me ask hujj-nb
+    if (n->instr_num > 5000) // magic number dont ask me ask hujj-nb
         return false;
     if (n->recursive)
         return false;
