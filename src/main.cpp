@@ -73,11 +73,7 @@ int main(int argc, char *argv[])
     }
     manager->printModule();
     manager->run<immeIntTomove>();
-    printf("int");
-    manager->printModule();
     manager->run<immeFloatToLoad>();
-    printf("float");
-    manager->printModule();
     manager->run<LargeToGlobal>();
     printf("globa");
     manager->printModule();
