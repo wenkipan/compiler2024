@@ -19,6 +19,8 @@
 #include <ir_opt/loopArgDrop.hpp>
 #include <ir_opt/THBalancing.hpp>
 #include <ir_opt/Inline.hpp>
+
+#include <lir/ArmStand.hpp>
 #include <ir_opt/uselessBBDel.hpp>
 #include <ir_opt/loopunroll.hpp>
 #include <ir_opt/looptimes.hpp>
