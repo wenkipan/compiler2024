@@ -5,6 +5,42 @@
 
 int Param::CurID = 0;
 
+void Function::Funcheck()
+{
+    for (BasicBlock *BB : *blocks)
+    {
+        for (Edge *edge : *BB->get_value_list())
+            assert(edge->get_user() == BB);
+        for (Edge *edge : *BB->get_user_list())
+            assert(edge->get_val() == BB);
+        for (PHINode *Phi : *BB->get_phinodes())
+        {
+            Phi->print();
+            printf("\nvalue num:%zu\n", Phi->get_value_list()->size());
+            std::unordered_map<Edge *, int> map;
+            for (Edge *edge : *Phi->get_value_list())
+            {
+                map.insert({edge, 0});
+                assert(edge->get_user() == Phi);
+            }
+            for (auto it : *Phi->get_valueMap())
+                map[it.second]++;
+            for (auto it : map)
+                assert(it.second == 1);
+
+            for (Edge *edge : *Phi->get_user_list())
+                assert(edge->get_val() == Phi);
+        }
+        for (Instrution *p_instr : *BB->get_instrs())
+        {
+            for (Edge *edge : *p_instr->get_value_list())
+                assert(edge->get_user() == p_instr);
+            for (Edge *edge : *p_instr->get_user_list())
+                assert(edge->get_val() == p_instr);
+        }
+    }
+}
+
 Param::Param(Type *_type)
     : Value(_type, true),
       loads(new std::vector<Instrution *>)

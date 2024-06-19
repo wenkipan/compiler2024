@@ -43,6 +43,8 @@ public:
     void ResetID(bool _flag);
     void CallGen(p_ast_block p_ast_block, p_symbol_func _p_func);
 
+    void Funcheck();
+
     void value_pushBack(Value *p_val);
     void Param_pushBack(Param *p_param);
 
