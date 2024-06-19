@@ -807,7 +807,6 @@ void SCEV::PassRun(Module *_module)
         LoopSCEVGen(_Loop->get_LoopInfo()->find(p_func)->second);
     }
     SetStep();
-    _module->print();
     print();
 }
 

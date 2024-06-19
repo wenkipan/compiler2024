@@ -108,6 +108,7 @@ public:
     void move_before_terminator();
     int get_pos_of_bb();
 
+    void set_instrType(InstrutionEnum type) { instr_type = type; }
     void replaceAllUses(Value *RepVal);
     virtual void drop();
 
@@ -231,7 +232,6 @@ public:
 
     Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
     Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }
-
     bool isCond();
     void print();
 };

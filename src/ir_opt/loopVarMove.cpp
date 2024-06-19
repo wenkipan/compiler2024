@@ -25,7 +25,7 @@ static inline void _initStep(bool &flag, Loop *loop, SCEV *scev)
     flag = true;
     BasicBlock *prev = loop->get_prev();
     SCEVEXP *p_exp = scev->find_exp(loop->get_lpStep());
-    assert(p_exp != nullptr && !(*p_exp->get_dims())[0].empty() && !(*p_exp->get_dims())[1].empty());
+    assert(p_exp != nullptr && !(*p_exp->get_dims())[0].empty() && !(*p_exp->get_dims())[1].empty() && (*p_exp->get_dims())[2].empty());
     Value *src0 = p_exp->get_scr(0, prev);
     Value *src1 = p_exp->get_scr(1, prev);
     Value *End = loop->get_lpEnd();
