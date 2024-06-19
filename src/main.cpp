@@ -71,6 +71,10 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         manager->printModule();
     }
+    manager->run<immeIntTomove>();
+    manager->run<immeFloatToLoad>();
+    manager->run<LargeToGlobal>();
+    manager->printModule();
     //  2lir
     //  module->lowerIR();
     //  module->print();
