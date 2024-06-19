@@ -36,7 +36,7 @@ void loopVarReduce::Reduce(Loop *loop, DomTree &_domtree)
             src1 = new Binary((InstrutionEnum)(25 + flag), src1, src2, prevBB);
             prevBB->Ins_pushBack(p_branch);
             PHINode *_phi = new PHINode(loop->get_header(), src1->get_type()->get_type(), true);
-            _BB->Insert_Phi(_phi);
+            loop->get_header()->Insert_Phi(_phi);
             _phi->addIncoming(src1, prevBB);
             p_branch = _latch->get_last_instrution();
             _latch->get_instrs()->pop_back();
