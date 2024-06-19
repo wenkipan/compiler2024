@@ -18,6 +18,8 @@
 #include <ir_opt/loopDrop.hpp>
 #include <ir_opt/THBalancing.hpp>
 #include <ir_opt/Inline.hpp>
+
+#include <lir/ArmStand.hpp>
 #include <ir_opt/uselessBBDel.hpp>
 #include <ir_opt/DPE.hpp>
 
