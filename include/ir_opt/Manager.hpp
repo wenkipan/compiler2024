@@ -16,6 +16,8 @@
 #include <ir_opt/loopDrop.hpp>
 #include <ir_opt/THBalancing.hpp>
 #include <ir_opt/Inline.hpp>
+#include <ir_opt/uselessBBDel.hpp>
+
 class Module;
 
 class Manager
