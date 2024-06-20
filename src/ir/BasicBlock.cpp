@@ -88,7 +88,7 @@ void BasicBlock::print()
         p_PHI->print();
     for (Instrution *p_instr : (*instrutions))
     {
-        if (p_instr->get_Instrtype() == InstrutionEnum::Call && ((GlobalValue *)((Call *)p_instr)->get_func())->get_name() == "memset")
+        if (p_instr->get_Instrtype() == InstrutionEnum::Call && ((GlobalValue *)((Call *)p_instr)->get_func())->get_name() == "memset1")
             continue;
         p_instr->print();
     }

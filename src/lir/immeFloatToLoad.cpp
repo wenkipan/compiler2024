@@ -38,9 +38,6 @@ void immeFloatToLoad::run(Module *m)
                                 b = kv.first;
                         }
                         assert(b);
-                        printf("111!!!!!");
-                        b->print();
-                        fflush(stdout);
                         l = new Load(GV, true, user->get_parent()); // gv
                         int pos;
                         if (b->get_last_instrution()->isBranch())
@@ -54,8 +51,6 @@ void immeFloatToLoad::run(Module *m)
                     }
                     else // others
                     {
-                        printf("2!!!!!");
-                        fflush(stdout);
                         l = new Load(GV, true, user->get_parent());
                         // replace me!
                         auto v = user->get_parent()->get_instrutions();
