@@ -1,3 +1,4 @@
+#include <iostream>
 #include <ir/Constant.hpp>
 
 Constant::Constant(TypeEnum type)
