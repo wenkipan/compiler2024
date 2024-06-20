@@ -265,7 +265,6 @@ void DCE::update_dead_block()
         live_instr.emplace(BB->get_last_instrution());
     }
     drop_all_edges(deletelist);
-    // function->print();
     assert(function->check_can_ret());
 }
 
