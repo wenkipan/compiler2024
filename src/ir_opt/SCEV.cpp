@@ -279,6 +279,8 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
         Value *_val = _phi->get_valueMap()->find(latch)->second->get_val();
         if (_this->find_exp(_val) != nullptr)
             continue;
+        if (!is_a<Instrution>(_val))
+            continue;
         assert(is_a<Instrution>(_val));
         Instrution *p_instr = (Instrution *)_val;
         if (loop->get_nwBBs()->find(p_instr->get_parent()) == loop->get_nwBBs()->end())
