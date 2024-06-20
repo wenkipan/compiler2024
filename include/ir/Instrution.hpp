@@ -144,6 +144,7 @@ class PHINode : public Instrution
 
 public:
     PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush);
+    PHINode(BasicBlock *_BB, Type *_type, bool notPush);
     std::unordered_map<BasicBlock *, Edge *> *get_valueMap() { return valueMap; }
     BasicBlock *get_edge_income_block(Edge *);
     ~PHINode();

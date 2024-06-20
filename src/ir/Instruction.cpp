@@ -711,6 +711,12 @@ PHINode::PHINode(BasicBlock *_BB, TypeEnum basic_type, bool notPush)
     valueMap = new std::unordered_map<BasicBlock *, Edge *>();
 }
 
+PHINode::PHINode(BasicBlock *_BB, Type *_type, bool notPush)
+    : Instrution(_BB, InstrutionEnum::PHINode, _type, 0, notPush)
+{
+    valueMap = new std::unordered_map<BasicBlock *, Edge *>();
+}
+
 BasicBlock *PHINode::get_edge_income_block(Edge *e)
 {
     for (auto kv : *valueMap)
