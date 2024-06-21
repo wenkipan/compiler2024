@@ -146,7 +146,6 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
         loop_BBsAdd(_son);
     if (!nwloop->get_lpDepth())
         return;
-    nwloop->createPrevHeader(nwloop);
     for (auto *_edge : (*nwloop->get_header()->get_value_list()))
     {
         BasicBlock *p_BB = (BasicBlock *)_edge->get_val();
@@ -170,10 +169,7 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
             break;
         }
     }
-    LoopNode *newNode = new LoopNode();
-    newNode->set_loop(nwloop->get_parent());
-    newNode->set_depth(nwloop->get_parent()->get_lpDepth());
-    BBmap->insert({nwloop->get_prev(), newNode});
+
     // return;
     printf("HEAD b%d:", nwloop->get_header()->get_ID());
     printf("\nenters: ");
@@ -196,6 +192,19 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
         printf("b%d, ", _BB->get_ID());
     putchar('\n');
     putchar('\n');
+}
+
+void Loop_Analysis::loop_addprevBB(Loop *nwloop)
+{
+    for (Loop *_son : (*nwloop->get_lpsons()))
+        loop_addprevBB(_son);
+    if (!nwloop->get_lpDepth())
+        return;
+    nwloop->createPrevHeader(nwloop);
+    LoopNode *newNode = new LoopNode();
+    newNode->set_loop(nwloop->get_parent());
+    newNode->set_depth(nwloop->get_parent()->get_lpDepth());
+    BBmap->insert({nwloop->get_prev(), newNode});
 }
 
 void Loop_Analysis::FuncAnalysis(Function *p_func)
@@ -268,6 +277,7 @@ void Loop_Analysis::FuncAnalysis(Function *p_func)
     }
     LoopInfo->insert({p_func, lproot});
     std::cout << p_func->get_name() << std::endl;
+    loop_addprevBB(lproot);
     loop_BBsAdd(lproot);
     _lpprint(lproot);
 }
