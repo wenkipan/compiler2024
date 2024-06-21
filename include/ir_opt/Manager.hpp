@@ -18,6 +18,7 @@
 #include <ir_opt/Inline.hpp>
 #include <ir_opt/uselessBBDel.hpp>
 #include <ir_opt/loopunroll.hpp>
+#include <ir_opt/loopunswitch.hpp>
 #include <ir_opt/CSE.hpp>
 #include <ir_opt/ALS.hpp>
 #include <ir_opt/DPE.hpp>
