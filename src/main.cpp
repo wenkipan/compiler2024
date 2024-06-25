@@ -73,9 +73,11 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         manager->printModule();
     }
-    //  2lir
-    //  module->lowerIR();
-    //  module->print();
+    manager->FuncRun<SSARegisterAlloc>();
+    manager->printModule();
+    // 2lir
+    // module->lowerIR();
+    // module->print();
 
     delete manager;
     return 0;

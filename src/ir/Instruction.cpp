@@ -217,7 +217,7 @@ Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
 Alloca::Alloca(BasicBlock *_parent, Type *_type, int is_copy)
     : Instrution(_parent, InstrutionEnum::Alloca, _type, is_copy)
 {
-    assert(is_copy == 0);
+    assert(is_copy == 1);
 }
 
 Alloca::Alloca(BasicBlock *_parent, Type *_type)

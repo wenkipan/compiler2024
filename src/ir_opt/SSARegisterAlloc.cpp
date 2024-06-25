@@ -5,11 +5,15 @@ void SSARegisterAlloc::run(Function *p_func)
     p_func->ResetID(false);
     LA.run(p_func);
     vregNum = LA.Vals.size();
+    if (vregNum > 1000)
+        return;
     K_R = 13;
     K_S = 32;
     Spill(p_func);
     RewriteProgram(p_func);
     MakeGraph(p_func);
+    AssignColor_R(p_func);
+    AssignColor_S(p_func);
 }
 
 void SSARegisterAlloc::AddEdge(int x, int y)
@@ -74,7 +78,7 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
             id_R.push_back(i);
             n++;
         }
-    std::vector<int> next(n << 1), pre(n << 1), w(n), q(n), dy(n);
+    std::vector<int> next(n + n + 1), pre(n + n + 1), w(n + 1), q(n + 1), dy(n + 1);
     for (int i = 1; i <= n; i++)
     {
         color[id_R[i]] = -1;
@@ -402,7 +406,9 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
     std::unordered_map<int, Alloca *> allocMap;
     for (auto v : spilledNodes)
     {
-        Alloca *alloc = new Alloca(ebb, LA.Vals[v]->get_type(), 0);
+        LA.Vals[v]->get_type()->print();
+        Alloca *alloc = new Alloca(ebb, LA.Vals[v]->get_type(), 1);
+        assert(alloc->get_type()->get_type() == TypeEnum::Ptr);
         alloc->insertInstr(ebb, 0);
         allocMap[v] = alloc;
     }
