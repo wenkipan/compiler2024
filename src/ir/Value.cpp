@@ -30,7 +30,6 @@ Value::Value(Type *_type, int is_copy)
     {
         if (_type->get_type() == TypeEnum::Ptr)
         {
-            assert(0);
             type = new Ptr(_type);
         }
 
@@ -79,7 +78,6 @@ Value::Value(Type *_type, bool _ele) // gep and load, alloca copy
     : value_list(new std::vector<Edge *>),
       user_list(new std::vector<Edge *>)
 {
-
     if (_type->get_type() == TypeEnum::I32 || _type->get_type() == TypeEnum::F32)
     {
         assert(!_ele);

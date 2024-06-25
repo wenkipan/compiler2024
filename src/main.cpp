@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         manager->printModule();
     }
+    manager->FuncRun<SSARegisterAlloc>();
+    manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");
     manager->printModule();
@@ -83,9 +85,9 @@ int main(int argc, char *argv[])
     manager->FuncRun<GEPToALU>();
     manager->printModule();
     fflush(stdout);
-    //  2lir
-    //  module->lowerIR();
-    //  module->print();
+    // 2lir
+    // module->lowerIR();
+    // module->print();
 
     delete manager;
     return 0;
