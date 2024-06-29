@@ -44,6 +44,7 @@ public:
     void CallGen(p_ast_block p_ast_block, p_symbol_func _p_func);
 
     void Funcheck();
+    void checkBBcond();
 
     void value_pushBack(Value *p_val);
     void Param_pushBack(Param *p_param);

@@ -2,8 +2,26 @@
 #include <ir/IRGener.hpp>
 #include <iostream>
 #include <unordered_set>
-
 int Param::CurID = 0;
+
+void Function::checkBBcond()
+{
+    for (BasicBlock *BB : *blocks)
+    {
+        if (BB->get_instrs()->empty())
+            continue;
+        Instrution *br = BB->get_last_instrution();
+        if (br->isJmp() || br->isReturn())
+            continue;
+        else if (br->isBranch())
+        {
+            int n = BB->get_instrs()->size();
+            assert((*BB->get_instrs())[n - 2]->isCmp());
+        }
+        else
+            assert(0);
+    }
+}
 
 void Function::Funcheck()
 {
@@ -222,6 +240,7 @@ void Function::print()
         p_BB->print();
     if (blocks->size())
         printf("}\n");
+    checkBBcond();
 }
 
 void Param::print()
