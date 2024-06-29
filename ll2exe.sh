@@ -21,12 +21,12 @@ function process_files {
             output_file1="${output_file%.bc}.s" 
 
             # 使用 llc 将 .bc 文件编译成目标平台的汇编代码
-            llc "$output_file" -o "$output_file1"
+            llc -relocation-model=pic "$output_file" -o "$output_file1"
 
             output_file2="${output_file1%.s}.exe"
 
             # 使用 gcc 将 .s 文件编译成可执行文件
-            gcc "$output_file1" -o "$output_file2" -L./lib -l:sylib.o 2>/dev/null
+            gcc  -fPIE -pie "$output_file1" -o "$output_file2" -L./lib -l:sylib.o 2>/dev/null
         elif [[ -d "$file" ]]; then
             # 如果是文件夹，则递归调用函数处理子文件夹中的文件
             process_files "$file"
