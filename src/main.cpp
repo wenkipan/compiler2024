@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     // gen ir
     Manager *manager = new Manager(new Module(Infile, Outfile));
     p_program p_program = frontend_trans(in_file, out_file, manager->get_module());
-    p_program->program_variable_print();
+    // p_program->program_variable_print();
     delete p_program;
     // IR
     // manager->printModule("O0");
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
-    manager->printModule();
+    // manager->printModule();
     manager->FuncRun<SimplifyCFG>();
     for (int i = 0; i < 3; i++)
     {
@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         manager->printModule();
     }
+    manager->printModule();
     manager->FuncRun<SSARegisterAlloc>();
     manager->printModule();
     manager->run<immeIntTomove>();
