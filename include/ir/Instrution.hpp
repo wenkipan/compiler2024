@@ -100,6 +100,8 @@ public:
     bool isIBinary() { return instr_type >= InstrutionEnum::IADD && instr_type <= InstrutionEnum::IMOD; }
 
     BasicBlock *get_parent() { return parent; }
+    void setParent_F(BasicBlock *_BB) { parent = _BB; }
+
     InstrutionEnum get_Instype() { return instr_type; }
     bool is_commutative();
     Value *get_operand_at(int pos);
