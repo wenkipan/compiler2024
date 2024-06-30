@@ -17,7 +17,8 @@
 #include <ir_opt/THBalancing.hpp>
 #include <ir_opt/Inline.hpp>
 #include <ir_opt/uselessBBDel.hpp>
-#include <ir_opt/DPE.hpp>
+#include <ir_opt/CSE.hpp>
+#include <ir_opt/ALS.hpp>#include <ir_opt/DPE.hpp>
 
 class Module;
 
