@@ -6,6 +6,7 @@
 #include <ir_opt/BitVector.hpp>
 #include <unordered_set>
 
+const int K_R = 12, K_S = 32, Para_num = 4;
 class LivenessAnalysis
 {
     const int INF = 1000000000;
@@ -19,7 +20,7 @@ class LivenessAnalysis
     std::unordered_map<BasicBlock *, std::vector<int>> OutDis;
     std::vector<BasicBlock *> BBs;
     std::vector<Value *> Vals;
-    std::vector<bool> is_float;
+    std::vector<int> is_float;
     std::unordered_set<BasicBlock *> vis;
     void init();
     bool work_BB(BasicBlock *bb);

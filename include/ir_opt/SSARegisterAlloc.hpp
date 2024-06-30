@@ -5,12 +5,10 @@
 #include <ir_opt/Manager.hpp>
 #include <set>
 #include <queue>
-#include <ir_opt/RegisterAlloc.hpp>
 #include <util/hash_pair.hpp>
 
 class SSARegisterAlloc
 {
-    int K_R, K_S;
     LivenessAnalysis LA;
     int vregNum;
     std::unordered_map<int, int> color;
@@ -24,9 +22,11 @@ public:
     void Spill(Function *p_func);
     void SpillBB_R(BasicBlock *bb);
     void SpillBB_S(BasicBlock *bb);
+    void spillUserPhi(int x);
     void RewriteProgram(Function *p_func);
     void MakeGraph(Function *p_func);
     void AddEdge(int x, int y);
     void AssignColor_R(Function *p_func);
     void AssignColor_S(Function *p_func);
+    int getReg(Value *val);
 };

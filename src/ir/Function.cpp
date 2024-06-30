@@ -246,7 +246,7 @@ void Function::print()
 void Param::print()
 {
     this->get_type()->print();
-    printf(" %%%d", this->get_ID());
+    printf(" %%%d\n", this->get_ID());
 }
 
 Function::~Function()
