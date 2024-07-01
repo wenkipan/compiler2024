@@ -324,6 +324,59 @@ void ALS::FuncCSS(Function *func)
     map.clear();
 }
 
+static inline void DIVCombine(Function *func)
+{
+    std::set<Value *> vis;
+    std::queue<BasicBlock *> q1, q2;
+    q1.push(func->get_entryBB());
+    vis.insert(func->get_entryBB());
+    std::vector<Value *> Del;
+    while (!q1.empty())
+    {
+        std::swap(q1, q2);
+        while (!q2.empty())
+        {
+            BasicBlock *curBB = q2.front();
+            q2.pop();
+
+            for (auto it : *curBB->get_user_list())
+            {
+                Value *user = it->get_user();
+                if (vis.find(user) != vis.end())
+                    continue;
+                vis.insert(user);
+                q1.push((BasicBlock *)user);
+            }
+
+            auto instrs = curBB->get_instrs();
+            for (Instrution *instr : *instrs)
+            {
+                if (instr->get_Instrtype() != InstrutionEnum::IDIV)
+                    continue;
+                Binary *p_b = (Binary *)instr;
+                if (!is_a<Instrution>(p_b->get_src1()))
+                    continue;
+                Instrution *src1 = (Instrution *)p_b->get_src1();
+                if (src1->get_Instrtype() != InstrutionEnum::IMUL)
+                    continue;
+                Binary *p_mul = (Binary *)src1;
+                Value *p_replace = nullptr;
+                if (p_mul->get_src1() == p_b->get_src2())
+                    p_replace = p_mul->get_src2();
+                else if (p_mul->get_src2() == p_b->get_src2())
+                    p_replace = p_mul->get_src1();
+                if (p_replace == nullptr)
+                    continue;
+                // assert(0);
+                auto _list = instr->get_user_list();
+                for (auto edge : *_list)
+                    edge->set_val(p_replace);
+                _list->clear();
+            }
+        }
+    }
+}
+
 void ALS::PassRun(Module *_module)
 {
     puts("            ALS  BEGIN               ");
@@ -334,10 +387,7 @@ void ALS::PassRun(Module *_module)
         if (p_func->get_blocks()->empty())
             continue;
         FuncDealer(p_func);
-        DCE dce1;
-        dce1.run(p_func);
-        SimplifyCFG spf1;
-        spf1.run(p_func);
+        DIVCombine(p_func);
         DomTree tree(p_func);
         tree.Run();
         Vs::domtree = &tree;
