@@ -1,5 +1,9 @@
 #include <ir_opt/ALS.hpp>
+#include <ir_opt/DCE.hpp>
+#include <ir_opt/SimplifyCFG.hpp>
 #include <queue>
+
+DomTree *Vs::domtree = nullptr;
 
 static inline bool _DealBinary(Binary *instr, std::unordered_map<Value *, ALexp *> &map)
 {
@@ -206,7 +210,6 @@ void ALS::FuncDealer(Function *func)
                     for (auto &it : *_list)
                         it->set_val(constnum);
                     _list->clear();
-                    curBB->print();
                 }
                 else if (exp->exps.size() == 1 && exp->Num == 0 && (((*exp->exps.begin()).second) >= 6 || (*exp->exps.begin()).second == 1))
                 {
@@ -223,7 +226,6 @@ void ALS::FuncDealer(Function *func)
                     instr = p_instr;
                     p_instr->setParent_F(curBB);
                     _DealBinary((Binary *)instr, map);
-                    curBB->print();
                 }
             }
         }
@@ -243,15 +245,104 @@ void ALS::FuncDealer(Function *func)
     map.clear();
 }
 
+void ALS::FuncCSS(Function *func)
+{
+    std::set<Value *> vis;
+    std::queue<BasicBlock *> q1, q2;
+    std::unordered_map<ALexp, Vs *, ALexpHash> ALexpMap;
+    q1.push(func->get_entryBB());
+    vis.insert(func->get_entryBB());
+    auto params = func->get_params();
+    for (Param *Param : *params)
+    {
+        ALexp *exp = new ALexp(Param);
+        map.emplace(Param, exp);
+        Vs *newVs = new Vs();
+        newVs->vals.emplace_back(Param);
+        ALexpMap.emplace(*exp, newVs);
+    }
+    std::vector<Value *> Del;
+    while (!q1.empty())
+    {
+        std::swap(q1, q2);
+        while (!q2.empty())
+        {
+            BasicBlock *curBB = q2.front();
+            q2.pop();
+            for (auto it : *curBB->get_phinodes())
+            {
+                ALexp *exp = new ALexp(it);
+                map.emplace(it, exp);
+                Vs *newVs = new Vs();
+                newVs->vals.emplace_back(it);
+                ALexpMap.emplace(*exp, newVs);
+            }
+            for (auto it : *curBB->get_user_list())
+            {
+                Value *user = it->get_user();
+                if (vis.find(user) != vis.end())
+                    continue;
+                vis.insert(user);
+                q1.push((BasicBlock *)user);
+            }
+
+            auto instrs = curBB->get_instrs();
+            for (auto &instr : *instrs)
+            {
+                if (instr->get_type()->get_type() == TypeEnum::F32)
+                    continue;
+                if (instr->isBinary())
+                    _DealBinary((Binary *)instr, map);
+                else if (instr->get_Instrtype() == InstrutionEnum::MINUS)
+                    _DealUnary((Unary *)instr, map);
+                else
+                {
+                    ALexp *exp = new ALexp(instr);
+                    map.insert({instr, exp});
+                    continue;
+                }
+                auto it = map.find(instr);
+                assert(it != map.end());
+                ALexp *exp = it->second;
+                auto ALfind = ALexpMap.find(*exp);
+                if (ALfind == ALexpMap.end())
+                {
+                    Vs *newVs = new Vs();
+                    newVs->vals.emplace_back(instr);
+                    ALexpMap.emplace(*exp, newVs);
+                }
+                else if (!ALfind->second->replaceVal(instr))
+                    ALfind->second->vals.emplace_back(instr);
+            }
+        }
+    }
+    for (auto &it : map)
+        delete it.second;
+    for (auto &it : ALexpMap)
+        delete it.second;
+
+    map.clear();
+}
+
 void ALS::PassRun(Module *_module)
 {
     puts("            ALS  BEGIN               ");
     p_module = _module;
+    Vs::domtree = nullptr;
     for (Function *p_func : *_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())
             continue;
         FuncDealer(p_func);
+        DCE dce1;
+        dce1.run(p_func);
+        SimplifyCFG spf1;
+        spf1.run(p_func);
+        DomTree tree(p_func);
+        tree.Run();
+        Vs::domtree = &tree;
+        FuncCSS(p_func);
+        Vs::domtree = nullptr;
     }
     puts("            ALS  END              ");
 }
