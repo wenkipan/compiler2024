@@ -1,5 +1,18 @@
 #include <ir_opt/SSARegisterAlloc.hpp>
 
+std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
+{
+    auto vrs = callLiveVreg[call];
+    std::vector<int> ret;
+    for (auto it : vrs)
+    {
+        int c = color[it];
+        if (c <= 3 || c == 12 || (c >= 16 && c <= 31))
+            ret.push_back(c);
+    }
+    return ret;
+}
+
 int SSARegisterAlloc::getReg(Value *val)
 {
     if (LA.ValueIdMap.find(val) == LA.ValueIdMap.end())
@@ -19,6 +32,14 @@ int SSARegisterAlloc::getReg(Value *val)
         else
             return 14;
     }
+}
+
+Param *SSARegisterAlloc::whichPara(Alloca *alloc)
+{
+    if (paraMap.find(alloc) == paraMap.end())
+        return nullptr;
+    else
+        return paraMap[alloc];
 }
 
 void SSARegisterAlloc::run(Function *p_func)
@@ -45,23 +66,16 @@ void SSARegisterAlloc::AddEdge(int x, int y)
 
 void SSARegisterAlloc::MakeGraph(Function *p_func)
 {
-    puts("------------------------make graph-----------------");
     p_func->ResetID(false);
     LA.run(p_func);
     vregNum = LA.Vals.size();
     G.resize(vregNum);
-    p_func->print();
     for (BasicBlock *bb : *(p_func->get_blocks()))
     {
-        bb->print();
-        puts("end bb");
         std::unordered_set<int> live;
         for (int i = 0; i < vregNum; i++)
             if (LA.OutSet[bb].at(i))
                 live.insert(i);
-        for (auto it : live)
-            LA.Vals[it]->print();
-        puts("end out");
         for (auto it = bb->get_instrs()->rbegin(); it != bb->get_instrs()->rend(); it++)
         {
             if (LA.ValueIdMap.find(*it) != LA.ValueIdMap.end())
@@ -98,7 +112,6 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
             }
         }
     }
-    puts("-----------------------end------------------");
 }
 
 void SSARegisterAlloc::AssignColor_R(Function *p_func)
@@ -300,12 +313,8 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
     for (auto ins : *(bb->get_instrs()))
     {
         std::unordered_set<int> ops;
-        int cnt = 0;
         for (auto edge : *(ins->get_value_list()))
         {
-            cnt++;
-            if (cnt > Para_num)
-                break;
             if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
                 ops.insert(LA.ValueIdMap.at(edge->get_val()));
         }
@@ -313,16 +322,23 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
         {
             if (inReg.find(op) == inReg.end())
             {
-                for (auto it : Regs)
-                {
-                    if (ops.find(it.second) == ops.end())
+                if (Regs.size() == K_R)
+                    for (auto it : Regs)
                     {
-                        spilledNodes.insert(it.second);
-                        spillUserPhi(it.second);
-                        inReg.erase(it.second);
-                        Regs.erase(it);
-                        break;
+                        if (ops.find(it.second) == ops.end())
+                        {
+                            spilledNodes.insert(it.second);
+                            spillUserPhi(it.second);
+                            inReg.erase(it.second);
+                            Regs.erase(it);
+                            break;
+                        }
                     }
+                if (Regs.size() == K_R)
+                {
+                    spilledNodes.insert(op);
+                    spillUserPhi(op);
+                    continue;
                 }
                 int tmp = LA.OutDis[bb][op] + bb->get_instrs()->size();
                 for (auto edge : *(LA.Vals[op]->get_user_list()))
@@ -362,6 +378,11 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                 inReg.erase(reg.second);
                 Regs.erase(reg);
             }
+        }
+        if (dynamic_cast<Call *>(ins) != nullptr)
+        {
+            for (auto reg : Regs)
+                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(reg.second);
         }
         if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 0)
         {
@@ -413,12 +434,8 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
     for (auto ins : *(bb->get_instrs()))
     {
         std::unordered_set<int> ops;
-        int cnt = 0;
         for (auto edge : *(ins->get_value_list()))
         {
-            cnt++;
-            if (cnt > Para_num)
-                break;
             if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
                 ops.insert(LA.ValueIdMap.at(edge->get_val()));
         }
@@ -426,16 +443,23 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
         {
             if (inReg.find(op) == inReg.end())
             {
-                for (auto it : Regs)
-                {
-                    if (ops.find(it.second) == ops.end())
+                if (Regs.size() == K_S)
+                    for (auto it : Regs)
                     {
-                        spilledNodes.insert(it.second);
-                        spillUserPhi(it.second);
-                        inReg.erase(it.second);
-                        Regs.erase(it);
-                        break;
+                        if (ops.find(it.second) == ops.end())
+                        {
+                            spilledNodes.insert(it.second);
+                            spillUserPhi(it.second);
+                            inReg.erase(it.second);
+                            Regs.erase(it);
+                            break;
+                        }
                     }
+                if (Regs.size() == K_S)
+                {
+                    spilledNodes.insert(op);
+                    spillUserPhi(op);
+                    continue;
                 }
                 int tmp = LA.OutDis[bb][op] + bb->get_instrs()->size();
                 for (auto edge : *(LA.Vals[op]->get_user_list()))
@@ -453,24 +477,33 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
         }
         for (auto reg : Regs)
         {
+            if (spilledNodes.find(reg.second) != spilledNodes.end())
+            {
+                inReg.erase(reg.second);
+                Regs.erase(reg);
+            }
             if (LA.OutSet[bb].at(reg.second))
                 continue;
             bool live = false;
-            if (spilledNodes.find(reg.second) == spilledNodes.end())
-                for (auto edge : *(LA.Vals[reg.second]->get_user_list()))
+            for (auto edge : *(LA.Vals[reg.second]->get_user_list()))
+            {
+                Value *use = edge->get_user();
+                if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
                 {
-                    Value *use = edge->get_user();
-                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
-                    {
-                        live = true;
-                        break;
-                    }
+                    live = true;
+                    break;
                 }
+            }
             if (!live)
             {
                 inReg.erase(reg.second);
                 Regs.erase(reg);
             }
+        }
+        if (dynamic_cast<Call *>(ins) != nullptr)
+        {
+            for (auto reg : Regs)
+                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(reg.second);
         }
         if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 1)
         {
@@ -517,6 +550,8 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         assert(alloc->get_type()->get_type() == TypeEnum::Ptr);
         alloc->insertInstr(ebb, 0);
         allocMap[v] = alloc;
+        if (dynamic_cast<Param *>(LA.Vals[v]) != nullptr)
+            paraMap[alloc] = dynamic_cast<Param *>(LA.Vals[v]);
     }
 
     for (auto v : spilledNodes)
