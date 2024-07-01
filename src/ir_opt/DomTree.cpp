@@ -137,11 +137,13 @@ void DomTree::MakeDom()
         if (u->Idom != u->Sdom)
             u->Idom = u->Idom->Idom;
     }
-    for (int i = timer; i >= 2; --i)
+    for (int i = timer; i >= 1; --i)
     {
         DomTreeNode *u = (*order)[i];
-        DomTreeNode *f = u->Idom;
         u->doms->insert(u);
+        if (i == 1)
+            break;
+        DomTreeNode *f = u->Idom;
         f->idoms->insert(u);
         for (DomTreeNode *v : *(u->doms))
             f->doms->insert(v);
