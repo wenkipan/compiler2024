@@ -13,9 +13,10 @@ class SSARegisterAlloc
     int vregNum;
     std::unordered_map<int, int> color;
     std::unordered_set<int> spilledNodes;
-    void build(Function *p_func);
     std::vector<std::vector<int>> G;
     std::unordered_set<std::pair<int, int>, pair_hash> AdjSet;
+    std::unordered_map<Alloca *, Param *> paraMap;
+    std::unordered_map<Call *, std::vector<int>> callLiveVreg;
 
 public:
     void run(Function *p_func);
@@ -29,4 +30,6 @@ public:
     void AssignColor_R(Function *p_func);
     void AssignColor_S(Function *p_func);
     int getReg(Value *val);
+    Param *whichPara(Alloca *alloc);
+    std::vector<int> regsStillAliveAfterCall(Call *call);
 };
