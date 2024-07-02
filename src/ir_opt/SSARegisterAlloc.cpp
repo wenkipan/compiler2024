@@ -34,6 +34,49 @@ int SSARegisterAlloc::getReg(Value *val)
     }
 }
 
+void SSARegisterAlloc::AddBB(Function *p_func)
+{
+    std::vector<BasicBlock *> allTmpBB;
+    for (auto bb : *(p_func->get_blocks()))
+    {
+        if (dynamic_cast<Branch *>(bb->get_instrutions()->back()) != nullptr)
+        {
+            assert(bb->get_user_list()->size() == 2);
+            auto now_user_list = *(bb->get_user_list());
+            BasicBlock *trueBB = dynamic_cast<BasicBlock *>(now_user_list[0]->get_user());
+            BasicBlock *falseBB = dynamic_cast<BasicBlock *>(now_user_list[1]->get_user());
+
+            if (!trueBB->get_phinodes()->empty() && !falseBB->get_phinodes()->empty())
+            {
+                BasicBlock *trueNewBB = new BasicBlock(p_func);
+                BasicBlock *falseNewBB = new BasicBlock(p_func);
+                allTmpBB.push_back(trueNewBB);
+                allTmpBB.push_back(falseNewBB);
+                trueNewBB->Set_jmp(trueBB);
+                falseNewBB->Set_jmp(falseBB);
+                for (auto phi : *(trueBB->get_phinodes()))
+                {
+                    std::unordered_map<BasicBlock *, Edge *> tmpMap;
+                    for (auto it : *(phi->get_valueMap()))
+                    {
+                        if (it.first == bb)
+                            tmpMap.insert(std::make_pair(trueNewBB, it.second));
+                        else
+                            tmpMap.insert(it);
+                    }
+                    std::swap(tmpMap, *(phi->get_valueMap()));
+                }
+                new Edge(trueNewBB, bb);
+                new Edge(falseNewBB, bb);
+                now_user_list[0]->drop();
+                now_user_list[1]->drop();
+            }
+        }
+    }
+    for (auto bb : allTmpBB)
+        p_func->block_pushBack(bb);
+}
+
 Param *SSARegisterAlloc::whichPara(Alloca *alloc)
 {
     if (paraMap.find(alloc) == paraMap.end())
@@ -44,6 +87,7 @@ Param *SSARegisterAlloc::whichPara(Alloca *alloc)
 
 void SSARegisterAlloc::run(Function *p_func)
 {
+    AddBB(p_func);
     p_func->ResetID(false);
     LA.run(p_func);
     vregNum = LA.Vals.size();
@@ -154,25 +198,7 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
                 break;
             }
         if (color[id_R[x]] == -1)
-        {
-            puts("");
-            puts("fuck:");
-            LA.Vals[id_R[x]]->print();
-            printf("??%d\n", (int)LA.Vals[id_R[x]]->get_type()->get_type());
-            putchar('\n');
-            for (auto y : G[id_R[x]])
-            {
-                LA.Vals[y]->print_ID();
-                printf(" color : %d\n", color[y]);
-            }
-            fflush(stdout);
             assert(0);
-        }
-        else
-        {
-            puts("OK:");
-            LA.Vals[id_R[x]]->print();
-        }
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -233,24 +259,7 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
             }
 
         if (color[id_S[x]] == -1)
-        {
-            puts("");
-            puts("fuck:");
-            LA.Vals[id_S[x]]->print();
-            putchar('\n');
-            for (auto y : G[id_S[x]])
-            {
-                LA.Vals[y]->print_ID();
-                printf(" color : %d\n", color[y]);
-            }
-            fflush(stdout);
             assert(0);
-        }
-        else
-        {
-            puts("OK:");
-            LA.Vals[id_S[x]]->print();
-        }
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -568,7 +577,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 int insNum = store->get_parent()->get_instrutions()->size();
                 if (dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
                 {
-                    store->insertInstr(store->get_parent(), insNum - 3); // wrong!!!!
+                    store->insertInstr(store->get_parent(), insNum - 3);
                 }
                 else
                 {
