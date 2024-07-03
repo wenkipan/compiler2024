@@ -286,10 +286,15 @@ void Inline::do_inline(Function *caller, Function *callee)
 
                 // promote alloc to func b0
                 //(for local variables, promote is safe, think about diff between define and declare)
+                std::vector<Instrution *> allocs;
                 for (auto newBBs : *inlining->get_blocks())
                     for (auto instr : *newBBs->get_instrs())
                         if (instr->isAlloca())
-                            instr->insertInstr(caller->get_entryBB(), 0);
+                        {
+                            allocs.push_back(instr);
+                        }
+                for (auto a : allocs)
+                    a->insertInstr(caller->get_entryBB(), 0);
 
                 // change newBBs to caller,clear inling_func bbs
                 for (auto newBBs : *inlining->get_blocks())
