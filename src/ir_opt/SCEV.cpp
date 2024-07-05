@@ -42,11 +42,12 @@ static bool inline _isInVar(Value *_val, Loop *loop)
     return false;
 }
 
-static inline Value *_getPhi(Value *_val)
+static inline Value *_getPhi(Value *_val, Loop *loop)
 {
     for (auto it : (*_val->get_user_list()))
     {
-        if (((Instrution *)it->get_user())->get_Instrtype() == InstrutionEnum::PHINode)
+        Instrution *user = (Instrution *)it->get_user();
+        if (user->get_Instrtype() == InstrutionEnum::PHINode && user->get_parent() == loop->get_header())
             return it->get_user();
     }
     assert(0);
@@ -97,12 +98,12 @@ void SCEV::LoopSetStep(Loop *loop)
     {
 
         cmpType = (cmpType + 2) % 4;
-        loop->set_lpStep(_getPhi(p_cmp->get_src2()));
+        loop->set_lpStep(_getPhi(p_cmp->get_src2(), loop));
         loop->set_lpEnd(p_cmp->get_src1());
     }
     else if ((p_exp = find_exp(p_cmp->get_src1())) != nullptr && _isInVar(p_cmp->get_src2(), loop))
     {
-        loop->set_lpStep(_getPhi(p_cmp->get_src1()));
+        loop->set_lpStep(_getPhi(p_cmp->get_src1(), loop));
         loop->set_lpEnd(p_cmp->get_src2());
     }
     else
@@ -188,6 +189,8 @@ SCEVEXP *SCEV::find_exp(Value *_val)
 
 void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pair<Value *, SCEVType>>> &dims, int &flags)
 {
+    if (flags >= 2000)
+        return;
     assert(is_a<Instrution>(_val));
     Instrution *p_instr = (Instrution *)_val;
     Binary *_binary = nullptr;
