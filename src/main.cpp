@@ -1,4 +1,3 @@
-#include "ir_opt/Inline.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -67,10 +66,11 @@ int main(int argc, char *argv[])
         manager->FuncRun<GCM>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        manager->FuncRun<DeadParamElimate>();
         manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
-        manager->run<Inline>();
+        // manager->run<Inline>();
         manager->printModule();
     }
     //  2lir

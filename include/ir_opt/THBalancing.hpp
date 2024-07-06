@@ -36,7 +36,7 @@ public:
     Instrution *rebuild(Instrution *root, std::priority_queue<Value *, std::vector<Value *>, decltype(rankcmp)> &q);
 
 private:
-    int if_debug = 1;
+    int if_debug = 0;
     Function *f;
     std::unordered_map<Value *, int> rank;
     std::priority_queue<Instrution *, std::vector<Instrution *>, decltype(cmp)> rootqueue;

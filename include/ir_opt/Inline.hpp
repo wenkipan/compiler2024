@@ -41,7 +41,7 @@ public:
 };
 class Inline
 {
-    int if_debug = 1;
+    int if_debug = 0;
     // Module *module;
     CallGraph *CG;
 
