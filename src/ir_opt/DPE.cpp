@@ -15,8 +15,8 @@ void DeadParamElimate::PassRun(Module *m)
             {
                 deadparams.push_back(p);
                 paramspos.push_back(i);
-                i++;
             }
+            i++;
         }
         for (auto p : deadparams)
         {
@@ -37,7 +37,11 @@ void DeadParamElimate::PassRun(Module *m)
                         int dynamic = 0;
                         for (auto pos : paramspos)
                         {
+                            printf("%d", pos);
+                            printf("              ");
                             Edge *e = i->get_value_list()->at(1 + pos - dynamic);
+                            e->get_val()->print_ID();
+                            printf("\n");
                             e->drop();
                             dynamic++;
                         }
