@@ -4,5 +4,5 @@ class DeadParamElimate
 {
 
 public:
-    void run(Function *f);
+    void PassRun(Module *M);
 };

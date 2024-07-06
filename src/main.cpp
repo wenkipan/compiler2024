@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         manager->FuncRun<GCM>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
-        manager->FuncRun<DeadParamElimate>();
+        manager->run<DeadParamElimate>();
         manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
