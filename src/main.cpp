@@ -72,8 +72,6 @@ int main(int argc, char *argv[])
         //  manager->printModule();
     }
     manager->printModule();
-    manager->FuncRun<SSARegisterAlloc>();
-    manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");
     manager->printModule();
@@ -84,6 +82,8 @@ int main(int argc, char *argv[])
     printf("globa");
     manager->printModule();
     manager->FuncRun<GEPToALU>();
+    manager->printModule();
+    manager->FuncRun<SSARegisterAlloc>();
     manager->printModule();
     fflush(stdout);
     // 2lir
