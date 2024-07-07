@@ -786,3 +786,27 @@ void Assign::print()
         printf("\n");
     }
 }
+
+Move::Move(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
+    : Instrution(_parent, type, TypeEnum::Void)
+{
+    new Edge(this, _src1);
+    new Edge(this, _src2);
+}
+
+void Move::print()
+{
+    printf("mov");
+    putchar(' ');
+    Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    if (is_a<Cmp>(p_src1) || is_a<Cmp>(p_src2))
+        printf("i1");
+    else
+        this->get_type()->print();
+    putchar(' ');
+    p_src1->print_ID();
+    putchar(',');
+    putchar(' ');
+    p_src2->print_ID();
+    putchar('\n');
+}
