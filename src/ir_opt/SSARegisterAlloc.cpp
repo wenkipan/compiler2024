@@ -15,8 +15,15 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
 
 int SSARegisterAlloc::getReg(Value *val)
 {
+    if (std::find(Register.begin(), Register.end(), val) != Register.end())
+        return std::find(Register.begin(), Register.end(), val) - Register.begin();
     if (LA.ValueIdMap.find(val) == LA.ValueIdMap.end())
-        assert(0);
+    {
+        if (valueMapRegister.find(val) == valueMapRegister.end())
+            return 12;
+        else
+            return valueMapRegister[val];
+    }
     int x = LA.ValueIdMap.at(val);
     if (color.find(x) == color.end())
         assert(0);
@@ -46,7 +53,7 @@ void SSARegisterAlloc::AddBB(Function *p_func)
             BasicBlock *trueBB = dynamic_cast<BasicBlock *>(now_user_list[0]->get_user());
             BasicBlock *falseBB = dynamic_cast<BasicBlock *>(now_user_list[1]->get_user());
 
-            if (!trueBB->get_phinodes()->empty() && !falseBB->get_phinodes()->empty())
+            if (!trueBB->get_phinodes()->empty() || !falseBB->get_phinodes()->empty())
             {
                 BasicBlock *trueNewBB = new BasicBlock(p_func);
                 BasicBlock *falseNewBB = new BasicBlock(p_func);
@@ -61,6 +68,18 @@ void SSARegisterAlloc::AddBB(Function *p_func)
                     {
                         if (it.first == bb)
                             tmpMap.insert(std::make_pair(trueNewBB, it.second));
+                        else
+                            tmpMap.insert(it);
+                    }
+                    std::swap(tmpMap, *(phi->get_valueMap()));
+                }
+                for (auto phi : *(falseBB->get_phinodes()))
+                {
+                    std::unordered_map<BasicBlock *, Edge *> tmpMap;
+                    for (auto it : *(phi->get_valueMap()))
+                    {
+                        if (it.first == bb)
+                            tmpMap.insert(std::make_pair(falseNewBB, it.second));
                         else
                             tmpMap.insert(it);
                     }
@@ -96,8 +115,310 @@ void SSARegisterAlloc::run(Function *p_func)
     MakeGraph(p_func);
     AssignColor_R(p_func);
     AssignColor_S(p_func);
+    Register.resize(K_R + K_S);
+    for (int i = 0; i < K_R + K_S; i++)
+    {
+        Register[i] = new Value(i < K_R ? TypeEnum::I32 : TypeEnum::F32);
+        p_func->value_pushBack(Register[i]);
+    }
+
+    ReSortForPara(p_func);
+
+    std::vector<Call *> calls;
+    for (auto bb : *(p_func->get_blocks()))
+    {
+        for (auto ins : *(bb->get_instrs()))
+            if (dynamic_cast<Call *>(ins) != nullptr)
+                calls.push_back(dynamic_cast<Call *>(ins));
+    }
+    for (auto call : calls)
+        ReSortForCall(call);
+
+    for (auto bb : *(p_func->get_blocks()))
+        ReSortForPhi(bb);
 }
 
+void SSARegisterAlloc::ReSortForPara(Function *p_func)
+{
+    int nowPos = 0;
+    for (auto it : *(p_func->get_entryBB()->get_instrs()))
+        if (dynamic_cast<Alloca *>(it) != nullptr)
+            nowPos++;
+        else
+            break;
+    auto paras = p_func->get_params();
+    std::vector<int> d(Para_num, 0);
+    std::vector<Value *> In(Para_num, nullptr);
+    for (int i = 0; i < paras->size(); i++)
+    {
+        if (i < Para_num)
+        {
+            if (spilledNodes.find(LA.ValueIdMap[paras->at(i)]) != spilledNodes.end())
+            {
+                Store *store = new Store(allocMap[LA.ValueIdMap[paras->at(i)]], Register[i], false, p_func->get_entryBB());
+                store->insertInstr(p_func->get_entryBB(), nowPos);
+                nowPos++;
+            }
+            else
+            {
+                int tmpR = getReg(paras->at(i));
+                if (tmpR >= Para_num)
+                {
+                    Move *move = new Move(InstrutionEnum::Move, Register[tmpR], Register[i], p_func->get_entryBB());
+                    move->insertInstr(p_func->get_entryBB(), nowPos);
+                    nowPos++;
+                }
+                else
+                {
+                    if (i != tmpR)
+                    {
+                        d[i]++;
+                        In[tmpR] = Register[i];
+                    }
+                    else
+                        d[i] = -1;
+                    /*printf("edge %d %d\n", i, tmpR);
+                    paras->at(i)->print();
+                    fflush(stdout);*/
+                }
+            }
+        }
+        else
+        {
+            if (spilledNodes.find(LA.ValueIdMap[paras->at(i)]) != spilledNodes.end())
+            {
+                // noting to do
+            }
+            else
+            {
+                Alloca *alloc = new Alloca(p_func->get_entryBB(), paras->at(i)->get_type(), 1);
+                alloc->insertInstr(p_func->get_entryBB(), 0);
+                nowPos++;
+                int tmpR = getReg(paras->at(i));
+                Load *load = new Load(alloc, false, p_func->get_entryBB());
+                load->insertInstr(p_func->get_entryBB(), nowPos);
+                nowPos++;
+                if (tmpR >= Para_num)
+                {
+                    valueMapRegister[load] = tmpR;
+                }
+                else
+                {
+                    In[tmpR] = load;
+                }
+            }
+        }
+    }
+    int n = Para_num;
+    while (1)
+    {
+        bool flag = false;
+        for (int i = 0; i < n; i++)
+            if (In[i] != nullptr && d[i] >= 0)
+                flag = true;
+        if (!flag)
+            break;
+        flag = false;
+        for (int i = 0; i < n; i++)
+        {
+            if (In[i] == nullptr)
+                continue;
+            if (d[i] == 0)
+            {
+                flag = true;
+                if (dynamic_cast<Load *>(In[i]) == nullptr)
+                {
+                    Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
+                    move->insertInstr(p_func->get_entryBB(), nowPos);
+                    nowPos++;
+                    d[getReg(In[i])]--;
+                }
+                else
+                {
+                    dynamic_cast<Instrution *>(In[i])->insertInstr(p_func->get_entryBB(), nowPos - 1);
+                    valueMapRegister[In[i]] = i;
+                }
+                d[i] = -1;
+                break;
+            }
+        }
+        if (!flag)
+        {
+            for (int i = 0; i < n; i++)
+                if (d[i] > 0)
+                {
+                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], p_func->get_entryBB());
+                    move->insertInstr(p_func->get_entryBB(), nowPos);
+                    nowPos++;
+                    assert(In[i] != nullptr);
+                    move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
+                    move->insertInstr(p_func->get_entryBB(), nowPos);
+                    nowPos++;
+                    assert(std::find(Register.begin(), Register.end(), In[i]) != Register.end());
+                    d[std::find(Register.begin(), Register.end(), In[i]) - Register.begin()]--;
+                    d[i] = -1;
+                    for (int j = 0; j < n; j++)
+                        if (d[i] > 0 && In[i] == Register[i])
+                        {
+                            In[i] = Register[12];
+                        }
+                    flag = true;
+                    break;
+                }
+        }
+        assert(flag);
+    }
+}
+
+void SSARegisterAlloc::ReSortForCall(Call *call)
+{
+    int nowPos = std::find(call->get_parent()->get_instrs()->begin(), call->get_parent()->get_instrs()->end(), call) - call->get_parent()->get_instrs()->begin();
+    std::vector<int> d(Para_num, 0);
+    std::vector<Value *> In(Para_num, nullptr);
+    int cnt = 0;
+    for (auto edge : *(call->get_value_list()))
+    {
+        Value *val = edge->get_val();
+        int regFrom = getReg(val);
+        if (regFrom == cnt)
+        {
+            d[cnt] = -1;
+        }
+        else
+        {
+            if (regFrom < Para_num)
+                d[regFrom]++;
+            In[cnt] = val;
+        }
+        cnt++;
+        if (cnt == Para_num)
+            break;
+    }
+    while (1)
+    {
+        bool flag = false;
+        for (int i = 0; i < cnt; i++)
+            if (d[i] >= 0)
+            {
+                flag = true;
+                break;
+            }
+        if (!flag)
+            break;
+        flag = false;
+        for (int i = 0; i < cnt; i++)
+            if (In[i] != nullptr && d[i] == 0)
+            {
+                int regFrom = getReg(In[i]);
+                Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
+                move->insertInstr(move->get_parent(), nowPos);
+                nowPos++;
+                if (regFrom < cnt)
+                    d[regFrom]--;
+                d[i] = -1;
+                flag = true;
+                break;
+            }
+        if (!flag)
+        {
+            for (int i = 0; i < cnt; i++)
+                if (d[i] > 0)
+                {
+                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], call->get_parent());
+                    move->insertInstr(move->get_parent(), nowPos);
+                    nowPos++;
+                    move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
+                    move->insertInstr(move->get_parent(), nowPos);
+                    nowPos++;
+                    if (getReg(In[i]) < cnt)
+                        d[getReg(In[i])]--;
+                    for (int j = 0; j < cnt; j++)
+                        if (In[j] == Register[i])
+                            In[j] = Register[12];
+                    d[i] = -1;
+                    flag = true;
+                    break;
+                }
+        }
+        assert(flag);
+    }
+}
+
+void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
+{
+    if (bb->get_phinodes()->empty())
+        return;
+    int n = bb->get_phinodes()->size();
+    for (auto it : *(bb->get_phinodes()->front()->get_valueMap()))
+    {
+        BasicBlock *bbFrom = it.first;
+        std::vector<int> d(n, 0);
+        std::vector<Value *> In(n, nullptr);
+        std::vector<int> a, b;
+        std::unordered_map<int, int> Q;
+        for (auto phi : *(bb->get_phinodes()))
+        {
+            a.push_back(getReg(phi->get_valueMap()->at(bbFrom)->get_val()));
+            b.push_back(getReg(phi));
+            Q[getReg(phi)] = a.size() - 1;
+        }
+        assert(a.size() == n);
+        for (int i = 0; i < n; i++)
+        {
+            In[i] = Register[a[i]];
+            if (a[i] == b[i])
+            {
+                d[i] = -1;
+            }
+            else if (Q.find(a[i]) != Q.end())
+                d[Q[a[i]]]++;
+        }
+        while (1)
+        {
+            bool flag = false;
+            for (int i = 0; i < n; i++)
+                if (d[i] >= 0)
+                {
+                    flag = true;
+                    break;
+                }
+            if (!flag)
+                break;
+            flag = false;
+            for (int i = 0; i < n; i++)
+                if (d[i] == 0)
+                {
+                    Move *move = new Move(InstrutionEnum::Move, Register[b[i]], In[i], bbFrom);
+                    move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 2);
+                    d[i] = -1;
+                    if (Q.find(a[i]) != Q.end())
+                        d[Q[a[i]]]--;
+                    flag = true;
+                    break;
+                }
+            if (!flag)
+            {
+                for (int i = 0; i < n; i++)
+                    if (d[i] > 0)
+                    {
+                        Move *move = new Move(InstrutionEnum::Move, Register[12], Register[b[i]], bbFrom);
+                        move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 2);
+                        move = new Move(InstrutionEnum::Move, Register[b[i]], In[i], bbFrom);
+                        move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 2);
+                        d[i] = -1;
+                        if (Q.find(a[i]) != Q.end())
+                            d[Q[a[i]]]--;
+                        for (int j = 0; j < n; j++)
+                            if (In[j] == Register[b[i]])
+                                In[j] = Register[12];
+                        flag = true;
+                        break;
+                    }
+            }
+            assert(flag);
+        }
+    }
+}
 void SSARegisterAlloc::AddEdge(int x, int y)
 {
     if (x == y || LA.is_float[x] != LA.is_float[y] || AdjSet.find(std::make_pair(x, y)) != AdjSet.end())
@@ -133,13 +454,17 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
                         AddEdge(l, def);
                 }
             }
-            if (dynamic_cast<Call *>(*it) != nullptr)
-                continue;
+            // if (dynamic_cast<Call *>(*it) != nullptr)
+            //     continue;
+            int cnt = 0;
             for (auto edge : *((*it)->get_value_list()))
             {
                 Value *use = edge->get_val();
                 if (LA.ValueIdMap.find(use) != LA.ValueIdMap.end())
                     live.insert(LA.ValueIdMap.at(use));
+                cnt++;
+                if (cnt == Para_num)
+                    break;
             }
         }
         if (bb == p_func->get_entryBB())
@@ -151,7 +476,9 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
                 {
                     live.erase(def);
                     for (auto l : live)
+                    {
                         AddEdge(l, def);
+                    }
                 }
             }
         }
@@ -171,26 +498,24 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
             n++;
             id_R_map[i] = n;
         }
-    std::vector<int> next(n + n + 1), pre(n + n + 1), w(n + 1), q(n + 1), dy(n + 1);
+    int N = n + 1;
+    std::vector<int> next(n + N + 1), pre(n + N + 1), w(n + 1), q(n + 1), dy(n + 1);
     for (int i = 1; i <= n; i++)
     {
         color[id_R[i]] = -1;
-        pre[next[i] = next[n + w[i]]] = i;
-        next[pre[i] = n + w[i]] = i;
+        pre[next[i] = next[N + w[i]]] = i;
+        next[pre[i] = N + w[i]] = i;
     }
     int now = 0;
     for (int k = n; k; --k, ++now)
     {
-        while (!next[n + now])
+        while (!next[N + now])
             --now;
-        int x = next[n + now];
+        int x = next[N + now];
         std::unordered_set<int> color_set;
         for (auto tmp : G[id_R[x]])
-        {
-            int y = id_R_map[tmp];
-            if (color[id_R[y]] != -1)
-                color_set.insert(color[id_R[y]]);
-        }
+            if (color[tmp] != -1)
+                color_set.insert(color[tmp]);
         for (int i = 0; i < K_R; i++)
             if (color_set.find(i) == color_set.end())
             {
@@ -211,8 +536,8 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
                 pre[next[y]] = pre[y];
                 next[pre[y]] = next[y];
                 ++w[y];
-                pre[next[y] = next[n + w[y]]] = y;
-                next[pre[y] = n + w[y]] = y;
+                pre[next[y] = next[N + w[y]]] = y;
+                next[pre[y] = N + w[y]] = y;
             }
         }
     }
@@ -231,33 +556,30 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
             n++;
             id_S_map[i] = n;
         }
-    std::vector<int> next(n + n + 1), pre(n + n + 1), w(n + 1), q(n + 1), dy(n + 1);
+    int N = n + 1;
+    std::vector<int> next(n + N + 1), pre(n + N + 1), w(n + 1), q(n + 1), dy(n + 1);
     for (int i = 1; i <= n; i++)
     {
         color[id_S[i]] = -1;
-        pre[next[i] = next[n + w[i]]] = i;
-        next[pre[i] = n + w[i]] = i;
+        pre[next[i] = next[N + w[i]]] = i;
+        next[pre[i] = N + w[i]] = i;
     }
     int now = 0;
     for (int k = n; k; --k, ++now)
     {
-        while (!next[n + now])
+        while (!next[N + now])
             --now;
-        int x = next[n + now];
+        int x = next[N + now];
         std::unordered_set<int> color_set;
         for (auto tmp : G[id_S[x]])
-        {
-            int y = id_S_map[tmp];
-            if (color[id_S[y]] != -1)
-                color_set.insert(color[id_S[y]]);
-        }
-        for (int i = 0; i < K_S; i++)
+            if (color[tmp] != -1)
+                color_set.insert(color[tmp]);
+        for (int i = 0; i < K_R; i++)
             if (color_set.find(i) == color_set.end())
             {
                 color[id_S[x]] = i;
                 break;
             }
-
         if (color[id_S[x]] == -1)
             assert(0);
         pre[next[x]] = pre[x];
@@ -272,8 +594,8 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
                 pre[next[y]] = pre[y];
                 next[pre[y]] = next[y];
                 ++w[y];
-                pre[next[y] = next[n + w[y]]] = y;
-                next[pre[y] = n + w[y]] = y;
+                pre[next[y] = next[N + w[y]]] = y;
+                next[pre[y] = N + w[y]] = y;
             }
         }
     }
@@ -322,10 +644,23 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
     for (auto ins : *(bb->get_instrs()))
     {
         std::unordered_set<int> ops;
+        int cnt = 0;
         for (auto edge : *(ins->get_value_list()))
         {
-            if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
-                ops.insert(LA.ValueIdMap.at(edge->get_val()));
+            cnt++;
+            if (cnt <= Para_num)
+            {
+                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
+                    ops.insert(LA.ValueIdMap.at(edge->get_val()));
+            }
+            else
+            {
+                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
+                {
+                    spilledNodes.insert(LA.ValueIdMap.at(edge->get_val()));
+                    spillUserPhi(LA.ValueIdMap.at(edge->get_val()));
+                }
+            }
         }
         for (auto op : ops)
         {
@@ -345,9 +680,7 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                     }
                 if (Regs.size() == K_R)
                 {
-                    spilledNodes.insert(op);
-                    spillUserPhi(op);
-                    continue;
+                    assert(0);
                 }
                 int tmp = LA.OutDis[bb][op] + bb->get_instrs()->size();
                 for (auto edge : *(LA.Vals[op]->get_user_list()))
@@ -443,10 +776,23 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
     for (auto ins : *(bb->get_instrs()))
     {
         std::unordered_set<int> ops;
+        int cnt = 0;
         for (auto edge : *(ins->get_value_list()))
         {
-            if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
-                ops.insert(LA.ValueIdMap.at(edge->get_val()));
+            cnt++;
+            if (cnt <= Para_num)
+            {
+                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
+                    ops.insert(LA.ValueIdMap.at(edge->get_val()));
+            }
+            else
+            {
+                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
+                {
+                    spilledNodes.insert(LA.ValueIdMap.at(edge->get_val()));
+                    spillUserPhi(LA.ValueIdMap.at(edge->get_val()));
+                }
+            }
         }
         for (auto op : ops)
         {
@@ -552,7 +898,6 @@ void SSARegisterAlloc::Spill(Function *p_func)
 void SSARegisterAlloc::RewriteProgram(Function *p_func)
 {
     BasicBlock *ebb = p_func->get_entryBB();
-    std::unordered_map<int, Alloca *> allocMap;
     for (auto v : spilledNodes)
     {
         Alloca *alloc = new Alloca(ebb, LA.Vals[v]->get_type(), 1);
@@ -560,7 +905,8 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         alloc->insertInstr(ebb, 0);
         allocMap[v] = alloc;
         if (dynamic_cast<Param *>(LA.Vals[v]) != nullptr)
-            paraMap[alloc] = dynamic_cast<Param *>(LA.Vals[v]);
+            if (p_func->get_params()->size() > Para_num && std::find(p_func->get_params()->begin(), p_func->get_params()->begin() + Para_num, LA.Vals[v]) == p_func->get_params()->begin() + Para_num)
+                paraMap[alloc] = dynamic_cast<Param *>(LA.Vals[v]);
     }
 
     for (auto v : spilledNodes)
@@ -592,7 +938,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
             int pos = std::find(insList->begin(), insList->end(), ins) - insList->begin() + 1;
             store->insertInstr(store->get_parent(), pos);
         }
-        /*else if (para != nullptr)
+        /*else if (para != nullptr && (p_func->get_params()->size() <= Para_num || std::find(p_func->get_params()->begin(), p_func->get_params()->begin() + Para_num, para) != p_func->get_params()->begin() + Para_num))
         {
             Store *store = new Store(allocMap[v], para, false, p_func->get_entryBB());
             auto insList = store->get_parent()->get_instrs();
@@ -611,29 +957,49 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
             {
                 continue;
             }
+            bool flag = true;
+            if (dynamic_cast<Call *>(use) != nullptr && use->get_value_list()->size() > Para_num)
+            {
+                flag = false;
+                for (int i = 0; i < Para_num; i++)
+                    if (use->get_value_list()->at(i)->get_val() == val)
+                    {
+                        flag = true;
+                        break;
+                    }
+            }
             auto insList = use->get_parent()->get_instrs();
             if (std::find(insList->begin(), insList->end(), use) != insList->end())
             {
-                Load *load;
-                if (load_map.find(use) == load_map.end())
+                if (flag)
                 {
-                    load = new Load(allocMap[v], false, use->get_parent());
-                    int pos = std::find(insList->begin(), insList->end(), use) - insList->begin();
-                    load->insertInstr(load->get_parent(), pos);
-                    load_map[use] = load;
+                    Load *load;
+                    if (load_map.find(use) == load_map.end())
+                    {
+                        load = new Load(allocMap[v], false, use->get_parent());
+                        int pos = std::find(insList->begin(), insList->end(), use) - insList->begin();
+                        load->insertInstr(load->get_parent(), pos);
+                        load_map[use] = load;
+                    }
+                    else
+                        load = load_map[use];
+                    it->set_val(load);
                 }
                 else
-                    load = load_map[use];
-                it->set_val(load);
+                {
+                    it->set_val(allocMap[v]);
+                }
             }
         }
         Edge *tmp_edge = nullptr;
         for (auto edge : *(val->get_user_list()))
+        {
             if (edge->get_val() == val && dynamic_cast<PHINode *>(edge->get_user()) == nullptr)
             {
                 tmp_edge = edge;
                 break;
             }
+        }
         val->get_user_list()->clear();
         if (tmp_edge != nullptr)
             val->get_user_list()->push_back(tmp_edge);
