@@ -231,7 +231,8 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
                     move->insertInstr(p_func->get_entryBB(), nowPos);
                     nowPos++;
-                    d[getReg(In[i])]--;
+                    if (getReg(In[i]) != 12)
+                        d[getReg(In[i])]--;
                 }
                 else
                 {
@@ -258,9 +259,9 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     d[std::find(Register.begin(), Register.end(), In[i]) - Register.begin()]--;
                     d[i] = -1;
                     for (int j = 0; j < n; j++)
-                        if (d[i] > 0 && In[i] == Register[i])
+                        if (d[j] >= 0 && In[j] == Register[i])
                         {
-                            In[i] = Register[12];
+                            In[j] = Register[12];
                         }
                     flag = true;
                     break;
