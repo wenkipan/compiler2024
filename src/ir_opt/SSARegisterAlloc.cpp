@@ -194,6 +194,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 Alloca *alloc = new Alloca(p_func->get_entryBB(), paras->at(i)->get_type(), 1);
                 alloc->insertInstr(p_func->get_entryBB(), 0);
                 nowPos++;
+                paraMap[alloc] = paras->at(i);
                 int tmpR = getReg(paras->at(i));
                 Load *load = new Load(alloc, false, p_func->get_entryBB());
                 load->insertInstr(p_func->get_entryBB(), nowPos);
@@ -231,7 +232,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
                     move->insertInstr(p_func->get_entryBB(), nowPos);
                     nowPos++;
-                    if (getReg(In[i]) != 12)
+                    if (getReg(In[i]) < n)
                         d[getReg(In[i])]--;
                 }
                 else
