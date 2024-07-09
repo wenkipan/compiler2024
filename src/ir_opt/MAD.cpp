@@ -270,15 +270,191 @@ void MAD::ARD()
     }
     for (Instrution *_del : Del)
         _del->drop();
+    DCE woker;
+    woker.run(func);
+}
+
+static int _getMAs(GEP *gep, std::set<Store *> &STs, std::set<Load *> &LDs, std::set<GEP *> &GEPs, Call *&call, bool FIT)
+{
+    auto user = gep->get_user_list();
+    int flag = 0;
+    for (Edge *edge : *user)
+    {
+        int tmp = 0;
+        Instrution *user = (Instrution *)edge->get_user();
+        if (user->isGEP())
+            tmp = _getMAs((GEP *)user, STs, LDs, GEPs, call, false);
+        else if (user->isLoad())
+            LDs.insert((Load *)user);
+        else if (user->isStore())
+        {
+            Store *ST = (Store *)user;
+            if (!is_a<ConstantI32>(ST->get_src()))
+                return -1;
+            STs.insert(ST);
+            tmp = 1;
+        }
+        else if (user->isCall())
+        {
+            if (!FIT || call != nullptr)
+                return -1;
+            Call *p_call = (Call *)user;
+            if (((Function *)p_call->get_func())->get_name() == "memset")
+            {
+                if (is_a<ConstantI32>(gep->get_offset()))
+                {
+                    if ((*((ConstantI32 *)gep->get_offset())->get_i32().begin()) == 0)
+                        call = p_call;
+                    else
+                        return -1;
+                }
+                else
+                    return -1;
+            }
+            else
+                return -1;
+        }
+        if (tmp == -1)
+            return -1;
+        else if (tmp == 1)
+            flag = 1;
+    }
+    if (flag)
+    {
+        if (is_a<ConstantI32>(gep->get_offset()))
+        {
+            GEPs.insert(gep);
+            return 1;
+        }
+        else
+            return -1;
+    }
+    return 0;
+}
+
+void MAD::SMO()
+{
+    std::set<Store *> STs;
+    std::set<Load *> LDs;
+    std::set<GEP *> GEPs;
+    DomTree tree(func);
+    tree.Run();
+    std::set<Value *> Allocas;
+    auto instrs = func->get_entryBB()->get_instrs();
+    for (auto instr = instrs->begin(); instr != instrs->end(); ++instr)
+    {
+        if (!(*instr)->isAlloca())
+            continue;
+        if ((((Ptr *)(*instr)->get_type())->get_btype()->get_type() != TypeEnum::Array))
+            assert(0);
+        if (Allocas.find(*instr) != Allocas.end())
+            continue;
+        STs.clear(), LDs.clear(), GEPs.clear();
+        auto users = (*instr)->get_user_list();
+        int flag;
+        Call *call = nullptr;
+        for (Edge *edge : *users)
+        {
+            Instrution *user = (Instrution *)edge->get_user();
+            assert(user->isGEP());
+            flag = _getMAs((GEP *)user, STs, LDs, GEPs, call, true);
+            if (flag == -1)
+                break;
+        }
+        if (flag == -1)
+            continue;
+        std::set<Value *> vis;
+        BasicBlock *CallBB = nullptr;
+        if (call != nullptr)
+            CallBB = call->get_parent();
+        for (Store *ST : STs)
+        {
+            BasicBlock *STBB = ST->get_parent();
+            if (vis.find(ST->get_src()) != vis.end())
+            {
+                flag = -1;
+                break;
+            }
+            vis.insert(ST->get_src());
+            if (call != nullptr)
+            {
+                if (STBB == CallBB)
+                {
+                    auto instrs = STBB->get_instrs();
+                    for (Instrution *instr : *instrs)
+                        if (instr == ST)
+                        {
+                            flag = -1;
+                            break;
+                        }
+                        else if (instr == call)
+                            break;
+                }
+                else if (tree.is_dom(CallBB, STBB))
+                    ;
+                else
+                    flag = -1;
+            }
+
+            for (Load *LD : LDs)
+            {
+                BasicBlock *LDBB = LD->get_parent();
+                if (STBB == LDBB)
+                {
+                    auto instrs = STBB->get_instrs();
+                    for (Instrution *instr : *instrs)
+                        if (instr == LD)
+                        {
+                            flag = -1;
+                            break;
+                        }
+                        else if (instr == ST)
+                            break;
+                }
+                else if (tree.is_dom(STBB, LDBB))
+                    ;
+                else
+                    flag = -1;
+                if (flag == -1)
+                    break;
+            }
+            if (flag == -1)
+                break;
+        }
+        if (flag == -1)
+            continue;
+        Allocas.insert(*instr);
+        BasicBlock *BB = func->get_entryBB();
+        Branch *p_branch = (Branch *)BB->get_last_instrution();
+        BB->Ins_popBack();
+        Instrution *cond = nullptr;
+        if (p_branch->isBranch())
+        {
+            assert(p_branch->get_cond() == BB->get_last_instrution());
+            cond = BB->get_last_instrution();
+            BB->Ins_popBack();
+        }
+        for (GEP *gep : GEPs)
+            if (gep->get_parent() != BB)
+                gep->insertInstr(BB, BB->get_instrs()->size());
+        for (Store *ST : STs)
+            if (ST->get_parent() != BB)
+                ST->insertInstr(BB, BB->get_instrs()->size());
+        if (cond != nullptr)
+            BB->Ins_pushBack(cond);
+        BB->Ins_pushBack(p_branch);
+        instr = instrs->begin();
+    }
 }
 
 void MAD::FuncDealer()
 {
+    LDD(); // stroe a A; b = load A -> b = a;
+    SSD(); // store a A; no load A ; store b A -> store b A
+    UAD(); // only store del
+    ARD(); // no load array del
 
-    LDD();
-    SSD();
-    UAD();
-    ARD();
+    SMO(); // store dom all load move to top
 }
 
 void MAD::PassRun(Module *p_module)
