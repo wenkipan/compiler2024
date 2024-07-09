@@ -15,6 +15,7 @@ public:
     void SSD();
     void UAD();
     void ARD();
+    void SMO();
 
     void FuncDealer();
     void PassRun(Module *p_module);
