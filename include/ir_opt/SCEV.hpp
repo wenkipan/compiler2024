@@ -8,10 +8,17 @@ enum class SCEVType
     ADD,
     SUB,
     MUL,
+    EXPADD0,
+    EXPSUB0,
+    EXPADD1,
+    EXPSUB1,
+    EXPADD2,
+    EXPSUB2,
 };
 
 class SCEVEXP
 {
+
     bool _mul = false;
     bool _ifmod = false;
     Value *ToPhi = nullptr;
@@ -19,6 +26,7 @@ class SCEVEXP
     std::vector<std::vector<std::pair<Value *, SCEVType>>> *dims;
 
 public:
+    static std::unordered_map<Value *, SCEVEXP *> *SCEVMAP;
     SCEVEXP();
     ~SCEVEXP();
 
@@ -33,6 +41,7 @@ public:
     bool is_mod() { return _ifmod; }
     Value *get_ToPhi() { return ToPhi; }
     Value *get_mod() { return _mod; }
+    Value *_getExpVal(SCEVEXP *val, int i, BasicBlock *_BB);
     std::vector<std::vector<std::pair<Value *, SCEVType>>> *get_dims() { return dims; }
 };
 

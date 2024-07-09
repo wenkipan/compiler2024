@@ -1,5 +1,68 @@
 #include <ir_opt/SCEV.hpp>
 
+std::unordered_map<Value *, SCEVEXP *> *SCEVEXP::SCEVMAP = nullptr;
+
+Value *SCEVEXP::_getExpVal(SCEVEXP *val, int i, BasicBlock *_BB)
+{
+    Value *re = nullptr;
+    int flag = 0;
+    auto dims = val->get_dims();
+    assert(!(*dims)[i].empty());
+    if ((*dims)[i][0].first->get_type()->get_type() == TypeEnum::I32)
+        re = new ConstantI32(0), flag = 0;
+    else if ((*dims)[i][0].first->get_type()->get_type() == TypeEnum::F32)
+        re = new ConstantF32(0.0), flag = 5;
+    else
+        assert(0);
+    _BB->get_func()->value_pushBack(re);
+    if (i >= 3)
+        assert(0);
+    Instrution *p_instr = nullptr;
+    int nw = -1;
+    std::vector<std::pair<Value *, SCEVType>> *dim;
+    for (auto &it : (*dims)[i])
+    {
+        switch (it.second)
+        {
+        case SCEVType::ADD:
+            p_instr = new Binary((InstrutionEnum)(24 + flag), re, it.first, _BB);
+            break;
+        case SCEVType::SUB:
+            p_instr = new Binary((InstrutionEnum)(25 + flag), re, it.first, _BB);
+            break;
+        case SCEVType::MUL:
+            p_instr = new Binary((InstrutionEnum)(26 + flag), re, it.first, _BB);
+            break;
+        case SCEVType::EXPADD0:
+            nw = nw == -1 ? 0 : nw;
+        case SCEVType::EXPADD1:
+            nw = nw == -1 ? 1 : nw;
+        case SCEVType::EXPADD2:
+            nw = nw == -1 ? 2 : nw;
+            dim = &(*SCEVMAP->find(it.first)->second->get_dims())[nw];
+            if (dim->empty())
+                break;
+            p_instr = new Binary((InstrutionEnum)(24 + flag), re, _getExpVal(SCEVMAP->find(it.first)->second, nw, _BB), _BB);
+            break;
+        case SCEVType::EXPSUB0:
+            nw = nw == -1 ? 0 : nw;
+        case SCEVType::EXPSUB1:
+            nw = nw == -1 ? 1 : nw;
+        case SCEVType::EXPSUB2:
+            nw = nw == -1 ? 2 : nw;
+            dim = &(*SCEVMAP->find(it.first)->second->get_dims())[nw];
+            if (dim->empty())
+                break;
+            p_instr = new Binary((InstrutionEnum)(25 + flag), re, _getExpVal(SCEVMAP->find(it.first)->second, nw, _BB), _BB);
+            break;
+        default:
+            break;
+        }
+        re = (Value *)p_instr;
+    }
+    return re;
+}
+
 Value *SCEVEXP::get_scr(int i, BasicBlock *_BB)
 {
     Value *re = nullptr;
@@ -13,6 +76,8 @@ Value *SCEVEXP::get_scr(int i, BasicBlock *_BB)
         assert(0);
     _BB->get_func()->value_pushBack(re);
     Instrution *p_instr = nullptr;
+    int nw = -1;
+    std::vector<std::pair<Value *, SCEVType>> *dim;
     for (auto &it : (*dims)[i])
     {
         switch (it.second)
@@ -25,6 +90,28 @@ Value *SCEVEXP::get_scr(int i, BasicBlock *_BB)
             break;
         case SCEVType::MUL:
             p_instr = new Binary((InstrutionEnum)(26 + flag), re, it.first, _BB);
+            break;
+        case SCEVType::EXPADD0:
+            nw = nw == -1 ? 0 : nw;
+        case SCEVType::EXPADD1:
+            nw = nw == -1 ? 1 : nw;
+        case SCEVType::EXPADD2:
+            nw = nw == -1 ? 2 : nw;
+            dim = &(*SCEVMAP->find(it.first)->second->get_dims())[nw];
+            if (dim->empty())
+                break;
+            p_instr = new Binary((InstrutionEnum)(24 + flag), re, _getExpVal(SCEVMAP->find(it.first)->second, nw, _BB), _BB);
+            break;
+        case SCEVType::EXPSUB0:
+            nw = nw == -1 ? 0 : nw;
+        case SCEVType::EXPSUB1:
+            nw = nw == -1 ? 1 : nw;
+        case SCEVType::EXPSUB2:
+            nw = nw == -1 ? 2 : nw;
+            dim = &(*SCEVMAP->find(it.first)->second->get_dims())[nw];
+            if (dim->empty())
+                break;
+            p_instr = new Binary((InstrutionEnum)(25 + flag), re, _getExpVal(SCEVMAP->find(it.first)->second, nw, _BB), _BB);
             break;
         default:
             break;
@@ -42,18 +129,6 @@ static bool inline _isInVar(Value *_val, Loop *loop)
     return false;
 }
 
-static inline Value *_getPhi(Value *_val, Loop *loop)
-{
-    for (auto it : (*_val->get_user_list()))
-    {
-        Instrution *user = (Instrution *)it->get_user();
-        if (user->get_Instrtype() == InstrutionEnum::PHINode && user->get_parent() == loop->get_header())
-            return it->get_user();
-    }
-    assert(0);
-    return nullptr;
-}
-
 void SCEV::LoopSetStep(Loop *loop)
 {
     for (Loop *_son : (*loop->get_lpsons()))
@@ -62,7 +137,6 @@ void SCEV::LoopSetStep(Loop *loop)
         return;
     if (!loop->is_simple())
         return;
-
     BasicBlock *_latch = (*loop->get_latchs()->begin());
     BasicBlock *_exiting = (*loop->get_exitings()->begin());
     assert(_latch && _exiting);
@@ -98,20 +172,19 @@ void SCEV::LoopSetStep(Loop *loop)
     {
 
         cmpType = (cmpType + 2) % 4;
-        loop->set_lpStep(_getPhi(p_cmp->get_src2(), loop));
+        loop->set_lpStep(p_exp->get_ToPhi());
         loop->set_lpEnd(p_cmp->get_src1());
     }
     else if ((p_exp = find_exp(p_cmp->get_src1())) != nullptr && _isInVar(p_cmp->get_src2(), loop))
     {
-        loop->set_lpStep(_getPhi(p_cmp->get_src1(), loop));
+        loop->set_lpStep(p_exp->get_ToPhi());
         loop->set_lpEnd(p_cmp->get_src2());
     }
     else
         return;
-
+    p_exp = SCEVMAP->find(p_exp->get_ToPhi())->second;
     if (!(*p_exp->get_dims())[2].empty() || !(*p_exp->get_dims())[3].empty() || !(*p_exp->get_dims())[4].empty())
         return;
-
     loop->set_ifStep(true);
     loop->set_lpCmp(p_cmp);
     loop->set_cmpType(cmpType);
@@ -136,26 +209,49 @@ void SCEVEXP::print()
     int cnt = 0;
     for (auto i : *dims)
     {
+
         if (i.empty())
             break;
+        if (i.begin()->second > SCEVType::MUL)
+        {
+            i.clear();
+            break;
+        }
         if (cnt)
             printf(", ");
         int cnt1 = 0;
+        int nw = -1;
         for (auto j : i)
         {
             if (cnt1)
                 printf(" + ");
             switch (j.second)
             {
+            case SCEVType::EXPADD0:
+                nw = nw == -1 ? 0 : nw;
+            case SCEVType::EXPADD1:
+                nw = nw == -1 ? 1 : nw;
+            case SCEVType::EXPADD2:
+                nw = nw == -1 ? 2 : nw;
+                break;
             case SCEVType::MUL:
                 putchar('*');
                 break;
             case SCEVType::SUB:
+            case SCEVType::EXPSUB0:
+                nw = nw == -1 ? 0 : nw;
+            case SCEVType::EXPSUB1:
+                nw = nw == -1 ? 1 : nw;
+            case SCEVType::EXPSUB2:
+                nw = nw == -1 ? 2 : nw;
                 putchar('-');
                 break;
             default:
                 break;
             }
+            if (j.second > SCEVType::MUL)
+                printf("(dim[%d])", nw);
+
             j.first->print_ID();
             cnt1++;
         }
@@ -170,6 +266,7 @@ void SCEVEXP::print()
 
 void SCEV::print()
 {
+    printf("Map size = %zu\n", SCEVMAP->size());
     for (auto it : *SCEVMAP)
     {
         it.first->print_ID();
@@ -199,7 +296,10 @@ void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pai
     switch (p_instr->get_Instrtype())
     {
     case InstrutionEnum::PHINode:
-        flags += 1000;
+        if (loop->get_header() == p_instr->get_parent())
+            flags += 1000;
+        else
+            flags += 3000;
         break;
     case InstrutionEnum::IADD:
     case InstrutionEnum::ISUB:
@@ -221,7 +321,7 @@ void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pai
                 dims[i + 1].insert(dims[i + 1].end(), (*p_exp->get_dims())[i].begin(), (*p_exp->get_dims())[i].end());
             }
             if (!(*p_exp->get_dims())[4].empty())
-                flag += 3000;
+                flags += 3000;
         }
         else
             _dfs(_binary->get_src1(), loop, _this, dims, flags);
@@ -245,19 +345,27 @@ void _dfs(Value *_val, Loop *loop, SCEV *_this, std::vector<std::vector<std::pai
                         dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::SUB));
                     else if (it.second == SCEVType::SUB)
                         dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::ADD));
+                    else if (it.second == SCEVType::EXPADD0)
+                        dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB0));
+                    else if (it.second == SCEVType::EXPSUB0)
+                        dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::EXPADD0));
+                    else if (it.second == SCEVType::EXPADD1)
+                        dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB1));
+                    else if (it.second == SCEVType::EXPSUB1)
+                        dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::EXPADD1));
+                    else if (it.second == SCEVType::EXPADD2)
+                        dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB2));
+                    else if (it.second == SCEVType::EXPSUB2)
+                        dims[i + 1].emplace_back(std::make_pair(it.first, SCEVType::EXPADD2));
                     else
                         flags += 3000;
                 }
             }
             if (!(*p_exp->get_dims())[4].empty())
-                flag += 3000;
+                flags += 3000;
         }
         else
-        {
-            if (flag)
-                flags += 3000;
             _dfs(_binary->get_src2(), loop, _this, dims, flags);
-        }
         break;
     case InstrutionEnum::MINUS:
         //?
@@ -293,6 +401,7 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
         Binary *_binary = (Binary *)p_instr;
         SCEVEXP *_scev;
         int bits = 0;
+        SCEVEXP *tmp = nullptr;
         Value *_mod = nullptr;
         std::vector<std::vector<std::pair<Value *, SCEVType>>> dims(5, std::vector<std::pair<Value *, SCEVType>>());
         for (int i = 0; i < 5; ++i)
@@ -313,10 +422,13 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
         case InstrutionEnum::ISUB:
         case InstrutionEnum::FADD:
         case InstrutionEnum::FSUB:
+            _binary->print();
+            puts("ssssssssssss");
             _dfs(_binary, loop, _this, dims, bits);
             if (!bits || bits >= 2000)
                 break;
             _scev = new SCEVEXP();
+            tmp = _scev;
             if (_mod != nullptr)
                 _scev->set_mod(_mod);
             for (int i = 0; i < 4; ++i)
@@ -328,6 +440,18 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
                 _scev->set_mod(_mod);
             for (int i = 0; i < 4; ++i)
                 (*_scev->get_dims())[i] = dims[i];
+            for (int i = 0; i < 3; ++i)
+            {
+                if (!(*tmp->get_dims())[i + 1].empty())
+                {
+                    if (i == 0)
+                        (*_scev->get_dims())[i].push_back(std::make_pair(_phi, SCEVType::EXPADD1));
+                    else if (i == 1)
+                        (*_scev->get_dims())[i].push_back(std::make_pair(_phi, SCEVType::EXPADD2));
+                    else
+                        assert(0);
+                }
+            }
             _scev->set_ToPhi(_phi);
             _this->get_map()->insert({p_instr, _scev});
             break;
@@ -479,7 +603,7 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && _isInVar(p_instr->get_src2(), lproot))
                     {
                         _fa = ((Instrution *)p_instr->get_src1())->get_parent();
-                        if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                             break;
                         target = true;
                         _scev = new SCEVEXP();
@@ -505,7 +629,7 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                         if (p_exp->is_mod())
                             break;
                         _fa = ((Instrution *)p_instr->get_src1())->get_parent();
-                        if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                             break;
                         target = true;
                         _scev = new SCEVEXP();
@@ -523,7 +647,7 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                         if (p_exp->is_mod())
                             break;
                         _fa = ((Instrution *)p_instr->get_src2())->get_parent();
-                        if (lproot->is_BBinLoop(_fa) && lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                             break;
                         target = true;
                         _scev = new SCEVEXP();
@@ -542,6 +666,18 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                                     (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::SUB));
                                 else if (it.second == SCEVType::SUB)
                                     (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::ADD));
+                                else if (it.second == SCEVType::EXPADD0)
+                                    (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB0));
+                                else if (it.second == SCEVType::EXPSUB0)
+                                    (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPADD0));
+                                else if (it.second == SCEVType::EXPADD1)
+                                    (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB1));
+                                else if (it.second == SCEVType::EXPSUB1)
+                                    (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPADD1));
+                                else if (it.second == SCEVType::EXPADD2)
+                                    (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB2));
+                                else if (it.second == SCEVType::EXPSUB2)
+                                    (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPADD2));
                             }
                         }
 
@@ -551,6 +687,12 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     else if ((p_exp = find_exp(p_instr->get_src1())) != nullptr && (p_exp2 = find_exp(p_instr->get_src2())) != nullptr)
                     {
                         if (p_exp->is_mod() || p_exp2->is_mod())
+                            break;
+                        _fa = ((Instrution *)p_instr->get_src1())->get_parent();
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                            break;
+                        _fa = ((Instrution *)p_instr->get_src2())->get_parent();
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                             break;
                         target = true;
                         _scev = new SCEVEXP();
@@ -570,6 +712,9 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     {
                         if (p_exp->is_mod())
                             break;
+                        _fa = ((Instrution *)p_instr->get_src1())->get_parent();
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -587,6 +732,9 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     {
                         if (p_exp->is_mod())
                             break;
+                        _fa = ((Instrution *)p_instr->get_src2())->get_parent();
+                        if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
+                            break;
                         target = true;
                         _scev = new SCEVEXP();
                         dims = _scev->get_dims();
@@ -602,9 +750,12 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                     }
                     break;
                 case InstrutionEnum::MINUS:
-                    if ((p_exp = find_exp(_instr)) == nullptr)
+                    if ((p_exp = find_exp(((Unary *)_instr)->get_src())) == nullptr)
                         break;
                     if (p_exp->is_mod())
+                        break;
+                    _fa = ((Instrution *)((Unary *)_instr)->get_src())->get_parent();
+                    if (lproot->get_nwBBs()->find(_fa) == lproot->get_nwBBs()->end())
                         break;
                     _scev = new SCEVEXP();
                     dims = _scev->get_dims();
@@ -618,6 +769,18 @@ void SCEV::LoopSCEVGen(Loop *lproot)
                                 (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::SUB));
                             else if (it.second == SCEVType::SUB)
                                 (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::ADD));
+                            else if (it.second == SCEVType::EXPADD0)
+                                (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB0));
+                            else if (it.second == SCEVType::EXPSUB0)
+                                (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPADD0));
+                            else if (it.second == SCEVType::EXPADD1)
+                                (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB1));
+                            else if (it.second == SCEVType::EXPSUB1)
+                                (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPADD1));
+                            else if (it.second == SCEVType::EXPADD2)
+                                (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPSUB2));
+                            else if (it.second == SCEVType::EXPSUB2)
+                                (*dims)[i].emplace_back(std::make_pair(it.first, SCEVType::EXPADD2));
                         }
                     }
                     SCEVMAP->insert({_instr, _scev});
@@ -635,6 +798,8 @@ void SCEV::PassRun(Module *_module)
 {
     _Loop = new Loop_Analysis();
     _Loop->PassRun(_module);
+    SCEVEXP::SCEVMAP = SCEVMAP;
+    _module->print();
     for (Function *p_func : *_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())

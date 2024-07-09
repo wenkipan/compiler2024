@@ -149,16 +149,17 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
         {
             if ((p_exp = _scev->find_exp(_instr)) == nullptr || _check(_instr, loop))
                 continue;
-
+            if (p_exp->get_ToPhi() != nullptr)
+                p_exp = _scev->find_exp(p_exp->get_ToPhi());
+            else
+                continue;
             _initStep(init, loop, _scev);
             Value *p_step = loop->get_calStep(is_under);
-            if ((p_exp->get_ToPhi() != nullptr))
-                p_exp = _scev->find_exp(p_exp->get_ToPhi());
             std::vector<std::vector<std::pair<Value *, SCEVType>>> *dims = p_exp->get_dims();
 
             if ((*dims)[1].empty())
                 assert(0);
-            else if ((*dims)[2].empty())
+            else if (((*dims)[2].empty()) || ((*dims)[2].begin()->second > SCEVType::MUL))
             {
                 Value *src0 = p_exp->get_scr(0, prev);
                 Value *src1 = p_exp->get_scr(1, prev);
@@ -174,7 +175,7 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
                     p_instr2 = new Binary(InstrutionEnum::IMOD, p_instr2, p_exp->get_mod(), prev);
                 _replace(_instr, p_instr2, loop);
             }
-            else if ((*dims)[3].empty())
+            else if (((*dims)[3].empty()) || ((*dims)[3].begin()->second > SCEVType::MUL))
             {
                 Value *src0 = p_exp->get_scr(0, prev);
                 Value *src1 = p_exp->get_scr(1, prev);
