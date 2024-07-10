@@ -20,7 +20,7 @@ int SSARegisterAlloc::getReg(Value *val)
     if (LA.ValueIdMap.find(val) == LA.ValueIdMap.end())
     {
         if (valueMapRegister.find(val) == valueMapRegister.end())
-            return 12;
+            return -1;
         else
             return valueMapRegister[val];
     }
@@ -115,15 +115,14 @@ void SSARegisterAlloc::run(Function *p_func)
     MakeGraph(p_func);
     AssignColor_R(p_func);
     AssignColor_S(p_func);
-    Register.resize(K_R + K_S);
-    for (int i = 0; i < K_R + K_S; i++)
+    Register.resize(48);
+    for (int i = 0; i < 48; i++)
     {
-        Register[i] = new Value(i < K_R ? TypeEnum::I32 : TypeEnum::F32);
+        Register[i] = new Value(i < 16 ? TypeEnum::I32 : TypeEnum::F32);
         p_func->value_pushBack(Register[i]);
     }
 
     ReSortForPara(p_func);
-
     std::vector<Call *> calls;
     for (auto bb : *(p_func->get_blocks()))
     {
@@ -136,6 +135,22 @@ void SSARegisterAlloc::run(Function *p_func)
 
     for (auto bb : *(p_func->get_blocks()))
         ReSortForPhi(bb);
+
+    /*for (auto it : LA.Vals)
+    {
+        printf("R %d : ", getReg(it));
+        it->print();
+    }
+    for (auto it : valueMapRegister)
+    {
+        printf("R %d ", it.second);
+        it.first->print();
+    }
+    for (int i = 0; i < 48; i++)
+    {
+        printf("R %d ", i);
+        Register[i]->print();
+    }*/
 }
 
 void SSARegisterAlloc::ReSortForPara(Function *p_func)
@@ -156,8 +171,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             if (spilledNodes.find(LA.ValueIdMap[paras->at(i)]) != spilledNodes.end())
             {
                 Store *store = new Store(allocMap[LA.ValueIdMap[paras->at(i)]], Register[i], false, p_func->get_entryBB());
-                store->insertInstr(p_func->get_entryBB(), nowPos);
-                nowPos++;
+                store->insertInstr(p_func->get_entryBB(), nowPos++);
             }
             else
             {
@@ -165,8 +179,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 if (tmpR >= Para_num)
                 {
                     Move *move = new Move(InstrutionEnum::Move, Register[tmpR], Register[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos);
-                    nowPos++;
+                    move->insertInstr(p_func->get_entryBB(), nowPos++);
                 }
                 else
                 {
@@ -197,8 +210,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 paraMap[alloc] = paras->at(i);
                 int tmpR = getReg(paras->at(i));
                 Load *load = new Load(alloc, false, p_func->get_entryBB());
-                load->insertInstr(p_func->get_entryBB(), nowPos);
-                nowPos++;
+                load->insertInstr(p_func->get_entryBB(), nowPos++);
                 if (tmpR >= Para_num)
                 {
                     valueMapRegister[load] = tmpR;
@@ -229,15 +241,15 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 flag = true;
                 if (dynamic_cast<Load *>(In[i]) == nullptr)
                 {
+
                     Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos);
-                    nowPos++;
+                    move->insertInstr(p_func->get_entryBB(), nowPos++);
                     if (getReg(In[i]) < n)
                         d[getReg(In[i])]--;
                 }
                 else
                 {
-                    dynamic_cast<Instrution *>(In[i])->insertInstr(p_func->get_entryBB(), nowPos - 1);
+                    dynamic_cast<Instrution *>(In[i])->insertInstr(p_func->get_entryBB(), nowPos);
                     valueMapRegister[In[i]] = i;
                 }
                 d[i] = -1;
@@ -250,12 +262,10 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 if (d[i] > 0)
                 {
                     Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos);
-                    nowPos++;
+                    move->insertInstr(p_func->get_entryBB(), nowPos++);
                     assert(In[i] != nullptr);
                     move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos);
-                    nowPos++;
+                    move->insertInstr(p_func->get_entryBB(), nowPos++);
                     assert(std::find(Register.begin(), Register.end(), In[i]) != Register.end());
                     d[std::find(Register.begin(), Register.end(), In[i]) - Register.begin()]--;
                     d[i] = -1;
@@ -281,14 +291,17 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
     for (auto edge : *(call->get_value_list()))
     {
         Value *val = edge->get_val();
+        if (dynamic_cast<Function *>(val) != nullptr)
+            continue;
         int regFrom = getReg(val);
+        assert(regFrom != -1 || dynamic_cast<Constant *>(val) != nullptr);
         if (regFrom == cnt)
         {
             d[cnt] = -1;
         }
         else
         {
-            if (regFrom < Para_num)
+            if (regFrom < Para_num && regFrom >= 0)
                 d[regFrom]++;
             In[cnt] = val;
         }
@@ -313,9 +326,8 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             {
                 int regFrom = getReg(In[i]);
                 Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
-                move->insertInstr(move->get_parent(), nowPos);
-                nowPos++;
-                if (regFrom < cnt)
+                move->insertInstr(move->get_parent(), nowPos++);
+                if (regFrom < cnt && regFrom >= 0)
                     d[regFrom]--;
                 d[i] = -1;
                 flag = true;
@@ -327,11 +339,9 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                 if (d[i] > 0)
                 {
                     Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], call->get_parent());
-                    move->insertInstr(move->get_parent(), nowPos);
-                    nowPos++;
+                    move->insertInstr(move->get_parent(), nowPos++);
                     move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
-                    move->insertInstr(move->get_parent(), nowPos);
-                    nowPos++;
+                    move->insertInstr(move->get_parent(), nowPos++);
                     if (getReg(In[i]) < cnt)
                         d[getReg(In[i])]--;
                     for (int j = 0; j < cnt; j++)
@@ -356,24 +366,28 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
         BasicBlock *bbFrom = it.first;
         std::vector<int> d(n, 0);
         std::vector<Value *> In(n, nullptr);
-        std::vector<int> a, b;
+        std::vector<Value *> a;
+        std::vector<int> b;
         std::unordered_map<int, int> Q;
         for (auto phi : *(bb->get_phinodes()))
         {
-            a.push_back(getReg(phi->get_valueMap()->at(bbFrom)->get_val()));
+            a.push_back(phi->get_valueMap()->at(bbFrom)->get_val());
             b.push_back(getReg(phi));
             Q[getReg(phi)] = a.size() - 1;
         }
         assert(a.size() == n);
         for (int i = 0; i < n; i++)
         {
-            In[i] = Register[a[i]];
-            if (a[i] == b[i])
+            In[i] = a[i];
+            if (getReg(a[i]) == b[i])
             {
                 d[i] = -1;
             }
-            else if (Q.find(a[i]) != Q.end())
-                d[Q[a[i]]]++;
+            else
+            {
+                if (getReg(a[i]) >= 0 && Q.find(getReg(a[i])) != Q.end())
+                    d[Q[getReg(a[i])]]++;
+            }
         }
         while (1)
         {
@@ -391,10 +405,10 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
                 if (d[i] == 0)
                 {
                     Move *move = new Move(InstrutionEnum::Move, Register[b[i]], In[i], bbFrom);
-                    move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 2);
+                    move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 1);
                     d[i] = -1;
-                    if (Q.find(a[i]) != Q.end())
-                        d[Q[a[i]]]--;
+                    if (getReg(a[i]) >= 0 && Q.find(getReg(a[i])) != Q.end())
+                        d[Q[getReg(a[i])]]--;
                     flag = true;
                     break;
                 }
@@ -404,12 +418,12 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
                     if (d[i] > 0)
                     {
                         Move *move = new Move(InstrutionEnum::Move, Register[12], Register[b[i]], bbFrom);
-                        move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 2);
+                        move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 1);
                         move = new Move(InstrutionEnum::Move, Register[b[i]], In[i], bbFrom);
-                        move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 2);
+                        move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 1);
                         d[i] = -1;
-                        if (Q.find(a[i]) != Q.end())
-                            d[Q[a[i]]]--;
+                        if (getReg(a[i]) >= 0 && Q.find(getReg(a[i])) != Q.end())
+                            d[Q[getReg(a[i])]]--;
                         for (int j = 0; j < n; j++)
                             if (In[j] == Register[b[i]])
                                 In[j] = Register[12];
@@ -462,11 +476,24 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
             for (auto edge : *((*it)->get_value_list()))
             {
                 Value *use = edge->get_val();
+                if (dynamic_cast<Function *>(use) != nullptr)
+                    continue;
                 if (LA.ValueIdMap.find(use) != LA.ValueIdMap.end())
                     live.insert(LA.ValueIdMap.at(use));
                 cnt++;
                 if (cnt == Para_num)
                     break;
+            }
+        }
+        for (auto it : *(bb->get_phinodes()))
+        {
+            int def = LA.ValueIdMap.at(it);
+            // assert(live.find(def) != live.end());
+            if (live.find(def) != live.end())
+            {
+                live.erase(def);
+                for (auto l : live)
+                    AddEdge(l, def);
             }
         }
         if (bb == p_func->get_entryBB())
@@ -525,7 +552,9 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
                 break;
             }
         if (color[id_R[x]] == -1)
+        {
             assert(0);
+        }
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -628,6 +657,9 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
     for (int i = 0; i < vregNum; i++)
         if (LA.InSet[bb].at(i) && LA.is_float[i] == 0)
             I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+    for (auto phi : *(bb->get_phinodes()))
+        if (LA.is_float[LA.ValueIdMap[phi]] == 0)
+            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
     for (auto it : I_B)
@@ -649,6 +681,8 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
         int cnt = 0;
         for (auto edge : *(ins->get_value_list()))
         {
+            if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
+                continue;
             cnt++;
             if (cnt <= Para_num)
             {
@@ -760,6 +794,9 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
     for (int i = 0; i < vregNum; i++)
         if (LA.InSet[bb].at(i) && LA.is_float[i] == 1)
             I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+    for (auto phi : *(bb->get_phinodes()))
+        if (LA.is_float[LA.ValueIdMap[phi]] == 1)
+            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
     for (auto it : I_B)
@@ -781,6 +818,8 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
         int cnt = 0;
         for (auto edge : *(ins->get_value_list()))
         {
+            if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
+                continue;
             cnt++;
             if (cnt <= Para_num)
             {
@@ -925,11 +964,11 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 int insNum = store->get_parent()->get_instrutions()->size();
                 if (dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
                 {
-                    store->insertInstr(store->get_parent(), insNum - 3);
+                    store->insertInstr(store->get_parent(), insNum - 2);
                 }
                 else
                 {
-                    store->insertInstr(store->get_parent(), insNum - 2);
+                    store->insertInstr(store->get_parent(), insNum - 1);
                 }
             }
         }
@@ -960,10 +999,10 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 continue;
             }
             bool flag = true;
-            if (dynamic_cast<Call *>(use) != nullptr && use->get_value_list()->size() > Para_num)
+            if (dynamic_cast<Call *>(use) != nullptr && use->get_value_list()->size() > Para_num + 1)
             {
                 flag = false;
-                for (int i = 0; i < Para_num; i++)
+                for (int i = 1; i <= Para_num; i++)
                     if (use->get_value_list()->at(i)->get_val() == val)
                     {
                         flag = true;

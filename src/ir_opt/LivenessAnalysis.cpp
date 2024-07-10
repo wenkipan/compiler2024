@@ -69,6 +69,8 @@ bool LivenessAnalysis::work_BB(BasicBlock *bb)
         for (Edge *edge : *(bb->get_instrs()->at(i)->get_value_list()))
         {
             Value *val = edge->get_val();
+            if (dynamic_cast<Function *>(val) != nullptr)
+                continue;
             if (ValueIdMap.find(val) != ValueIdMap.end())
             {
                 InDis[bb][ValueIdMap[val]] = std::min(InDis[bb][ValueIdMap[val]], i);
@@ -106,6 +108,8 @@ void LivenessAnalysis::DefAndUseAnalysis()
             for (auto edge : *(ins->get_value_list()))
             {
                 Value *tmp = edge->get_val();
+                if (dynamic_cast<Function *>(tmp) != nullptr)
+                    continue;
                 if (ValueIdMap.find(tmp) != ValueIdMap.end())
                 {
                     if (!DefSet[bb].at(ValueIdMap[tmp]))
