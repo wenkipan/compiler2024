@@ -639,7 +639,10 @@ void Binary::print()
     else
         this->get_type()->print();
     putchar(' ');
-    p_src1->print_ID();
+    if (is_a<GlobalValue>(p_src1))
+        std::cout << "@" << ((GlobalValue *)p_src1)->get_name();
+    else
+        p_src1->print_ID();
     putchar(',');
     putchar(' ');
     p_src2->print_ID();

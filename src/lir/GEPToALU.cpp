@@ -69,8 +69,8 @@ void GEPToALU::combine_gep(Function *f)
 }
 void GEPToALU::run(Function *f)
 {
+    int if_debug = 0;
     combine_gep(f);
-    return;
     std::unordered_map<Instrution *, std::vector<Instrution *>> replacemap;
     for (auto BB : *f->get_blocks())
     {
@@ -80,6 +80,8 @@ void GEPToALU::run(Function *f)
             std::vector<Instrution *> newinstrs;
             if (instr->isGEP())
             {
+                if (if_debug)
+                    instr->print();
                 Value *gepsrc = instr->get_operand_at(0);
                 Type *pointeety = ((Ptr *)gepsrc->get_type())->get_btype();
                 TypeEnum te;
@@ -88,9 +90,17 @@ void GEPToALU::run(Function *f)
                 if (pointeety->get_type() == TypeEnum::Array)
                 {
                     dims = *((ArrayType *)pointeety)->get_dims();
+                    if (if_debug)
+                        for (auto d : dims)
+                            printf("--dims%d    ", d);
                     maxsize = ((ArrayType *)pointeety)->get_size();
+                    if (if_debug)
+                        printf("maxsize--%d ", maxsize);
                     if (((GEP *)instr)->get_isele())
+                    {
                         maxsize /= dims.at(0);
+                        dims.erase(dims.begin());
+                    }
                     te = ((ArrayType *)pointeety)->get_basic_type();
                 }
                 else
@@ -104,15 +114,25 @@ void GEPToALU::run(Function *f)
                     size = 4;
                 else
                     assert(0);
+                if (if_debug)
+                    printf("--maxsize--%d\n", maxsize);
 
                 int offset = 0;
                 Value *src2 = nullptr;
                 for (int i = 0; i < instr->get_value_list()->size() - 1; i++) // first val is ptr
                 {
+                    if (if_debug)
+                        printf("---------i----%d------\n", i);
                     Value *vi = instr->get_value_list()->at(i + 1)->get_val();
                     if (auto c = dynamic_cast<ConstantI32 *>(vi))
                     {
                         offset += maxsize * c->get_32_at(0) * size;
+                        if (if_debug)
+                        {
+                            printf("--offset--%d\n", c->get_32_at(0));
+                            printf("--offset--%d\n", maxsize);
+                            printf("--offset--%d\n", offset);
+                        }
                     }
                     else
                     {
@@ -128,20 +148,34 @@ void GEPToALU::run(Function *f)
                         else
                             src2 = newmuli;
                     }
+                    if (i + 1 == instr->get_value_list()->size() - 1)
+                        break;
+
                     maxsize /= dims.at(i);
+                    if (if_debug)
+                        printf("--dims--%d\n", dims.at(i));
+
+                    if (if_debug)
+                        printf("--maxsize--%d\n", maxsize);
                 }
                 ConstantI32 *ioff = new ConstantI32(offset);
                 f->value_pushBack(ioff);
                 if (src2)
                 {
-                    src2 = new Binary(InstrutionEnum::IADD, ioff, src2, BB);
-                    newinstrs.push_back((Instrution *)src2);
+                    if (offset)
+                    {
+                        src2 = new Binary(InstrutionEnum::IADD, src2, ioff, BB);
+                        newinstrs.push_back((Instrution *)src2);
+                    }
                 }
                 else
                     src2 = ioff;
 
                 // create final for load or another gep
+                printf("-----replace ptr---\n");
+                instr->get_operand_at(0)->print();
                 Instrution *final = new Binary(InstrutionEnum::IADD, instr->get_operand_at(0), src2, BB);
+                final->print();
                 Ptr *fake = new Ptr(final->get_type());
                 delete final->get_type();
                 final->set_type(fake);

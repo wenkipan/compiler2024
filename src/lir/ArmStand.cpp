@@ -1,9 +1,5 @@
 #include <lir/ArmStand.hpp>
 
-#define imm_8_max 255
-#define imm_12_max 4095
-#define imm_16_max 65535
-
 #define ror(value, bits) ((value >> bits) | (value << (sizeof(value) * 8 - bits)))
 
 bool is_legal_rotate_imme(int a)

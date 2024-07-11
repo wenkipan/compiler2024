@@ -5,11 +5,12 @@
 #include <frontend/use.hpp>
 #include <ir/ir.hpp>
 #include <ir_opt/Manager.hpp>
+#include <backend/arm/ArmGen.hpp>
 
 int main(int argc, char *argv[])
 {
     freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
+    // freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -72,9 +73,6 @@ int main(int argc, char *argv[])
         //  manager->printModule();
     }
     manager->printModule();
-    manager->run<immeIntTomove>();
-    printf("int");
-    manager->printModule();
     manager->run<immeFloatToLoad>();
     printf("float");
     manager->printModule();
@@ -82,10 +80,20 @@ int main(int argc, char *argv[])
     printf("globa");
     manager->printModule();
     manager->FuncRun<GEPToALU>();
+    printf("GEPTO__________\n");
     manager->printModule();
-    manager->FuncRun<SSARegisterAlloc>();
+    printf("________mod___\n");
+    manager->FuncRun<modTosubmul>();
+    manager->printModule();
+    manager->run<immeIntTomove>();
+    printf("int");
     manager->printModule();
     fflush(stdout);
+
+    ArmGen backend;
+    backend.run(manager->get_module());
+    ArmModule *am = backend.get_arm();
+    delete am;
     // 2lir
     // module->lowerIR();
     // module->print();

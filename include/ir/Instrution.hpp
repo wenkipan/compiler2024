@@ -99,6 +99,7 @@ public:
     bool isBinary() { return instr_type >= InstrutionEnum::BinaryBegin && instr_type < InstrutionEnum::BinaryEnd; }
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
     bool isIBinary() { return instr_type >= InstrutionEnum::IADD && instr_type <= InstrutionEnum::IMOD; }
+    bool isMove() { return instr_type == InstrutionEnum::Move; }
 
     BasicBlock *get_parent() { return parent; }
     InstrutionEnum get_Instype() { return instr_type; }
