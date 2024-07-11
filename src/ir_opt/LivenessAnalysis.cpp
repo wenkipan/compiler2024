@@ -24,7 +24,7 @@ void LivenessAnalysis::init()
         for (auto ins : *(bb->get_instrutions()))
         {
             Value *val = dynamic_cast<Value *>(ins);
-            if (val->get_type()->get_type() != TypeEnum::Void && !dynamic_cast<Alloca *>(ins) && !dynamic_cast<Ret *>(ins))
+            if (val->get_type()->get_type() != TypeEnum::Void && !dynamic_cast<Alloca *>(ins) && !dynamic_cast<Ret *>(ins) && (!dynamic_cast<Cmp *>(ins) || !dynamic_cast<Cmp *>(ins)->isCond()))
             {
                 ValueIdMap[val] = allocaCounter++;
                 Vals.push_back(val);
@@ -160,7 +160,7 @@ void LivenessAnalysis::run(Function *func)
         bb->print();
         for (auto val : Vals)
         {
-            printf("%d %d : ", InSet[bb].at(ValueIdMap[val]), OutSet[bb].at(ValueIdMap[val]));
+            printf("%d %d %d %d: ", InSet[bb].at(ValueIdMap[val]), OutSet[bb].at(ValueIdMap[val]), DefSet[bb].at(ValueIdMap[val]), UseSet[bb].at(ValueIdMap[val]));
             val->print();
         }
     }*/

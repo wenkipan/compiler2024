@@ -187,6 +187,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     {
                         d[i]++;
                         In[tmpR] = Register[i];
+                        printf("yes %d %d\n", tmpR, i);
                     }
                     else
                         d[i] = -1;
@@ -223,6 +224,11 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
         }
     }
     int n = Para_num;
+    puts("");
+    p_func->print();
+    for (int i = 0; i < paras->size(); i++)
+        printf("R %d\n", getReg(paras->at(i)));
+    fflush(stdout);
     while (1)
     {
         bool flag = false;
@@ -234,6 +240,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
         flag = false;
         for (int i = 0; i < n; i++)
         {
+            fflush(stdout);
             if (In[i] == nullptr)
                 continue;
             if (d[i] == 0)

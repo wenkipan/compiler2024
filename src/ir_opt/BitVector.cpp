@@ -22,9 +22,9 @@ void bit_vector::set(int id, bool x)
 {
     if (id < 0 || id >= num)
         assert(0);
-    bits[id >> 5] |= (1 << (id & 31));
+    bits[id >> 5] |= (1u << (id & 31));
     if (!x)
-        bits[id >> 5] ^= (1 << (id & 31));
+        bits[id >> 5] ^= (1u << (id & 31));
 }
 
 bit_vector &bit_vector::operator=(const bit_vector &bv)
@@ -70,7 +70,8 @@ bit_vector bit_vector::operator~()
     int len = bits.size();
     for (int i = 0; i < len; i++)
         ret.bits[i] = ~bits[i];
-    ret.bits[len - 1] &= ((1 << (num & 31)) - 1);
+    if (num & 31u)
+        ret.bits[len - 1] = bits[len - 1] ^ ((1u << (num & 31u)) - 1u);
     return ret;
 }
 
