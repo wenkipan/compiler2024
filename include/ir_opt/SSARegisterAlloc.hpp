@@ -19,6 +19,7 @@ class SSARegisterAlloc
     std::unordered_map<Call *, std::vector<int>> callLiveVreg;
     std::unordered_map<int, Alloca *> allocMap;
     std::unordered_map<Value *, int> valueMapRegister;
+    std::unordered_map<Call *, Move *> firstMoveofCall;
     void Spill(Function *p_func);
     void SpillBB_R(BasicBlock *bb);
     void SpillBB_S(BasicBlock *bb);
@@ -38,4 +39,10 @@ public:
     int getReg(Value *val);
     Param *whichPara(Alloca *alloc);
     std::vector<int> regsStillAliveAfterCall(Call *call);
+    Move *getFirstMoveofCall(Call *call)
+    {
+        if (firstMoveofCall.find(call) == firstMoveofCall.end())
+            assert(0);
+        return firstMoveofCall[call];
+    }
 };

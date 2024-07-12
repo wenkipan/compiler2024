@@ -6,6 +6,8 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
     std::vector<int> ret;
     for (auto it : vrs)
     {
+        if (spilledNodes.find(it) != spilledNodes.end())
+            continue;
         int c = color[it];
         if (c <= 3 || c == 12 || (c >= 16 && c <= 31))
             ret.push_back(c);
@@ -333,6 +335,10 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             {
                 int regFrom = getReg(In[i]);
                 Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
+                if (firstMoveofCall.find(call) == firstMoveofCall.end())
+                {
+                    firstMoveofCall[call] = move;
+                }
                 move->insertInstr(move->get_parent(), nowPos++);
                 if (regFrom < cnt && regFrom >= 0)
                     d[regFrom]--;
@@ -346,6 +352,10 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                 if (d[i] > 0)
                 {
                     Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], call->get_parent());
+                    if (firstMoveofCall.find(call) == firstMoveofCall.end())
+                    {
+                        firstMoveofCall[call] = move;
+                    }
                     move->insertInstr(move->get_parent(), nowPos++);
                     move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
                     move->insertInstr(move->get_parent(), nowPos++);
