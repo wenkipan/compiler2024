@@ -140,6 +140,8 @@ Function *IRCopy::copy_func(Function *f)
                 newinstr = new Binary(((Binary *)instr)->get_Instrtype(),
                                       get_mapval(((Binary *)instr)->get_src1()),
                                       get_mapval(((Binary *)instr)->get_src2()), newBB);
+            else if (instr->get_Instrtype() == InstrutionEnum::Assign)
+                newinstr = new Assign(InstrutionEnum::Assign, get_mapval(((Unary *)instr)->get_src()), newBB, false);
             else if (instr->isUnary())
                 newinstr = new Unary(((Unary *)instr)->get_Instrtype(),
                                      get_mapval(((Unary *)instr)->get_src()), newBB);
