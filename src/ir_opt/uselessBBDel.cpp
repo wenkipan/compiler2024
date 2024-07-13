@@ -28,8 +28,9 @@ void uselessBBDel::eliminate_uselessBB()
             vis.insert({(BasicBlock *)(it->get_user()), true});
         }
 
-        if (cur->get_instrs()->size() != 1 || cur->get_user_list()->size() != 1 || cur == function->get_entryBB())
+        if (cur->get_instrs()->size() != 1 || cur == function->get_entryBB() || cur->get_last_instrution()->get_Instrtype() == InstrutionEnum::Ret)
             continue;
+        assert(cur->get_last_instrution()->isJmp());
         BasicBlock *nextBB = (BasicBlock *)(*cur->get_user_list()->begin())->get_user();
         auto _list = cur->get_value_list();
         bool flag = false;
@@ -39,14 +40,10 @@ void uselessBBDel::eliminate_uselessBB()
             if (nwBB->get_last_instrution()->isBranch())
             {
                 auto users = nwBB->get_user_list();
-                if ((*users)[0]->get_user() == cur && (*users)[1]->get_user() == nextBB)
-                    flag = true;
-                else if ((*users)[0]->get_user() == nextBB && (*users)[1]->get_user() == cur)
+                if ((*users)[0]->get_user() == nextBB || (*users)[1]->get_user() == nextBB)
                     flag = true;
             }
         }
-        if (nextBB->get_phinodes()->empty())
-            flag = false;
         if (flag)
             continue;
         if (cur->get_phinodes()->empty())
@@ -73,6 +70,8 @@ void uselessBBDel::eliminate_uselessBB()
                 else
                     onlyNextPhi = false;
             }
+            if (cur->get_phinodes()->size() != nextBB->get_phinodes()->size())
+                onlyNextPhi = false;
             if (onlyNextPhi)
             {
                 int comenum = 0;
@@ -85,7 +84,8 @@ void uselessBBDel::eliminate_uselessBB()
                         assert(NextBBPhi->get_valueMap()->find(it->first) == NextBBPhi->get_valueMap()->end());
                         NextBBPhi->addIncoming(it->second->get_val(), it->first);
                     }
-                    Phi->get_user_list()->clear();
+                    if (comenum)
+                        assert(comenum == NextBBPhi->get_valueMap()->size());
                     comenum = NextBBPhi->get_valueMap()->size();
                 }
                 assert(comenum > 0);
@@ -93,20 +93,7 @@ void uselessBBDel::eliminate_uselessBB()
                 {
                     if (Phi->get_valueMap()->size() == comenum)
                         continue;
-                    Constant *const0 = nullptr;
-                    if (Phi->get_type()->get_type() == TypeEnum::I32)
-                        const0 = new ConstantI32(0);
-                    else if (Phi->get_type()->get_type() == TypeEnum::F32)
-                        const0 = new ConstantF32(0.0);
-                    else
-                        assert(0);
-                    assert(const0 != nullptr);
-                    function->value_pushBack(const0);
-                    for (Edge *edge : *_list)
-                    {
-                        BasicBlock *fromBB = (BasicBlock *)edge->get_val();
-                        Phi->addIncoming(const0, fromBB);
-                    }
+                    assert(0);
                 }
             }
             else
@@ -118,7 +105,5 @@ void uselessBBDel::eliminate_uselessBB()
             edge->set_user(nextBB);
         }
         cur->get_value_list()->clear();
-        function->print();
-        puts("\n\n");
     }
 }
