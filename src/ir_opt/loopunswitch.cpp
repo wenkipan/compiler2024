@@ -1,254 +1,262 @@
 #include <ir_opt/loopunswitch.hpp>
-#include <ir_opt/IRCopy.hpp>
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
 
-static inline void _SetNewVal(Value *_val, Value *_used, IRCopy &copyer)
+#define MustDo(it, list_) ((it) == (list_)->end() ? Assert_() : true)
+
+static inline void ResetVal_(PHINode *phi, Value *val, BasicBlock *BB, IRCopy &copyer)
 {
-    // Edge *_newEdge = new Edge(_val, _used);
-    //_val->get_value_list()->pop_back();
-    Value *_key = copyer.get_mapval(_used);
-    bool flag = false;
-    for (auto i = _val->get_value_list()->begin(); i != _val->get_value_list()->end(); ++i)
-        if ((*i)->get_val() == _key)
+    PHINode *cphi = (PHINode *)copyer.get_mapval(phi);
+    BasicBlock *cBB = copyer.get_mapbb(BB);
+    cphi->eraseIncoming(cBB);
+    cphi->addIncoming(val, cBB);
+}
+
+void loopunswitch::SetVal(PHINode *phi, IRCopy &copyer, Loop *loop)
+{
+    auto map_ = phi->get_valueMap();
+    for (auto it_ : *map_)
+    {
+        assert(loop->is_BBinLoop(it_.first) || loop->get_prev() == it_.first);
+        Value *val = it_.second->get_val();
+        if (is_a<Param>(val) || is_a<Constant>(val))
+            ResetVal_(phi, val, it_.first, copyer);
+        else if (is_a<Instrution>(val))
         {
-            for (auto j = _key->get_user_list()->begin(); j != _key->get_user_list()->end(); ++j)
-            {
-                if ((*j) == (*i))
-                {
-                    _key->get_user_list()->erase(j);
-                    flag = true;
-                    break;
-                }
-            }
-            assert(flag);
-            (*i)->set_val(_used);
-            return;
+            Instrution *instr_ = (Instrution *)val;
+            BasicBlock *BB_ = instr_->get_parent();
+            if (!loop->is_BBinLoop(BB_))
+                ResetVal_(phi, val, it_.first, copyer);
         }
+        else
+            assert(0);
+    }
+}
+
+void loopunswitch::SetUser(Instrution *instr, IRCopy &copyer, Loop *loop)
+{
+    auto list_ = instr->get_user_list();
+    for (auto it_ : *list_)
+    {
+        Instrution *T = (Instrution *)it_->get_user();
+        if (loop->is_BBinLoop(T->get_parent()))
+            continue;
+        assert(is_a<PHINode>(it_->get_user()));
+        PHINode *user = (PHINode *)it_->get_user();
+        BasicBlock *BB = user->get_edge_income_block(it_);
+        assert(loop->is_BBinLoop(BB));
+        PHINode *cuser = (PHINode *)copyer.get_mapval(user);
+        BasicBlock *cBB = copyer.get_mapbb(BB);
+        cuser->eraseIncoming(cBB);
+        user->addIncoming(copyer.get_mapval(instr), cBB);
+        puts("???");
+    }
+}
+
+static inline bool Assert_()
+{
     assert(0);
+    return false;
 }
 
-static inline void _PhiSetNewVal(PHINode *oldPhi, BasicBlock *fromBB, Value *used, IRCopy &copyer)
+static inline void ResetVal_(Instrution *instr, Value *val, IRCopy &copyer)
 {
-    PHINode *nwPhi = (PHINode *)copyer.get_mapval(oldPhi);
-    BasicBlock *nwfromBB = copyer.get_mapbb(fromBB);
-    nwPhi->eraseIncoming(nwfromBB);
-    nwPhi->addIncoming(used, fromBB);
-}
-
-static inline void _dealVal(Value *_val, Loop *loop, std::set<Value *> &_addValues, IRCopy &copyer)
-{
-    bool isPhi = false;
-    if (((Instrution *)_val)->isPHINode())
-        isPhi = true;
-    std::vector<Edge *> *Edges = _val->get_value_list();
-    for (auto it : *Edges)
-    {
-        Value *_used = (*it).get_val();
-        if (is_a<Constant>(_used))
-            _addValues.insert(copyer.get_mapval(_used));
-        else if (is_a<Param>(_used))
+    Instrution *cinstr = (Instrution *)copyer.get_mapval(instr);
+    Value *cval = copyer.get_mapval(val);
+    auto list_ = cval->get_user_list();
+    for (auto it = list_->begin(); MustDo(it, list_); ++it)
+        if ((*it)->get_user() == cinstr)
         {
-            assert(!isPhi);
-            _SetNewVal(copyer.get_mapval(_val), _used, copyer);
-        }
-        else if (is_a<GlobalValue>(_used))
-            continue;
-        else if (!loop->is_BBinLoop((((Instrution *)_used)->get_parent())))
-        {
-            if (isPhi)
-            {
-                PHINode *oldPhi = (PHINode *)_val;
-                _PhiSetNewVal(oldPhi, oldPhi->get_edge_income_block(it), _used, copyer);
-            }
-            else
-            {
-                _SetNewVal(copyer.get_mapval(_val), _used, copyer);
-            }
-        }
-    }
-}
-
-static inline void _dealUser(Value *val, Loop *loop, IRCopy &copyer, DomTree &domtree)
-{
-    auto userlist = val->get_user_list();
-    for (auto it = userlist->begin(); it != userlist->end(); ++it)
-    {
-        Instrution *_user = (Instrution *)(*it)->get_user();
-        BasicBlock *_BB = _user->get_parent();
-        if (loop->is_BBinLoop(_BB))
-        {
-            continue;
-        }
-        PHINode *nwPhi = (PHINode *)_user;
-        assert(loop->get_exits()->find(_BB) != loop->get_exits()->end());
-        Value *Cval = copyer.get_mapval(val);
-        Value *CPhi = copyer.get_mapval(nwPhi);
-        auto Cuserlist = Cval->get_user_list();
-
-        bool Dflag = false;
-        for (auto Edge = Cuserlist->begin(); Edge != Cuserlist->end(); ++Edge)
-        {
-            if ((*Edge)->get_user() == CPhi)
-            {
-                delete *Edge;
-                Cuserlist->erase(Edge);
-                nwPhi->addIncoming(Cval, copyer.get_mapbb(nwPhi->get_edge_income_block(*it)));
-                Dflag = true;
-                break;
-            }
-        }
-        assert(Dflag);
-    }
-}
-
-static inline void _Dealexits(Loop *loop, IRCopy &copyer)
-{
-    for (BasicBlock *BB : *loop->get_BBs())
-    {
-        Instrution *p_instr = BB->get_last_instrution();
-        if (!p_instr->isBranch())
-            continue;
-        auto userlist = BB->get_user_list();
-        assert(userlist->size() == 2);
-        int cnt = 0;
-        for (auto it = userlist->begin(); it != userlist->end(); ++it, ++cnt)
-        {
-            BasicBlock *toBB = (BasicBlock *)(*it)->get_user();
-            if (loop->is_BBinLoop(toBB))
-                continue;
-            BasicBlock *CBB = copyer.get_mapbb(BB);
-            (*CBB->get_user_list())[cnt]->set_user(toBB);
-            int cnt = toBB->get_value_list()->size();
-            for (PHINode *Phi : *toBB->get_phinodes())
-            {
-                if (Phi->get_valueMap()->size() == cnt)
-                    continue;
-                Phi->addIncoming(Phi->get_valueMap()->find(BB)->second->get_val(), CBB);
-                assert(0);
-                assert(Phi->get_valueMap()->size() == cnt);
-            }
-        }
-    }
-}
-
-static inline Cmp *_getCmp(BasicBlock *BB)
-{
-    assert(BB->get_last_instrution()->isBranch());
-    Branch *p_branch = (Branch *)BB->get_last_instrution();
-    return (Cmp *)p_branch->get_cond();
-}
-
-static inline void _DealHeader(Loop *loop, BasicBlock *workBB, IRCopy &copyer)
-{
-    BasicBlock *prev = loop->get_prev();
-    assert(prev->get_last_instrution()->isJmp());
-    Cmp *p_cmp = _getCmp(workBB);
-    Instrution *p_br = prev->get_last_instrution();
-    prev->get_instrs()->pop_back();
-    Cmp *nwCmp = new Cmp(p_cmp->get_Instrtype(), p_cmp->get_src1(), p_cmp->get_src2(), prev);
-    auto list = loop->get_header()->get_value_list();
-    for (auto it = list->begin(); it != list->end(); ++it)
-    {
-        if ((*it)->get_val() == prev)
-        {
-            list->erase(it);
+            (*it)->set_val(val);
+            list_->erase(it);
             break;
         }
-    }
-    list = copyer.get_mapbb(loop->get_header())->get_value_list();
-    for (auto it = list->begin(); it != list->end(); ++it)
+}
+
+void loopunswitch::SetVal(Instrution *instr, IRCopy &copyer, Loop *loop)
+{
+    auto list_ = instr->get_value_list();
+    for (auto it : *list_)
     {
-        if ((*it)->get_val() == copyer.get_mapbb(prev))
+        Value *val = it->get_val();
+        if (is_a<Param>(val) || is_a<Constant>(val))
+            ResetVal_(instr, val, copyer);
+        else if (is_a<Instrution>(val))
         {
-            list->erase(it);
+            Instrution *instr_ = (Instrution *)val;
+            BasicBlock *BB_ = instr_->get_parent();
+            if (!loop->is_BBinLoop(BB_))
+                ResetVal_(instr, val, copyer);
+        }
+        else if (is_a<GlobalValue>(val))
+            continue;
+        else
+            assert(0);
+    }
+}
+
+static inline bool SSSSCheck(Value *val, Function *func) // need delete in release
+{
+    auto list = func->get_Values();
+    for (Value *it : *list)
+        if (it == val)
+            return true;
+    return false;
+}
+
+void loopunswitch::SetPrevBB(BasicBlock *workBB, Loop *loop, IRCopy &copyer)
+{
+    BasicBlock *prevBB = loop->get_prev();
+    BasicBlock *cprevBB = copyer.get_mapbb(prevBB);
+    BasicBlock *Header = loop->get_header();
+    BasicBlock *cHeader = copyer.get_mapbb(Header);
+    for (auto it : *cHeader->get_phinodes())
+    {
+        Value *val = it->get_valueMap()->find(cprevBB)->second->get_val();
+        SSSSCheck(val, workBB->get_func());
+        it->eraseIncoming(cprevBB);
+        it->addIncoming(val, prevBB);
+    }
+
+    assert(prevBB->get_last_instrution()->isJmp());
+    auto list_ = Header->get_value_list();
+    auto it = list_->begin();
+    for (; MustDo(it, list_); ++it)
+        if ((*it)->get_val() == prevBB)
+        {
+            delete *it;
+            list_->erase(it);
             break;
         }
-    }
-    delete (*prev->get_user_list())[0];
-    prev->get_user_list()->clear();
-    new Branch(nwCmp, loop->get_header(), copyer.get_mapbb(loop->get_header()), prev);
-    p_br->print();
-    assert(prev->get_last_instrution()->isBranch());
-    BasicBlock *CBB = copyer.get_mapbb(workBB);
-    Branch *p_branch = (Branch *)workBB->get_last_instrution();
+    prevBB->get_user_list()->clear();
+    list_ = cHeader->get_value_list();
+    it = list_->begin();
+    for (; MustDo(it, list_); ++it)
+        if ((*it)->get_val() == cprevBB)
+        {
+            delete *it;
+            list_->erase(it);
+            break;
+        }
+    cprevBB->get_user_list()->clear();
+    int cnt = prevBB->get_instrs()->size();
+    prevBB->get_last_instrution()->drop();
+    assert(cnt == prevBB->get_instrs()->size() + 1);
+    Branch *Wbranch = (Branch *)workBB->get_last_instrution();
     workBB->Ins_popBack();
-    Cmp *p_cond = (Cmp *)p_branch->get_cond();
-    Branch *Cp_brach = (Branch *)copyer.get_mapval(p_branch);
-    CBB->Ins_popBack();
-    Cmp *Cp_cond = (Cmp *)copyer.get_mapval(p_cond);
-    Constant *const0 = new ConstantI32(0);
-    workBB->get_func()->value_pushBack(const0);
-    for (auto it = p_cond->get_user_list()->begin(); it != p_cond->get_user_list()->end(); ++it)
-    {
-        if ((*it)->get_user() == p_branch)
-        {
-            Cmp *nwCmp = new Cmp(InstrutionEnum::IEQ, const0, const0, workBB);
-            (*it)->set_val(nwCmp);
-            p_cond->get_user_list()->erase(it);
-            break;
-        }
-    }
-    for (auto it = Cp_cond->get_user_list()->begin(); it != Cp_cond->get_user_list()->end(); ++it)
-    {
-        if ((*it)->get_user() == Cp_brach)
-        {
-            Cmp *nwCmp = new Cmp(InstrutionEnum::INEQ, const0, const0, CBB);
-            (*it)->set_val(nwCmp);
-            Cp_cond->get_user_list()->erase(it);
-            break;
-        }
-    }
-    workBB->Ins_pushBack(p_branch);
-    CBB->Ins_pushBack(Cp_brach);
+    assert(workBB->get_last_instrution()->isCmp());
+    Cmp *Wcmp = (Cmp *)workBB->get_last_instrution();
+    workBB->Ins_popBack();
+    Cmp *prevCmp = new Cmp(Wcmp->get_Instrtype(), Wcmp->get_src1(), Wcmp->get_src2(), prevBB);
+    new Branch(prevCmp, Header, cHeader, prevBB);
+    BasicBlock *cworkBB = copyer.get_mapbb(workBB);
+    Branch *cbranch = (Branch *)(cworkBB)->get_last_instrution();
+    cworkBB->Ins_popBack();
+    Cmp *cWcmp = (Cmp *)copyer.get_mapval(Wcmp);
+    assert(cWcmp->get_user_list()->size() == 1 && cWcmp == cworkBB->get_last_instrution());
+    Constant *num0 = new ConstantI32(0);
+    workBB->get_func()->value_pushBack(num0);
+    Cmp *NcWcmp = new Cmp(InstrutionEnum::INEQ, num0, num0, cworkBB);
+    (*cWcmp->get_user_list()->begin())->set_val(NcWcmp);
+    cWcmp->get_user_list()->clear();
+    cworkBB->Ins_pushBack(cbranch);
+    Cmp *NWcmp = new Cmp(InstrutionEnum::IEQ, num0, num0, workBB);
+    (*Wcmp->get_user_list()->begin())->set_val(NWcmp);
+    Wcmp->get_user_list()->clear();
+    Wcmp->drop(), cWcmp->drop();
+    workBB->Ins_pushBack(Wbranch);
 }
 
 void loopunswitch::Unswitch(Loop *loop, Function *p_func, BasicBlock *workBB, DomTree &domtree)
 {
     IRCopy copyer;
-    Function *Cfunc = copyer.copy_func(p_func);
-    std::set<Value *> _addValues;
-    std::vector<BasicBlock *> _addBBs;
-    for (BasicBlock *_BB : *loop->get_BBs())
+    Function *cfunc = copyer.copy_func(p_func);
+    std::vector<Value *> addvals;
+    std::vector<BasicBlock *> addBBs;
+    for (BasicBlock *BB : *loop->get_BBs())
     {
-        _addBBs.emplace_back(copyer.get_mapbb(_BB));
-        for (PHINode *_Phi : *_BB->get_phinodes())
+        addBBs.emplace_back(copyer.get_mapbb(BB));
+        for (PHINode *phi : *BB->get_phinodes())
         {
-            _addValues.insert(copyer.get_mapval(_Phi));
-            _dealVal(_Phi, loop, _addValues, copyer);
-            _dealUser(_Phi, loop, copyer, domtree);
+            addvals.emplace_back(copyer.get_mapval(phi));
+            SetVal(phi, copyer, loop);
+            SetUser(phi, copyer, loop);
         }
-        std::vector<Instrution *> *instrs = _BB->get_instrutions();
-        for (Instrution *p_instr : *instrs)
+        for (Instrution *instr : *BB->get_instrutions())
         {
-            _addValues.insert(copyer.get_mapval(p_instr));
-            _dealVal(p_instr, loop, _addValues, copyer);
-            _dealUser(p_instr, loop, copyer, domtree);
+            addvals.emplace_back(copyer.get_mapval(instr));
+            SetVal(instr, copyer, loop);
+            SetUser(instr, copyer, loop);
         }
     }
-    puts("cppyer");
-    for (BasicBlock *_BB : *loop->get_BBs())
+    for (auto it : addBBs)
     {
-        copyer.get_mapbb(_BB)->print();
+        auto list_ = cfunc->get_blocks();
+        for (auto del = list_->begin(); MustDo(del, list_); ++del)
+            if ((*del) == it)
+            {
+                it->Set_parent(p_func);
+                p_func->get_blocks()->emplace_back(it);
+                list_->erase(del);
+                break;
+            }
     }
-    _Dealexits(loop, copyer);
+    for (auto it : addvals)
+    {
+        auto list_ = cfunc->get_Values();
+        for (auto del = list_->begin(); MustDo(del, list_); ++del)
+            if ((*del) == it)
+            {
+                p_func->get_Values()->emplace_back(it);
+                list_->erase(del);
+                break;
+            }
+    }
+    SetPrevBB(workBB, loop, copyer);
+    for (BasicBlock *BB : *loop->get_BBs())
+    {
+        auto list = BB->get_user_list();
+        for (auto edge : *list)
+        {
+            BasicBlock *nextBB = (BasicBlock *)edge->get_user();
+            if (loop->is_BBinLoop(nextBB))
+                continue;
+            BasicBlock *cnextBB = copyer.get_mapbb(nextBB);
+            auto users = copyer.get_mapbb(BB)->get_user_list();
+            for (auto cedge : *users)
+            {
+                if (cedge->get_user() == cnextBB)
+                {
+                    cedge->set_user(nextBB);
+                }
+            }
+        }
+    }
+    auto list = cfunc->get_Values();
+    for (Value *val : *list)
+    {
+        auto edges = val->get_value_list();
+        for (auto edge : *edges)
+        {
+            Value *value = edge->get_val();
+            if (is_a<GlobalValue>(value))
+            {
+                auto users = value->get_user_list();
+                for (auto it = users->begin(); it != users->end(); ++it)
+                {
+                    if ((*it) == edge)
+                    {
+                        delete edge;
+                        users->erase(it);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
-    auto nwblocks = Cfunc->get_blocks();
-    for (BasicBlock *addBB : _addBBs)
-    {
-        nwblocks->erase(std::remove(nwblocks->begin(), nwblocks->end(), addBB), nwblocks->end());
-        p_func->block_pushBack(addBB);
-        addBB->Set_parent(p_func);
-    }
-    auto nwValues = Cfunc->get_Values();
-    for (Value *addval : _addValues)
-    {
-        nwValues->erase(std::remove(nwValues->begin(), nwValues->end(), addval), nwValues->end());
-        p_func->value_pushBack(addval);
-    }
-    _DealHeader(loop, workBB, copyer);
-    delete Cfunc;
+    delete cfunc;
 }
 
 static inline bool _CheckVar(Value *val, Loop *loop)
@@ -263,18 +271,60 @@ static inline bool _CheckVar(Value *val, Loop *loop)
     return false;
 }
 
-static inline BasicBlock *checkIF(Loop *loop)
+BasicBlock *loopunswitch::checkIF(Loop *loop)
 {
-    for (BasicBlock *BB : *loop->get_BBs())
+    BasicBlock *re = nullptr;
+    for (BasicBlock *BB : *loop->get_nwBBs())
     {
         Instrution *p_branch = BB->get_last_instrution();
         if (!p_branch->isBranch())
             continue;
         Cmp *p_cond = (Cmp *)((Branch *)p_branch)->get_cond();
         if (_CheckVar(p_cond->get_src1(), loop) && _CheckVar(p_cond->get_src2(), loop))
-            return BB;
+            re = BB;
     }
-    return nullptr;
+    int cnt = 0;
+    for (BasicBlock *BB : *loop->get_nwBBs())
+    {
+        cnt += BB->get_instrs()->size();
+        cnt += BB->get_phinodes()->size();
+    }
+    if (cnt >= 1000)
+        re = nullptr;
+    else if (cnt >= 500)
+    {
+        if (codesize > 3000)
+            re = nullptr;
+        else
+            codesize += cnt;
+    }
+    else if (cnt >= 150)
+    {
+        if (codesize > 4500)
+            re = nullptr;
+        else
+            codesize += cnt;
+    }
+    else if (codesize > 7000)
+        re = nullptr;
+    else
+        codesize += cnt;
+    return re;
+}
+
+void loopunswitch::searchFunc(Loop *loop, Function *func, DomTree &domtree, bool &flag)
+{
+    for (Loop *son : *loop->get_lpsons())
+        searchFunc(son, func, domtree, flag);
+    if (flag)
+        return;
+    BasicBlock *BB = checkIF(loop);
+    if (BB == nullptr)
+        return;
+    flag = true;
+    BB->print();
+    puts("WWWWWWWWWWWWW\n");
+    Unswitch(loop, func, BB, domtree);
 }
 
 static inline void _checkVal(Value *val, Loop *loop)
@@ -324,19 +374,6 @@ static void _checkloop(Loop *loop)
     }
 }
 
-void loopunswitch::searchFunc(Loop *loop, Function *func, DomTree &domtree, bool &flag)
-{
-    for (Loop *son : *loop->get_lpsons())
-        searchFunc(son, func, domtree, flag);
-    if (flag)
-        return;
-    BasicBlock *BB = checkIF(loop);
-    if (BB == nullptr)
-        return;
-    flag = true;
-    Unswitch(loop, func, BB, domtree);
-}
-
 void loopunswitch::FuncDealer(Function *p_func)
 {
 
@@ -347,15 +384,26 @@ void loopunswitch::FuncDealer(Function *p_func)
     _checkloop(loop);
     DomTree domtree(p_func);
     domtree.Run();
+    p_func->print();
+    bool flag = false;
     for (Loop *son : *loop->get_lpsons())
     {
-        bool flag = false;
+        if (flag)
+            break;
         searchFunc(son, p_func, domtree, flag);
     }
 }
 
 void loopunswitch::PassRun(Module *p_module)
 {
+    codesize = 0;
+    for (Function *p_func : *p_module->get_funcs())
+    {
+        if (p_func->get_blocks()->empty())
+            continue;
+        codesize += p_func->get_Values()->size();
+    }
+
     puts("\n Unswitch\n");
     _SCEV->PassRun(p_module);
     _Loop = _SCEV->_Loop;
