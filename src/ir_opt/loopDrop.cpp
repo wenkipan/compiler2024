@@ -14,6 +14,8 @@ static bool inline _check(Value *p_val, BasicBlock *BB)
 
 void LoopDrop::DealLoop(Loop *loop)
 {
+    for (auto son : *loop->get_lpsons())
+        DealLoop(son);
     if (!loop->get_lpsons()->empty() || loop->get_BBs()->size() != 1)
         return;
     BasicBlock *_BB = loop->get_header();
@@ -28,41 +30,26 @@ void LoopDrop::DealLoop(Loop *loop)
     }
     if (_check((*_BB->get_phinodes()->begin()), _BB))
         return;
-    Instrution *p_branch = _BB->get_last_instrution();
-    assert(p_branch->get_Instrtype() == InstrutionEnum::Branch);
-    BasicBlock *p_next = nullptr;
-    if ((*_BB->get_user_list())[0]->get_user() == _BB)
-        p_next = (BasicBlock *)(*_BB->get_user_list())[1]->get_user();
+    assert(_BB->get_last_instrution()->isBranch());
+    Branch *p_branch = (Branch *)_BB->get_last_instrution();
+    _BB->Ins_popBack();
+    bool Texit = true;
+    if (p_branch->get_trueBB() == _BB)
+        Texit = false;
+    Constant *num0 = new ConstantI32(0);
+    _BB->get_func()->value_pushBack(num0);
+    Instrution *p_cmp = _BB->get_last_instrution();
+    assert(p_branch->get_cond() == p_cmp);
+    Cmp *n_cmp = nullptr;
+    if (Texit)
+        n_cmp = new Cmp(InstrutionEnum::IEQ, num0, num0, _BB);
     else
-        p_next = (BasicBlock *)(*_BB->get_user_list())[0]->get_user();
-    std::vector<Edge *> *edges = p_next->get_value_list();
-    for (auto it = edges->begin(); it != edges->end(); ++it)
-        if ((*it)->get_val() == _BB)
-        {
-            delete *it;
-            edges->erase(it);
-            break;
-        }
-    edges = _BB->get_value_list();
-    for (auto it = edges->begin(); edges->end() != it; ++it)
-        if ((*it)->get_val() == _BB)
-        {
-            delete *it;
-            edges->erase(it);
-            break;
-        }
-    (*_BB->get_phinodes())[0]->drop();
-    for (Instrution *p_instr : (*_BB->get_instrs()))
-    {
-        edges = p_instr->get_user_list();
-        for (Edge *edge : *edges)
-            delete edge;
-        edges->clear();
-    }
-    _BB->get_instrs()->clear();
-    _BB->get_phinodes()->clear();
-    _BB->get_user_list()->clear();
-    _BB->Set_jmp(p_next);
+        n_cmp = new Cmp(InstrutionEnum::INEQ, num0, num0, _BB);
+    (*p_branch->get_value_list()->begin())->set_val(n_cmp);
+    assert(p_cmp->get_user_list()->size() == 1);
+    p_cmp->get_user_list()->clear();
+    p_cmp->drop();
+    _BB->Ins_pushBack(p_branch);
 }
 
 void LoopDrop::PassRun(Module *p_module)

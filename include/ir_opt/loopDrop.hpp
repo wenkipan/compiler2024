@@ -3,7 +3,7 @@
 #include <ir/ir.hpp>
 #include <ir_opt/Loop.hpp>
 
-class LoopDrop
+class LoopDrop // need sccp
 {
     Loop_Analysis *loop = nullptr;
 
