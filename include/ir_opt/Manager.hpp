@@ -14,6 +14,7 @@
 #include <ir_opt/loopVarReduce.hpp>
 #include <ir_opt/loopVarMove.hpp>
 #include <ir_opt/loopDrop.hpp>
+#include <ir_opt/loopArgDrop.hpp>
 #include <ir_opt/THBalancing.hpp>
 #include <ir_opt/Inline.hpp>
 #include <ir_opt/uselessBBDel.hpp>

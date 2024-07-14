@@ -1,4 +1,7 @@
 #include <ir_opt/loopDrop.hpp>
+#include <ir_opt/SCCP.hpp>
+#include <ir_opt/DCE.hpp>
+#include <ir_opt/SimplifyCFG.hpp>
 
 static bool inline _check(Value *p_val, BasicBlock *BB)
 {
@@ -63,6 +66,12 @@ void LoopDrop::PassRun(Module *p_module)
         Loop *root = loop->get_LoopInfo()->find(p_func)->second;
         for (Loop *it : (*root->get_lpsons()))
             DealLoop(it);
+        SCCP sccp;
+        sccp.run(p_func);
+        DCE dce;
+        dce.run(p_func);
+        SimplifyCFG spycfg;
+        spycfg.run(p_func);
     }
 }
 
