@@ -11,13 +11,7 @@ static bool inline _check(Value *p_val, Loop *loop)
         p_instr = (Instrution *)edge->get_user();
         if (!loop->is_BBinLoop(p_instr->get_parent()))
             continue;
-        if (p_instr->isCmp() && loop->get_lpCmp() == p_instr)
-            continue;
         if (p_instr->get_Instrtype() != InstrutionEnum::PHINode)
-            return true;
-        else if (p_instr->get_user_list()->size() != 1)
-            return true;
-        if (p_instr->get_parent() != loop->get_header())
             return true;
         ++flag;
     }
@@ -159,7 +153,7 @@ void loopVarMove::VarMove(Loop *loop, DomTree &_domtree)
 
             if ((*dims)[1].empty())
                 assert(0);
-            else if (((*dims)[2].empty()) || ((*dims)[2].begin()->second > SCEVType::MUL))
+            else if ((((*dims)[2].empty()) || ((*dims)[2].begin()->second > SCEVType::MUL)) && (((*dims)[3].empty()) || ((*dims)[3].begin()->second > SCEVType::MUL)))
             {
                 Value *src0 = p_exp->get_scr(0, prev);
                 Value *src1 = p_exp->get_scr(1, prev);
