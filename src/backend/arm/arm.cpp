@@ -226,6 +226,11 @@ void ArmBlock::print()
     for (auto instr : instrs)
         instr->print();
 }
+void Armconstlable::print()
+{
+    std::cout << name << ":" << std::endl;
+    std::cout << "   .word " << word << std::endl;
+}
 static inline void print_pop_push(ArmInstr *i)
 {
     std::cout << " ";

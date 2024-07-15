@@ -240,10 +240,12 @@ public:
 
 public:
 };
+class ArmFunc;
 class ArmBlock : public ArmValue
 {
     std::string name;
     std::vector<ArmInstr *> instrs;
+    ArmFunc *parent = nullptr;
 
 public:
     void instrs_push_back(ArmInstr *i)
@@ -255,6 +257,8 @@ public:
     {
         instrs.insert(instrs.begin() + pos, i);
     }
+    ArmBlock(std::string na, ArmFunc *f) : name(na), parent(f) {}
+    ArmFunc *get_parent() { return parent; }
     void set_name(std::string na) { name = na; }
     std::string get_name() { return name; }
     std::vector<ArmInstr *> get_instrs() { return instrs; }
@@ -264,7 +268,18 @@ public:
     void drop();
     ~ArmBlock();
 };
+class Armconstlable : public ArmValue
+{
+    std::string name;
+    uint32_t word;
+    ArmFunc *parent = nullptr;
 
+public:
+    Armconstlable(std::string na, uint32_t w, ArmFunc *f) : name(na), word(w), parent(f) {}
+    Armconstlable(std::string na, int w, ArmFunc *f) : name(na), word((uint32_t)w), parent(f) {}
+    ArmFunc *gen_parent() { return parent; }
+    void print();
+};
 class ArmGlobal : public ArmValue
 {
 };
@@ -272,13 +287,17 @@ class ArmFunc : public ArmGlobal
 {
     std::string name;
     std::vector<ArmBlock *> blocks;
+    std::vector<Armconstlable *> constantlables;
     bool external = 0;
 
 public:
     void blocks_push_back(ArmBlock *ab) { blocks.push_back(ab); }
+    void constlable_push_back(Armconstlable *b) { constantlables.push_back(b); }
+
     void set_name(std::string na) { name = na; }
     std::string get_name() { return name; }
     std::vector<ArmBlock *> get_blocks() { return blocks; }
+    std::vector<Armconstlable *> get_constlable() { return constantlables; }
     void set_external() { external = 1; }
     bool is_external() { return external; }
     void print();
