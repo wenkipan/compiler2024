@@ -127,10 +127,12 @@ s24-s27 	d12-d13 	q6 	非易失性的
 s28-s31 	d14-d15 	q7 	非易失性的
 */
 // fp r11(gcc) or r7(llvm)
+#define R0 0
 #define RTMP 12 // also know as ip in gcc
 #define SP 13
 #define LR 14
 #define PC 15
+#define S0 16
 std::string printENUM(ARMENUM ARMENUM);
 
 class ArmEdge;
@@ -191,7 +193,8 @@ class ArmReg : public ArmOperand
 public:
     ArmReg(int _regno) : regno(_regno) { assert(_regno >= 0); }
     ArmReg(int _re, int off) : regno(_re), offset(off), is_addr(1) {}
-    bool is_s_reg() { return regno > 15; }
+    bool is_s_reg() { return regno > 15 && regno <= 15 + 32; }
+    bool is_r_reg() { return 0 <= regno && regno <= 15; }
     int get_offset() { return offset; }
     void print();
     ~ArmReg() {}
@@ -203,11 +206,21 @@ class ArmImme : public ArmOperand
 
 public:
     ArmImme(uint32_t _imme) : imme_int(_imme) {}
+    ArmImme(int i) : imme_int((uint32_t)i) {}
     // ArmImme(float _imme) : imme_float(_imme) {}
     void print();
     ~ArmImme() {}
 };
-class ArmInstr
+class ArmImmef : public ArmOperand
+{
+    float imme_float;
+
+public:
+    ArmImmef(float f) : imme_float(f) {}
+    void print();
+    ~ArmImmef() {}
+};
+class ArmInstr : public ArmValue
 {
     ARMENUM armenum;
     // ARMCOND *cond = nullptr;
@@ -246,6 +259,7 @@ public:
     std::string get_name() { return name; }
     std::vector<ArmInstr *> get_instrs() { return instrs; }
     ArmInstr *get_last_instr() { return instrs.back(); }
+    int find_instr_pos(ArmInstr *i);
     void print();
     void drop();
     ~ArmBlock();
@@ -274,12 +288,12 @@ class ArmGlobalVariable : public ArmGlobal
 {
     std::string name;
     std::vector<uint32_t> words;
-    uint32_t space;
+    int space;
 
 public:
     ArmGlobalVariable(std::string _name) : name(_name) {}
     void words_push_back(uint32_t i) { words.push_back(i); }
-    void set_space(uint32_t s) { space = s; }
+    void set_space(int s) { space = s; }
     std::string get_name() { return name; }
     void print();
 };
@@ -288,13 +302,16 @@ class ArmModule
 {
     std::vector<ArmGlobalVariable *> globals;
     std::vector<ArmFunc *> funcs;
+    std::string infile;
+    std::string outfile;
 
 public:
     // ArmModule();
+    ArmModule(std::string inf, std::string outf) : infile(inf), outfile(outf) {}
     void gvs_push_back(ArmGlobalVariable *ab) { globals.push_back(ab); }
     void funcs_push_back(ArmFunc *f) { funcs.push_back(f); }
     std::vector<ArmFunc *> get_funcs() { return funcs; }
-    void print();
+    void print(int test);
     ~ArmModule();
 };
 

@@ -23,3 +23,12 @@ bool is_legal_rotate_imme(int a)
     }
     return false;
 }
+
+bool is_legal_ldr_str_imme(int a)
+{
+    // careful, you need write specific symbol when neg
+    // 格式：LDR <Rt>, [<Rn>, #+/-<imm12>]! 和 STR <Rt>, [<Rn>, #+/-<imm12>]!
+    if (a < imm_12_max && a > -imm_12_max)
+        return true;
+    return false;
+}

@@ -4,6 +4,9 @@
 #include <string>
 #include <iostream>
 
+#include <stdio.h>
+#include <unistd.h>
+
 #define ENUM_TO_STRING_CASE(enumeration, value) \
     case enumeration::value:                    \
         print_enum = #value;                    \
@@ -97,7 +100,6 @@ ArmEdge::ArmEdge(ArmValue *val, ArmValue *u)
     : value(val), user(u)
 {
     val->get_user_list()->push_back(this);
-    printf("SADdd%d", (int)val->get_user_list()->size());
     u->get_value_list()->push_back(this);
 }
 void ArmEdge::drop()
@@ -147,27 +149,56 @@ std::vector<ArmBlock *> RPO(ArmFunc *f)
     std::reverse(order.begin(), order.end());
     return order;
 }
+int ArmBlock::find_instr_pos(ArmInstr *i)
+{
+    int pos = 0;
+    for (auto it : this->get_instrs())
+    {
+        if (it == i)
+            return pos;
+        pos++;
+    }
+    assert(0);
+}
 
 // print
-void ArmModule::print()
+void ArmModule::print(int test)
 {
+    int saved_stdout = dup(STDOUT_FILENO);
+    if (!test)
+        freopen(outfile.c_str(), "w", stdout);
+
+    std::cout << ".file \"" << infile << "\"" << std::endl;
+    std::cout << "   .arch armv7ve" << std::endl;
+    std::cout << "   .arm" << std::endl;
+    std::cout << "   .fpu neon-vfpv4" << std::endl
+              << std::endl;
+
+    std::cout << "   .section .data " << std::endl;
     for (auto g : globals)
     {
         g->print();
     }
+    std::cout << std::endl;
+    std::cout << "   .section .text" << std::endl;
     for (auto f : funcs)
     {
         if (f->is_external())
             continue;
         f->print();
     }
+
+    fflush(stdout);
+    dup2(saved_stdout, STDOUT_FILENO);
+    close(saved_stdout);
 }
 void ArmGlobalVariable::print()
 {
     std::cout << name << ":" << std::endl;
     for (auto word : words)
         std::cout << "   .word " << word << std::endl;
-    std::cout << "   .space " << space << std::endl;
+    if (words.size() != 1)
+        std::cout << "   .space " << space << std::endl;
 }
 void ArmFunc::print()
 {
@@ -197,6 +228,7 @@ void ArmBlock::print()
 }
 static inline void print_pop_push(ArmInstr *i)
 {
+    std::cout << " ";
     assert(i->is_arm_push_pop());
     std::cout << "{";
     for (auto op : i->get_ops())
@@ -210,6 +242,7 @@ static inline void print_pop_push(ArmInstr *i)
 }
 static inline void print_movw_gv(ArmInstr *i)
 {
+    std::cout << " ";
     assert(i->get_ops().size() == 2);
     i->get_ops()[0]->print();
     std::cout << ", " << "#:lower16:";
@@ -218,6 +251,7 @@ static inline void print_movw_gv(ArmInstr *i)
 }
 static inline void print_movt_gv(ArmInstr *i)
 {
+    std::cout << " ";
     assert(i->get_ops().size() == 2);
     i->get_ops()[0]->print();
     std::cout << ", " << "#:upper16:";
@@ -226,7 +260,7 @@ static inline void print_movt_gv(ArmInstr *i)
 }
 void ArmInstr::print()
 {
-    std::cout << "   " << printENUM(armenum) << " ";
+    std::cout << "   " << printENUM(armenum);
 
     if (armenum == ARMENUM::arm_movw && is_a<ArmAddr>(ops[1]))
     {
@@ -238,12 +272,20 @@ void ArmInstr::print()
         print_movt_gv(this);
         return;
     }
+    else if (armenum == ARMENUM::arm_vmov)
+    {
+        assert(is_a<ArmReg>(ops[0]));
+        if (((ArmReg *)ops[0])->is_s_reg())
+            if ((is_a<ArmReg>(ops[1]) && ((ArmReg *)ops[1])->is_s_reg()) || is_a<ArmImmef>(ops[1]))
+                std::cout << ".f32";
+    }
     else if (is_arm_push_pop())
     {
         print_pop_push(this);
         return;
     }
 
+    std::cout << " ";
     for (auto op : ops)
     {
         op->print();
@@ -291,7 +333,10 @@ void ArmImme::print()
 {
     std::cout << "#" << imme_int;
 }
-
+void ArmImmef::print()
+{
+    std::cout << "#" << imme_float;
+}
 // deletes
 ArmModule::~ArmModule()
 {

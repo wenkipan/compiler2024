@@ -1,9 +1,9 @@
-#include "ir/Type.hpp"
 #include <backend/arm/ArmGen.hpp>
+#include <cstdint>
 #include <cstdio>
 void ArmGen::init(Module *m)
 {
-    arm_module = new ArmModule;
+    arm_module = new ArmModule(m->get_infile(), m->get_outfile());
     for (auto f : *m->get_funcs())
     {
         auto newf = init_func(f);
@@ -30,10 +30,7 @@ void ArmGen::init(Module *m)
                 }
             }
             else
-            {
-                // dangerous
                 newgv->set_space(4);
-            }
         }
         else if (pointeetype->get_type() == TypeEnum::Array)
         {
@@ -90,6 +87,29 @@ ArmFunc *ArmGen::init_func(Function *f)
         }
     }
 
+    //  deal params
+    std::vector<Param *> paramstostack;
+    int iount = 4, fount = 16;
+    for (auto pa : *f->get_params())
+    {
+        if (pa->get_type()->get_type() == TypeEnum::I32 || pa->get_type()->get_type() == TypeEnum::Ptr)
+        {
+            if (iount)
+                iount--;
+            else
+                paramstostack.push_back(pa);
+        }
+        else if (pa->get_type()->get_type() == TypeEnum::F32)
+        {
+            if (fount)
+                fount--;
+            else
+                paramstostack.push_back(pa);
+        }
+        else
+            assert(0);
+    }
+    paraminfomap.emplace(f, paramsinfo(paramstostack));
     return newf;
 }
 void ArmGen::run(Module *m)
@@ -112,7 +132,6 @@ void ArmGen::gen_func(Function *f)
     gen_sp_sub_and_offset_for_alloc_and_param(f, get_ab(f->get_entryBB()));
     printf("--------sp_sub---------\n");
     ((ArmFunc *)val2val_map.find(f)->second)->print();
-    printf("--------sp_sub_end---------\n");
 
     for (auto BB : *f->get_blocks())
     {
@@ -130,9 +149,7 @@ void ArmGen::gen_func(Function *f)
 
     printf("--------total arm---------\n");
     ((ArmFunc *)val2val_map.find(f)->second)->print();
-    printf("--------total arm end---------\n");
 }
-static inline bool is_s_reg(int no) { return no > 15; }
 void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb)
 {
     uint32_t low = ((1 << 16) - 1) & imme;
@@ -157,6 +174,13 @@ static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, Arm
     newi->ops_push_back(o2);
     b->instrs_push_back(newi);
 }
+static inline void gen_instr_op2_before(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b, int pos)
+{
+    auto newi = new ArmInstr(ae);
+    newi->ops_push_back(o1);
+    newi->ops_push_back(o2);
+    b->instrs_insert_before(pos, newi);
+}
 static inline void gen_instr_op3(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmBlock *b)
 {
     auto newi = new ArmInstr(ae);
@@ -165,6 +189,14 @@ static inline void gen_instr_op3(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, Arm
     newi->ops_push_back(o3);
     b->instrs_push_back(newi);
 }
+// static inline void gen_instr_op3_before(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmBlock *b, int pos)
+// {
+//     auto newi = new ArmInstr(ae);
+//     newi->ops_push_back(o1);
+//     newi->ops_push_back(o2);
+//     newi->ops_push_back(o3);
+//     b->instrs_insert_before(pos, newi);
+// }
 void ArmGen::gen_mov_imme(int dst, int imme, ArmBlock *b)
 {
     if (imme >= 0)
@@ -197,7 +229,7 @@ void ArmGen::gen_mov_imme(int dst, int imme, ArmBlock *b)
         }
     }
 }
-void ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
+ArmInstr *ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
 {
     // int2reg
     if (is_a<ConstantI32>(src))
@@ -207,16 +239,22 @@ void ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
     else if (is_a<ConstantF32>(src))
     {
         // 比较幽默的是，寄存器分配没考虑这个，float的mov用的ldr
+        // 比较幽默的是，全部做完之后我发现arm也有mov伪指令，意思是浮点数可以用mov r12 来做      mmp
         assert(0);
+    }
+    else if (is_a<GlobalVariable>(src))
+    {
+        gen_load_GV_addr(ssara->getReg(dst), src, bb);
     }
     else if (!is_s_reg(ssara->getReg(dst)) && !is_s_reg(ssara->getReg(src)))
     {
-        gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(dst)), new ArmReg(ssara->getReg(src)), bb);
+        gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(dst)), get_op(src, bb, 0), bb);
     }
     else
     {
-        gen_instr_op2(ARMENUM::arm_vmov_f32, new ArmReg(ssara->getReg(dst)), new ArmReg(ssara->getReg(src)), bb);
+        gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(dst)), get_op(src, bb, 0), bb);
     }
+    return bb->get_instrs().back();
 }
 
 ArmBlock *ArmGen::get_ab(BasicBlock *b)
@@ -231,7 +269,14 @@ ArmValue *ArmGen::getArmval(Value *v)
 }
 int ArmGen::get_offset(Value *addr)
 {
-    assert(alloc_and_param_offset_map.find(addr) != alloc_and_param_offset_map.end());
+    // do something to alloc
+    if (alloc_and_param_offset_map.find(addr) == alloc_and_param_offset_map.end())
+    {
+        assert(is_a<Alloca>(addr));
+        assert(ssara->whichPara((Alloca *)addr));
+        assert(alloc_and_param_offset_map.find(ssara->whichPara((Alloca *)addr)) != alloc_and_param_offset_map.end());
+        return alloc_and_param_offset_map.find(ssara->whichPara((Alloca *)addr))->second;
+    }
     return alloc_and_param_offset_map.find(addr)->second;
 }
 void ArmGen::set_offset(Value *a, int off)
@@ -241,74 +286,34 @@ void ArmGen::set_offset(Value *a, int off)
     else
         alloc_and_param_offset_map.emplace(a, off);
 }
-
-void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
+static inline bool find_if_call(Function *f)
 {
-    // erase before
-    alloc_and_param_offset_map.clear();
-
-    // find which reg to push and vpush
-    // push { r4 r5 lr r11}
-    std::set<int> used_reg;
-    int pushedsize = 0;
-    for (auto BB : *f->get_blocks())
-        for (auto instr : *BB->get_instrs())
-        {
-            if (!is_a<Alloca>(instr))
-                used_reg.emplace(ssara->getReg(instr));
-        }
-    ArmInstr *newpush = nullptr;
-    ArmInstr *newvpush = nullptr;
-    std::vector<int> r;
-    std::vector<int> s;
-    for (auto k : used_reg)
-    {
-        if (k == SP || k == PC)
-            assert(0);
-        if (k <= 3 || k == 12)
-        {
-        }
-        else if (k <= 15)
-        {
-            if (newpush == nullptr)
-                newpush = new ArmInstr(ARMENUM::arm_push);
-            newpush->ops_push_back(new ArmReg(k));
-            r.push_back(k);
-            pushedsize += 4;
-        }
-        else if (k <= 15 + 16)
-        {
-        }
-        else if (k <= 15 + 32)
-        {
-            if (newpush == nullptr)
-                newvpush = new ArmInstr(ARMENUM::arm_vpush);
-            newvpush->ops_push_back(new ArmReg(k));
-            s.push_back(k);
-            pushedsize += 4;
-        }
-        else
-            assert(0);
-    }
-    if (newpush)
-        b->instrs_push_back(newpush);
-    if (newvpush)
-        b->instrs_push_back(newvpush);
-    // total alloc size, max  callee param size
-    int max_callee_param_sub4 = 0;
+    for (auto B : *f->get_blocks())
+        for (auto i : *B->get_instrs())
+            if (i->isCall())
+                return 1;
+    return 0;
+}
+int ArmGen::find_max_pushed_callee_param(Function *f)
+{
+    int max_pushed_callee_param = 0;
+    for (auto B : *f->get_blocks())
+        for (auto i : *B->get_instrs())
+            if (i->isCall())
+            {
+                int wqzhemechang = ssaramap.find(f)->second->regsStillAliveAfterCall((Call *)i).size();
+                int parmstostack = paraminfomap.find(f)->second.allcount();
+                if (max_pushed_callee_param > wqzhemechang + parmstostack)
+                    max_pushed_callee_param = wqzhemechang + parmstostack;
+            }
+    return max_pushed_callee_param *= 4;
+}
+int ArmGen::find_all_alloc_size(Function *f)
+{
     int allocsize = 0;
     for (auto BB : *f->get_blocks())
         for (auto instr : *BB->get_instrs())
-        {
-            if (is_a<Call>(instr))
-            {
-                if ((int)(instr->get_value_list()->size() - 5) > max_callee_param_sub4)
-                {
-                    max_callee_param_sub4 = instr->get_value_list()->size() - 5; // one is callee ptr
-                    printf("ASDDDDDDDDDD%d\n", max_callee_param_sub4);
-                }
-            }
-            else if (is_a<Alloca>(instr) && ssara->whichPara((Alloca *)instr) == nullptr)
+            if (is_a<Alloca>(instr))
             {
                 printf("----alloc----");
                 instr->print();
@@ -321,144 +326,279 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
                 else
                     allocsize += 4;
             }
+    return allocsize;
+}
+void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
+{
+    // erase before
+    alloc_and_param_offset_map.clear();
+
+    // find which reg to push and vpush
+    // push { r4 r5 lr r11}
+    std::set<int> used_reg;
+    if (find_if_call(f))
+        used_reg.emplace(LR);
+
+    for (auto BB : *f->get_blocks())
+        for (auto instr : *BB->get_instrs())
+        {
+            if (!is_a<Alloca>(instr))
+                used_reg.emplace(ssara->getReg(instr));
         }
-    max_callee_param_sub4 *= 4;
+    std::vector<int> r;
+    for (auto k : used_reg)
+    {
+        if (k == SP || k == PC)
+            assert(0);
+        if (k <= 3 || k == 12)
+        {
+        }
+        else if (k <= 15)
+            r.push_back(k);
+        else if (k <= 15 + 16)
+        {
+        }
+        else if (k <= 15 + 32)
+            r.push_back(k);
+        else
+            assert(0);
+    }
+    gen_push_or_pop(ARMENUM::arm_push, r, b, b->get_instrs().size());
+
+    int pushedsize = 4 * used_reg.size();
+    // total alloc size, max  callee param size
+    int max_pushed_callee_param = find_max_pushed_callee_param(f);
+    int allocsize = find_all_alloc_size(f);
 
     // gen_sp_sub
     // sp sub sp_sub_offset
-    int sp_sub_offset = allocsize + max_callee_param_sub4;
-    auto newsubsp = new ArmInstr(ARMENUM::arm_sub);
-    newsubsp->ops_push_back(new ArmReg(SP));
-    if (is_legal_rotate_imme(sp_sub_offset))
+    int sp_sub_offset = allocsize + max_pushed_callee_param;
+    if (sp_sub_offset != 0)
     {
+        auto newsubsp = new ArmInstr(ARMENUM::arm_sub);
         newsubsp->ops_push_back(new ArmReg(SP));
-        printf("ASDDDDDDDDDD%d\n", max_callee_param_sub4);
-        printf("ASDDDDDDDDDD%d\n", allocsize);
-        printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
-        newsubsp->ops_push_back(new ArmImme((uint32_t)sp_sub_offset));
+        newsubsp->ops_push_back(new ArmReg(SP));
+        if (is_legal_ldr_str_imme(sp_sub_offset))
+        {
+            printf("ASDDDDDDDDDD%d\n", max_pushed_callee_param);
+            printf("ASDDDDDDDDDD%d\n", allocsize);
+            printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
+            newsubsp->ops_push_back(new ArmImme((uint32_t)sp_sub_offset));
+        }
+        else
+        {
+            gen_mov_imme32(RTMP, sp_sub_offset, b);
+            newsubsp->ops_push_back(new ArmReg(RTMP));
+        }
+        b->instrs_push_back(newsubsp);
     }
-    else
-    {
-        gen_mov_imme32(RTMP, sp_sub_offset, b);
-        newsubsp->ops_push_back(new ArmReg(RTMP));
-    }
-    b->instrs_push_back(newsubsp);
 
     // gen_sp_offset_for_alloc_and_params
 
-    // int paramssub4 = f->get_params()->size() - 4;
-    int paramscnt = 0;
-    for (auto pa : *f->get_params())
+    // build which param push to stack
+    // set offset for params
+    int papos = 0;
+    for (auto pa : paraminfomap.find(f)->second.paramstostack)
     {
-        if (paramscnt > 3)
-        {
-            set_offset(pa, pushedsize + sp_sub_offset + 4 * (paramscnt - 4));
-        }
-        paramscnt++;
+        set_offset(pa, pushedsize + sp_sub_offset + 4 * (papos++));
     }
+
+    // set offset for allocs
     for (auto BB : *f->get_blocks())
         for (auto instr : *BB->get_instrs())
             if (is_a<Alloca>(instr))
-            {
-                Param *k = ssara->whichPara((Alloca *)instr);
-                if (k)
-                {
-                    set_offset(instr, get_offset(k));
-                }
-                else
-                {
-                    // int posofalloc = 0;
-                    set_offset(instr, max_callee_param_sub4 + get_offset(instr));
-                }
-            }
-    spinfomap.emplace(f, SPinfo(sp_sub_offset, r, s));
+                set_offset(instr, max_pushed_callee_param + get_offset(instr));
+
+    spinfomap.emplace(f, SPinfo(sp_sub_offset, r));
 }
 void ArmGen::gen_sp_add_and_pop(Function *f, ArmBlock *b)
 {
     // gen_sp_sadd
     // sp add sp sp_sub_offset
     int sp_sub_offset = spinfomap.find(f)->second.sp_sub_offset;
-    auto newsubsp = new ArmInstr(ARMENUM::arm_add);
-    newsubsp->ops_push_back(new ArmReg(SP));
-    if (is_legal_rotate_imme(sp_sub_offset))
+    if (sp_sub_offset != 0)
     {
+        auto newsubsp = new ArmInstr(ARMENUM::arm_add);
         newsubsp->ops_push_back(new ArmReg(SP));
-        newsubsp->ops_push_back(new ArmImme((uint32_t)sp_sub_offset));
+        if (is_legal_ldr_str_imme(sp_sub_offset))
+        {
+            newsubsp->ops_push_back(new ArmReg(SP));
+            newsubsp->ops_push_back(new ArmImme((uint32_t)sp_sub_offset));
+        }
+        else
+        {
+            gen_mov_imme32(RTMP, sp_sub_offset, b);
+            newsubsp->ops_push_back(new ArmReg(RTMP));
+        }
+        b->instrs_insert_before(b->get_instrs().size() - 1, newsubsp);
+    }
+    // gen pop
+    gen_push_or_pop(ARMENUM::arm_pop, spinfomap.find(f)->second.used_reg, b, b->get_instrs().size() - 1);
+}
+static inline int posofpa(Function *f, Param *p)
+{
+    int pos = 0;
+    for (auto pa : *f->get_params())
+    {
+        if (pa == p)
+            return pos;
+        pos++;
+    }
+    assert(0);
+}
+static inline void gen_str(ArmReg *stored, ArmReg *addr, ArmBlock *b, int pos)
+{
+    if (stored->is_r_reg())
+        gen_instr_op2_before(ARMENUM::arm_str, stored, addr, b, pos);
+    else if (stored->is_s_reg())
+        gen_instr_op2_before(ARMENUM::arm_vstr_32, stored, addr, b, pos);
+    else
+        assert(0);
+}
+static inline void gen_ldr(ArmReg *stored, ArmReg *addr, ArmBlock *b, int pos)
+{
+    if (stored->is_r_reg())
+        gen_instr_op2_before(ARMENUM::arm_str, stored, addr, b, pos);
+    else if (stored->is_s_reg())
+        gen_instr_op2_before(ARMENUM::arm_vstr_32, stored, addr, b, pos);
+    else
+        assert(0);
+}
+void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
+{
+    // still alives to stack
+    if (ssara->getFirstMoveofCall((Call *)i))
+    {
+        auto alives = ssara->regsStillAliveAfterCall((Call *)i);
+        auto firstmv = ssara->getFirstMoveofCall((Call *)i);
+        assert(val2val_map.find(firstmv) != val2val_map.end());
+        int pos = b->find_instr_pos((ArmInstr *)val2val_map.find(firstmv)->second);
+        int stackparamsize = paraminfomap.find(i->get_BB()->get_func())->second.allcount();
+        int off = 0;
+        for (auto alive : alives)
+        {
+            gen_str(new ArmReg(alive), new ArmReg(SP, stackparamsize + off), b, pos);
+            off += 4;
+        }
+    }
+
+    // params to stack
+    int off = 0;
+    for (auto patostack : paraminfomap.find(i->get_BB()->get_func())->second.paramstostack)
+    {
+        Value *tostack = i->get_operand_at(posofpa(i->get_BB()->get_func(), patostack) + 1);
+        gen_str((ArmReg *)get_op(tostack, b, 1), new ArmReg(SP, off), b, b->get_instrs().size());
+        off += 4;
+    }
+}
+void ArmGen::gen_call_after(Instrution *i, ArmBlock *b)
+{
+    if (i->get_type()->get_type() == TypeEnum::Void)
+    {
+    }
+    else if (i->get_type()->get_type() == TypeEnum::I32)
+    {
+        assert(!is_s_reg(ssara->getReg(i)));
+        if (ssara->getReg(i) != R0)
+            gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(i)), new ArmReg(R0), b);
+    }
+    else if (i->get_type()->get_type() == TypeEnum::F32)
+    {
+        assert(is_s_reg(ssara->getReg(i)));
+        gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(i)), new ArmReg(S0), b);
     }
     else
+        assert(0);
+
+    // ldr still alive
+    int stackparamsize = paraminfomap.find(i->get_BB()->get_func())->second.allcount();
+    auto alives = ssara->regsStillAliveAfterCall((Call *)i);
+    int off = 0;
+    for (auto alive : alives)
     {
-        gen_mov_imme32(RTMP, sp_sub_offset, b);
-        newsubsp->ops_push_back(new ArmReg(RTMP));
+        gen_ldr(new ArmReg(alive), new ArmReg(SP, stackparamsize + off), b, b->get_instrs().size());
+        off += 4;
     }
-    b->instrs_insert_before(b->get_instrs().size() - 1, newsubsp);
-    ArmInstr *newpush = nullptr;
-    ArmInstr *newvpush = nullptr;
-    for (auto k : spinfomap.find(f)->second.used_s_reg)
-    {
-        if (newvpush == nullptr)
-            newvpush = new ArmInstr(ARMENUM::arm_vpop);
-        newvpush->ops_push_back(new ArmReg(k));
-    }
-    if (newvpush)
-        b->instrs_insert_before(b->get_instrs().size() - 1, newvpush);
-    for (auto k : spinfomap.find(f)->second.used_r_reg)
-    {
-        if (newpush == nullptr)
-            newpush = new ArmInstr(ARMENUM::arm_pop);
-        newpush->ops_push_back(new ArmReg(k));
-    }
-    if (newpush)
-        b->instrs_insert_before(b->get_instrs().size() - 1, newpush);
 }
 
 void ArmGen::gen_call(Instrution *i, ArmBlock *b)
 {
-    for (int pos = 5; pos < i->get_value_list()->size(); pos++)
-    {
-        ArmInstr *newstr;
-        int regno = ssara->getReg(i->get_operand_at(pos));
-        if (regno != -1)
-        {
-            if (is_s_reg(regno))
-                newstr = new ArmInstr(ARMENUM::arm_vstr_32);
-            else
-                newstr = new ArmInstr(ARMENUM::arm_str);
-            newstr->ops_push_back(new ArmReg(regno));
-            newstr->ops_push_back(new ArmReg(SP, 4 * (pos - 5)));
-        }
-        else
-        {
-            newstr = new ArmInstr(ARMENUM::arm_str);
-            if (is_a<Alloca>(i->get_operand_at(pos)))
-            {
-                gen_instr_op2(ARMENUM::arm_ldr, new ArmReg(RTMP), new ArmReg(SP, get_offset(i->get_operand_at(pos))), b);
-                newstr->ops_push_back(new ArmReg(RTMP));
-            }
-            else if (is_a<ConstantI32>(i->get_operand_at(pos)))
-            {
-                gen_mov_imme(RTMP, ((ConstantI32 *)i->get_operand_at(pos))->get_32_at(0), b);
-                newstr->ops_push_back(new ArmReg(RTMP));
-            }
-            else if (is_a<GlobalVariable>(i->get_operand_at(pos)))
-            {
-                gen_load_GV_addr(i->get_operand_at(pos), b);
-                newstr->ops_push_back(new ArmReg(RTMP));
-            }
-            else
-                assert(0);
-            newstr->ops_push_back(new ArmReg(SP, 4 * (pos - 5)));
-            //!!!
-        }
-        b->instrs_push_back(newstr);
-    }
+    // call before
+    gen_call_before(i, b);
+
     assert(is_a<Function>(i->get_operand_at(0)));
     auto newi = new ArmInstr(ARMENUM::arm_bl);
     Function *f = (Function *)i->get_operand_at(0);
     newi->ops_push_back(new ArmAddr(getArmval(f)));
     b->instrs_push_back(newi);
+
+    // call after
+    gen_call_after(i, b);
+}
+void ArmGen::gen_push_or_pop(ARMENUM ae, std::vector<int> v, ArmBlock *b, int pos)
+{
+    // insert before
+    ARMENUM ae2 = ARMENUM::arm_vpop;
+    if (ae == ARMENUM::arm_push)
+        ae2 = ARMENUM::arm_vpush;
+
+    ArmInstr *pushs = nullptr;
+    ArmInstr *vpushs = nullptr;
+    for (auto no : v)
+    {
+        if (no <= 15)
+        {
+            if (pushs == nullptr)
+            {
+                pushs = new ArmInstr(ae);
+                b->instrs_insert_before(pos, pushs);
+            }
+            pushs->ops_push_back(new ArmReg(no));
+        }
+        else if (is_s_reg(no))
+        {
+            if (vpushs == nullptr)
+            {
+                vpushs = new ArmInstr(ae2);
+                b->instrs_insert_before(pos, vpushs);
+            }
+            vpushs->ops_push_back(new ArmReg(no));
+        }
+        else
+            assert(0);
+    }
 }
 void ArmGen::gen_ret(Instrution *i, ArmBlock *b)
 {
+    // mov to s0/r0
+    if (i->get_type()->get_type() == TypeEnum::Void)
+    {
+    }
+    else
+    {
+        Value *src = i->get_operand_at(0);
+        if (is_a<ConstantI32>(src))
+        {
+            gen_mov_imme(R0, ((ConstantI32 *)src)->get_32_at(0), b);
+        }
+        else if (is_a<ConstantF32>(src))
+        {
+            gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(S0), new ArmImmef(((ConstantF32 *)src)->get_32_at(0)), b);
+        }
+        else if (is_r_reg(ssara->getReg(src)))
+        {
+            if (ssara->getReg(src) != R0)
+                gen_instr_op2(ARMENUM::arm_mov, new ArmReg(R0), new ArmReg(ssara->getReg(src)), b);
+        }
+        else if (is_s_reg(ssara->getReg(src)))
+        {
+            if (ssara->getReg(src) != S0)
+                gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(S0), new ArmReg(ssara->getReg(src)), b);
+        }
+        else
+            assert(0);
+    }
+
     auto newi = new ArmInstr(ARMENUM::arm_bx);
     newi->ops_push_back(new ArmReg(14));
     b->instrs_push_back(newi);
@@ -471,17 +611,11 @@ void ArmGen::gen_branch(Instrution *i, ArmBlock *b)
     assert(cmp->get_operand_at(0)->get_type()->get_type() == cmp->get_operand_at(1)->get_type()->get_type());
     if (cmp->get_operand_at(0)->get_type()->get_type() == TypeEnum::F32)
     {
-        auto newcmp = new ArmInstr(ARMENUM::arm_vcmp_f32);
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(0), b));
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(1), b));
-        b->instrs_push_back(newcmp);
+        gen_instr_op2(ARMENUM::arm_vcmp_f32, get_op(cmp->get_operand_at(0), b, 1), get_op(cmp->get_operand_at(1), b, 1), b);
     }
     else if (cmp->get_operand_at(0)->get_type()->get_type() == TypeEnum::I32)
     {
-        auto newcmp = new ArmInstr(ARMENUM::arm_cmp);
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(0), b));
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(1), b));
-        b->instrs_push_back(newcmp);
+        gen_instr_op2(ARMENUM::arm_cmp, get_op(cmp->get_operand_at(0), b, 1), get_op(cmp->get_operand_at(1), b, 0), b);
     }
     else
         assert(0);
@@ -534,182 +668,139 @@ void ArmGen::gen_jmp(Instrution *i, ArmBlock *b)
     newi->ops_push_back(new ArmAddr(getArmval(thenbb)));
     b->instrs_push_back(newi);
 }
-void ArmGen::gen_load_GV_addr(Value *addr, ArmBlock *b)
+void ArmGen::gen_load_GV_addr(int no, Value *addr, ArmBlock *b)
 {
     assert(is_a<GlobalVariable>(addr));
-    // RTMP= addr
     auto newi = new ArmInstr(ARMENUM::arm_movw);
-    newi->ops_push_back(new ArmReg(RTMP));
+    newi->ops_push_back(new ArmReg(no));
     newi->ops_push_back(new ArmAddr(getArmval((GlobalVariable *)addr)));
     b->instrs_push_back(newi);
     newi = new ArmInstr(ARMENUM::arm_movt);
-    newi->ops_push_back(new ArmReg(RTMP));
+    newi->ops_push_back(new ArmReg(no));
     newi->ops_push_back(new ArmAddr(getArmval((GlobalVariable *)addr)));
     b->instrs_push_back(newi);
 }
 ArmReg *ArmGen::gen_sp_and_offset_op(int offset, ArmBlock *b)
 {
-    if (offset < imm_12_max)
+    if (0 <= offset && offset < imm_12_max)
     {
         return new ArmReg(SP, (uint32_t)offset);
     }
     else
     {
         gen_mov_imme32(RTMP, offset, b);
-        return new ArmReg(RTMP);
+        return new ArmReg(RTMP, 0);
     }
 }
 void ArmGen::gen_load(Instrution *i, ArmBlock *b)
 {
     Value *addr = i->get_operand_at(0);
-    if (is_a<GlobalVariable>(addr))
+    // if (ssara.whichGV(addr))
+    // {
+    //     gen_load_GV_addr(ssara->getReg(i), GV, b);
+    // }
+    if (is_r_reg(ssara->getReg(i)))
     {
-        gen_load_GV_addr(addr, b);
-        // R/s=[RTMP]
-        ArmInstr *newi;
-        if (i->get_type()->get_type() == TypeEnum::I32)
-        {
-            newi = new ArmInstr(ARMENUM::arm_ldr);
-        }
-        else if (i->get_type()->get_type() == TypeEnum::F32)
-        {
-            newi = new ArmInstr(ARMENUM::arm_vldr_32);
-        }
-        else
-            assert(0);
-        newi->ops_push_back(new ArmReg(ssara->getReg(i)));
-        newi->ops_push_back(new ArmReg(RTMP));
-        b->instrs_push_back(newi);
+        gen_instr_op2(ARMENUM::arm_ldr, new ArmReg(ssara->getReg(i)), get_op_addr(addr, b), b);
     }
-    else // gep results and alloc
+    else if (is_s_reg(ssara->getReg(i)))
     {
-        ArmInstr *newi;
-        if (i->get_type()->get_type() == TypeEnum::I32)
-        {
-            newi = new ArmInstr(ARMENUM::arm_ldr);
-        }
-        else if (i->get_type()->get_type() == TypeEnum::Ptr)
-            newi = new ArmInstr(ARMENUM::arm_ldr);
-        else if (i->get_type()->get_type() == TypeEnum::F32)
-        {
-            newi = new ArmInstr(ARMENUM::arm_vldr_32);
-        }
-        else
-            assert(0);
-        newi->ops_push_back(new ArmReg(ssara->getReg(i)));
-        if (is_a<Alloca>(addr))
-            newi->ops_push_back(gen_sp_and_offset_op(get_offset(addr), b));
-        else // geps
-            newi->ops_push_back(new ArmReg(ssara->getReg(addr), 0));
-        b->instrs_push_back(newi);
+        gen_instr_op2(ARMENUM::arm_vldr_32, new ArmReg(ssara->getReg(i)), get_op_addr(addr, b), b);
     }
+    else
+        assert(0);
 }
 void ArmGen::gen_store(Instrution *i, ArmBlock *b)
 {
     Value *stored = i->get_operand_at(1);
     Value *addr = i->get_operand_at(0);
-    ArmInstr *newi = nullptr;
-    if (stored->get_type()->get_type() == TypeEnum::F32)
-    {
-        newi = new ArmInstr(ARMENUM::arm_vstr_32);
-    }
-    else if (stored->get_type()->get_type() == TypeEnum::I32)
-    {
-        newi = new ArmInstr(ARMENUM::arm_str);
-    }
-    else if (stored->get_type()->get_type() == TypeEnum::Ptr)
-    {
-        newi = new ArmInstr(ARMENUM::arm_str);
-    }
-    else
-        assert(0);
 
+    ArmOperand *op1 = nullptr;
     if (is_a<ConstantI32>(stored))
     {
         gen_mov_imme(RTMP, ((ConstantI32 *)stored)->get_32_at(0), b);
-        newi->ops_push_back(new ArmReg(RTMP));
+        op1 = new ArmReg(RTMP);
     }
     else if (is_a<ConstantF32>(stored))
         assert(0);
     else
-        newi->ops_push_back(new ArmReg(ssara->getReg(stored)));
-    if (is_a<GlobalVariable>(addr))
     {
-        gen_load_GV_addr(addr, b);
-        // addr
-        newi->ops_push_back(new ArmReg(RTMP));
+        op1 = new ArmReg(ssara->getReg(stored));
     }
-    else if (is_a<Alloca>(addr)) // not sure depends on geps
+
+    if (((ArmReg *)op1)->is_r_reg())
     {
-        newi->ops_push_back(gen_sp_and_offset_op(get_offset(addr), b));
+        gen_instr_op2(ARMENUM::arm_str, op1, get_op_addr(addr, b), b);
+    }
+    else if (((ArmReg *)op1)->is_s_reg())
+    {
+        gen_instr_op2(ARMENUM::arm_vldr_32, op1, get_op_addr(addr, b), b);
     }
     else
-    {
-        // gep results,not sure
-        newi->ops_push_back(new ArmReg(ssara->getReg(addr)));
-    }
-    b->instrs_push_back(newi);
+        assert(0);
 }
 void ArmGen::gen_cmp(Instrution *cmp, ArmBlock *b)
 {
     printf("-----cmptype\n");
-    TypeEnum ty1 = cmp->get_operand_at(0)->get_type()->get_type();
-    TypeEnum ty2 = cmp->get_operand_at(1)->get_type()->get_type();
     cmp->get_operand_at(1)->get_type()->print();
     fflush(stdout);
+    TypeEnum ty1 = cmp->get_operand_at(0)->get_type()->get_type();
+    TypeEnum ty2 = cmp->get_operand_at(1)->get_type()->get_type();
     if (ty1 == TypeEnum::I1)
         ty1 = TypeEnum::I32;
     if (ty2 == TypeEnum::I1)
         ty2 = TypeEnum::I32;
-    assert(ty1 = ty2);
+    assert(ty1 == ty2);
     if (ty1 == TypeEnum::F32)
     {
         auto newcmp = new ArmInstr(ARMENUM::arm_vcmp_f32);
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(0), b));
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(1), b));
+        newcmp->ops_push_back(get_op(cmp->get_operand_at(0), b, 1));
+        newcmp->ops_push_back(get_op(cmp->get_operand_at(1), b, 1));
         b->instrs_push_back(newcmp);
     }
     else if (ty2 == TypeEnum::I32)
     {
         auto newcmp = new ArmInstr(ARMENUM::arm_cmp);
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(0), b));
-        newcmp->ops_push_back(get_op(cmp->get_operand_at(1), b));
+        newcmp->ops_push_back(get_op(cmp->get_operand_at(0), b, 1));
+        newcmp->ops_push_back(get_op(cmp->get_operand_at(1), b, 0));
         b->instrs_push_back(newcmp);
     }
     else
         assert(0);
 
-    gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(cmp)), new ArmImme(0), b);
+    gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(cmp)), new ArmImme((uint32_t)0), b);
+    ARMENUM ae;
     switch (cmp->get_Instrtype())
     {
     case InstrutionEnum::IEQ:
     case InstrutionEnum::FEQ:
-        gen_instr_op2(ARMENUM::arm_moveq, new ArmReg(ssara->getReg(cmp)), new ArmImme(1), b);
+        ae = ARMENUM::arm_moveq;
         break;
     case InstrutionEnum::INEQ:
     case InstrutionEnum::FNEQ:
-        gen_instr_op2(ARMENUM::arm_movne, new ArmReg(ssara->getReg(cmp)), new ArmImme(1), b);
+        ae = ARMENUM::arm_movne;
         break;
     case InstrutionEnum::IGT:
     case InstrutionEnum::FGT:
-        gen_instr_op2(ARMENUM::arm_movge, new ArmReg(ssara->getReg(cmp)), new ArmImme(1), b);
+        ae = ARMENUM::arm_movge;
         break;
     case InstrutionEnum::IGE:
     case InstrutionEnum::FGE:
-        gen_instr_op2(ARMENUM::arm_movgt, new ArmReg(ssara->getReg(cmp)), new ArmImme(1), b);
+        ae = ARMENUM::arm_movgt;
         break;
     case InstrutionEnum::ILT:
     case InstrutionEnum::FLT:
-        gen_instr_op2(ARMENUM::arm_movlt, new ArmReg(ssara->getReg(cmp)), new ArmImme(1), b);
+        ae = ARMENUM::arm_movlt;
         break;
     case InstrutionEnum::ILE:
     case InstrutionEnum::FLE:
-        gen_instr_op2(ARMENUM::arm_movle, new ArmReg(ssara->getReg(cmp)), new ArmImme(1), b);
+        ae = ARMENUM::arm_movle;
         break;
     default:
         assert(0);
         break;
     }
+    gen_instr_op2(ae, new ArmReg(ssara->getReg(cmp)), new ArmImme((uint32_t)1), b);
 }
 void ArmGen::gen_instr(Instrution *i, ArmBlock *b)
 {
@@ -765,7 +856,8 @@ void ArmGen::gen_instr(Instrution *i, ArmBlock *b)
     }
     else if (i->isMove())
     {
-        gen_mov(i->get_operand_at(0), i->get_operand_at(1), b);
+        auto mv = gen_mov(i->get_operand_at(0), i->get_operand_at(1), b);
+        val2val_map.emplace(i, mv);
     }
     else
         assert(0);
@@ -775,7 +867,7 @@ ArmOperand *ArmGen::gen_legal_imme(int imme, ArmBlock *b)
     if (imme >= 0)
     {
         if (is_legal_rotate_imme(imme))
-            return new ArmImme(imme);
+            return new ArmImme((uint32_t)imme);
         else
         {
             gen_mov_imme32(RTMP, imme, b);
@@ -800,15 +892,41 @@ ArmOperand *ArmGen::gen_legal_imme(int imme, ArmBlock *b)
         }
     }
 }
-ArmOperand *ArmGen::get_op(Value *i, ArmBlock *b)
+ArmOperand *ArmGen::get_op_addr(Value *addr, ArmBlock *b)
+{
+    if (is_a<GlobalVariable>(addr))
+    {
+        gen_load_GV_addr(ssara->getReg(addr), addr, b);
+        return new ArmReg(ssara->getReg(addr), 0);
+    }
+    else if (is_a<Alloca>(addr))
+    {
+        return gen_sp_and_offset_op(get_offset(addr), b);
+    }
+    else // gep results
+        return new ArmReg(ssara->getReg(addr), 0);
+}
+ArmOperand *ArmGen::get_op(Value *i, ArmBlock *b, int must_reg)
 {
     if (is_a<ConstantI32>(i))
     {
+        if (must_reg)
+        {
+            gen_mov_imme(RTMP, ((ConstantI32 *)i)->get_32_at(0), b);
+            return new ArmReg(RTMP);
+        }
         int imme = ((ConstantI32 *)i)->get_32_at(0);
         return gen_legal_imme(imme, b);
     }
     else if (is_a<ConstantF32>(i))
+    {
+        // 比较幽默的是，寄存器分配没考虑这个，float的mov用的ldr
+        // 比较幽默的是，全部做完之后我发现arm也有mov伪指令，意思是浮点数可以用mov r12 来做      mmp
+        // float f = ((ConstantF32 *)i)->get_32_at(0);
+        // gen_instr_op2(ARMENUM::arm_mov, new ArmReg(RTMP), new ArmImme(*(uint32_t *)(&f)), b);
+        // gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(dst)), new ArmReg(RTMP), bb);
         assert(0);
+    }
     else if (is_a<Alloca>(i)) // for geps
     {
         gen_instr_op3(ARMENUM::arm_add, new ArmReg(RTMP), new ArmReg(SP), gen_legal_imme(get_offset(i), b), b);
@@ -816,8 +934,8 @@ ArmOperand *ArmGen::get_op(Value *i, ArmBlock *b)
     }
     else if (is_a<GlobalVariable>(i))
     {
-        gen_load_GV_addr(i, b);
-        return new ArmReg(RTMP);
+        gen_load_GV_addr(ssara->getReg(i), i, b);
+        return new ArmReg(ssara->getReg(i));
     }
     else
     {
@@ -832,9 +950,9 @@ void ArmGen::gen_binary(Instrution *i, ArmBlock *b)
 
     Value *src1 = i->get_operand_at(0);
     Value *src2 = i->get_operand_at(1);
-    ArmOperand *dst = get_op(i, b);
-    ArmOperand *op1 = get_op(src1, b);
-    ArmOperand *op2 = get_op(src2, b);
+    ArmOperand *dst = get_op(i, b, 0);
+    ArmOperand *op1 = get_op(src1, b, 0);
+    ArmOperand *op2 = get_op(src2, b, 0);
     assert(!(is_a<ArmImme>(op1) && is_a<ArmImme>(op2)));
     switch (i->get_Instrtype())
     {
@@ -855,38 +973,6 @@ void ArmGen::gen_binary(Instrution *i, ArmBlock *b)
     case InstrutionEnum::LSHR:
         gen_instr_op3(ARMENUM::arm_lsr, dst, op1, op2, b);
         return;
-    case InstrutionEnum::IMUL:
-        if (is_a<ArmImme>(op1))
-        {
-            gen_mov_imme(RTMP, ((ConstantI32 *)src1)->get_32_at(0), b);
-            delete op1;
-            op1 = new ArmReg(RTMP);
-        }
-        else if (is_a<ArmImme>(op2))
-        {
-            gen_mov_imme(RTMP, ((ConstantI32 *)src2)->get_32_at(0), b);
-            delete op2;
-            op2 = new ArmReg(RTMP);
-        }
-        gen_instr_op3(ARMENUM::arm_mul, dst, op1, op2, b);
-        return;
-    case InstrutionEnum::IDIV:
-        if (is_a<ArmImme>(op1))
-        {
-            gen_mov_imme(RTMP, ((ConstantI32 *)src1)->get_32_at(0), b);
-            delete op1;
-            op1 = new ArmReg(RTMP);
-        }
-        else if (is_a<ArmImme>(op2))
-        {
-            gen_mov_imme(RTMP, ((ConstantI32 *)src2)->get_32_at(0), b);
-            delete op2;
-            op2 = new ArmReg(RTMP);
-        }
-        gen_instr_op3(ARMENUM::arm_sdiv, dst, op1, op2, b);
-        return;
-    case InstrutionEnum::IMOD:
-        assert(0);
     default:
         break;
     }
@@ -894,6 +980,38 @@ void ArmGen::gen_binary(Instrution *i, ArmBlock *b)
     assert(!is_a<ArmImme>(op1) && !is_a<ArmImme>(op2));
     switch (i->get_Instrtype())
     {
+    case InstrutionEnum::IMUL:
+        // if (is_a<ArmImme>(op1))
+        // {
+        //     gen_mov_imme(RTMP, ((ConstantI32 *)src1)->get_32_at(0), b);
+        //     delete op1;
+        //     op1 = new ArmReg(RTMP);
+        // }
+        // else if (is_a<ArmImme>(op2))
+        // {
+        //     gen_mov_imme(RTMP, ((ConstantI32 *)src2)->get_32_at(0), b);
+        //     delete op2;
+        //     op2 = new ArmReg(RTMP);
+        // }
+        gen_instr_op3(ARMENUM::arm_mul, dst, op1, op2, b);
+        return;
+    case InstrutionEnum::IDIV:
+        // if (is_a<ArmImme>(op1))
+        // {
+        //     gen_mov_imme(RTMP, ((ConstantI32 *)src1)->get_32_at(0), b);
+        //     delete op1;
+        //     op1 = new ArmReg(RTMP);
+        // }
+        // else if (is_a<ArmImme>(op2))
+        // {
+        //     gen_mov_imme(RTMP, ((ConstantI32 *)src2)->get_32_at(0), b);
+        //     delete op2;
+        //     op2 = new ArmReg(RTMP);
+        // }
+        gen_instr_op3(ARMENUM::arm_sdiv, dst, op1, op2, b);
+        return;
+    case InstrutionEnum::IMOD:
+        assert(0);
     case InstrutionEnum::FADD:
         gen_instr_op3(ARMENUM::arm_vadd_f32, dst, op1, op2, b);
         break;
@@ -907,6 +1025,7 @@ void ArmGen::gen_binary(Instrution *i, ArmBlock *b)
         gen_instr_op3(ARMENUM::arm_vdiv_f32, dst, op1, op2, b);
         break;
     default:
+        assert(0);
         break;
     }
 }
@@ -948,7 +1067,7 @@ void ArmGen::gen_unary(Instrution *i, ArmBlock *b)
         newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
         newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
         b->instrs_push_back(newi);
-        newi = new ArmInstr(ARMENUM::arm_vmov_f32);
+        newi = new ArmInstr(ARMENUM::arm_vmov);
         newi->ops_push_back(new ArmReg(ssara->getReg(i)));
         newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
         b->instrs_push_back(newi);
@@ -956,7 +1075,7 @@ void ArmGen::gen_unary(Instrution *i, ArmBlock *b)
     case InstrutionEnum::I2F:
         // VMOV S1, R1：将R1中的整数值传送到单精度浮点寄存器S1。
         // VCVT.F32.S32 S0, S1：将S1中的整数值转换为单精度浮点数，结果存入单精度浮点寄存器S0。
-        newi = new ArmInstr(ARMENUM::arm_vmov_f32);
+        newi = new ArmInstr(ARMENUM::arm_vmov);
         newi->ops_push_back(new ArmReg(ssara->getReg(i)));
         newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
         b->instrs_push_back(newi);

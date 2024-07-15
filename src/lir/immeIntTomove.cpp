@@ -71,7 +71,7 @@ void immeIntTomove::run(Module *m)
             auto workvec = *BB->get_instrs();
             for (auto i : workvec)
             {
-                if (i->isBinary() && i->get_Instrtype() == InstrutionEnum::IMUL)
+                if (i->isBinary() && (i->get_Instrtype() == InstrutionEnum::IMUL || i->get_Instrtype() == InstrutionEnum::IDIV))
                 {
                     assert(i->get_value_list()->size() == 2);
                     for (auto valedge : *i->get_value_list())

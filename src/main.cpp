@@ -88,11 +88,15 @@ int main(int argc, char *argv[])
     manager->run<immeIntTomove>();
     printf("int");
     manager->printModule();
+    manager->FuncRun<GVtoA>();
+    printf("gvtoassgin");
+    manager->printModule();
     fflush(stdout);
 
     ArmGen backend;
     backend.run(manager->get_module());
     ArmModule *am = backend.get_arm();
+    // am->print(1);
     delete am;
     // 2lir
     // module->lowerIR();
