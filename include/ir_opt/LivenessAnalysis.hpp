@@ -6,7 +6,7 @@
 #include <ir_opt/BitVector.hpp>
 #include <unordered_set>
 
-const int K_R = 12, K_S = 32, Para_num = 4;
+const int K_R = 12, K_S = 32, Para_R = 4, Para_S = 16, Para_Sum = 20;
 class LivenessAnalysis
 {
     const int INF = 1000000000;

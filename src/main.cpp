@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     freopen("in.txt", "r", stdin);
-    // freopen("out.txt", "w", stdout);
+    freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -87,9 +87,6 @@ int main(int argc, char *argv[])
     manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");
-    manager->printModule();
-    manager->FuncRun<GVtoA>();
-    printf("gvtoassgin");
     manager->printModule();
     fflush(stdout);
 

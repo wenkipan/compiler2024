@@ -106,8 +106,18 @@ Param *SSARegisterAlloc::whichPara(Alloca *alloc)
         return paraMap[alloc];
 }
 
+GlobalVariable *SSARegisterAlloc::whichGV(Alloca *alloc)
+{
+    if (gvMap.find(alloc) == gvMap.end())
+        return nullptr;
+    else
+        return gvMap[alloc];
+}
+
 void SSARegisterAlloc::run(Function *p_func)
 {
+    GVtoA gvtoa;
+    gvtoa.run(p_func);
     AddBB(p_func);
     p_func->ResetID(false);
     LA.run(p_func);
@@ -117,6 +127,7 @@ void SSARegisterAlloc::run(Function *p_func)
     MakeGraph(p_func);
     AssignColor_R(p_func);
     AssignColor_S(p_func);
+    return;
     Register.resize(48);
     for (int i = 0; i < 48; i++)
     {
@@ -155,8 +166,13 @@ void SSARegisterAlloc::run(Function *p_func)
     }*/
 }
 
-void SSARegisterAlloc::ReSortForPara(Function *p_func)
+/*void SSARegisterAlloc::ReSortForPara(Function *p_func)
 {
+    std::unordered_map<int, int> Register_Para;
+    for (int i = 0; i < 4; i++)
+        Register_Para[i] = i;
+    for (int i = 16; i < 32; i++)
+        Register_Para[i - 16] = i;
     int nowPos = 0;
     for (auto it : *(p_func->get_entryBB()->get_instrs()))
         if (dynamic_cast<Alloca *>(it) != nullptr)
@@ -164,8 +180,8 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
         else
             break;
     auto paras = p_func->get_params();
-    std::vector<int> d(Para_num, 0);
-    std::vector<Value *> In(Para_num, nullptr);
+    std::vector<int> d(Para_Sum, 0);
+    std::vector<Value *> In(Para_Sum, nullptr);
     for (int i = 0; i < paras->size(); i++)
     {
         if (i < Para_num)
@@ -193,9 +209,6 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     }
                     else
                         d[i] = -1;
-                    /*printf("edge %d %d\n", i, tmpR);
-                    paras->at(i)->print();
-                    fflush(stdout);*/
                 }
             }
         }
@@ -208,8 +221,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             else
             {
                 Alloca *alloc = new Alloca(p_func->get_entryBB(), paras->at(i)->get_type(), 1);
-                alloc->insertInstr(p_func->get_entryBB(), 0);
-                nowPos++;
+                p_func->get_entryBB()->get_instrs()->pop_back();
                 paraMap[alloc] = paras->at(i);
                 int tmpR = getReg(paras->at(i));
                 Load *load = new Load(alloc, false, p_func->get_entryBB());
@@ -226,11 +238,6 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
         }
     }
     int n = Para_num;
-    puts("");
-    p_func->print();
-    for (int i = 0; i < paras->size(); i++)
-        printf("R %d\n", getReg(paras->at(i)));
-    fflush(stdout);
     while (1)
     {
         bool flag = false;
@@ -451,7 +458,7 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
             assert(flag);
         }
     }
-}
+}*/
 void SSARegisterAlloc::AddEdge(int x, int y)
 {
     if (x == y || LA.is_float[x] != LA.is_float[y] || AdjSet.find(std::make_pair(x, y)) != AdjSet.end())
@@ -489,17 +496,26 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
             }
             // if (dynamic_cast<Call *>(*it) != nullptr)
             //     continue;
-            int cnt = 0;
+            int cnt_R = 0, cnt_S = 0;
             for (auto edge : *((*it)->get_value_list()))
             {
                 Value *use = edge->get_val();
                 if (dynamic_cast<Function *>(use) != nullptr)
                     continue;
+                if (use->get_type()->get_type() == TypeEnum::F32)
+                {
+                    cnt_S++;
+                    if (cnt_S > Para_S)
+                        continue;
+                }
+                else
+                {
+                    cnt_R++;
+                    if (cnt_R > Para_R)
+                        continue;
+                }
                 if (LA.ValueIdMap.find(use) != LA.ValueIdMap.end())
                     live.insert(LA.ValueIdMap.at(use));
-                cnt++;
-                if (cnt == Para_num)
-                    break;
             }
         }
         for (auto it : *(bb->get_phinodes()))
@@ -622,14 +638,16 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
         for (auto tmp : G[id_S[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 0; i < K_R; i++)
+        for (int i = 0; i < K_S; i++)
             if (color_set.find(i) == color_set.end())
             {
                 color[id_S[x]] = i;
                 break;
             }
         if (color[id_S[x]] == -1)
+        {
             assert(0);
+        }
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -695,13 +713,14 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
     for (auto ins : *(bb->get_instrs()))
     {
         std::unordered_set<int> ops;
-        int cnt = 0;
+        int cnt_R = 0;
         for (auto edge : *(ins->get_value_list()))
         {
             if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
                 continue;
-            cnt++;
-            if (cnt <= Para_num)
+            if (edge->get_val()->get_type()->get_type() != TypeEnum::F32)
+                cnt_R++;
+            if (cnt_R <= Para_R)
             {
                 if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
                     ops.insert(LA.ValueIdMap.at(edge->get_val()));
@@ -832,13 +851,14 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
     for (auto ins : *(bb->get_instrs()))
     {
         std::unordered_set<int> ops;
-        int cnt = 0;
+        int cnt_S = 0;
         for (auto edge : *(ins->get_value_list()))
         {
             if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
                 continue;
-            cnt++;
-            if (cnt <= Para_num)
+            if (edge->get_val()->get_type()->get_type() == TypeEnum::F32)
+                cnt_S++;
+            if (cnt_S <= Para_S)
             {
                 if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
                     ops.insert(LA.ValueIdMap.at(edge->get_val()));
@@ -870,9 +890,7 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
                     }
                 if (Regs.size() == K_S)
                 {
-                    spilledNodes.insert(op);
-                    spillUserPhi(op);
-                    continue;
+                    assert(0);
                 }
                 int tmp = LA.OutDis[bb][op] + bb->get_instrs()->size();
                 for (auto edge : *(LA.Vals[op]->get_user_list()))
@@ -963,8 +981,52 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         alloc->insertInstr(ebb, 0);
         allocMap[v] = alloc;
         if (dynamic_cast<Param *>(LA.Vals[v]) != nullptr)
-            if (p_func->get_params()->size() > Para_num && std::find(p_func->get_params()->begin(), p_func->get_params()->begin() + Para_num, LA.Vals[v]) == p_func->get_params()->begin() + Para_num)
+        {
+            bool flag = false;
+            if (LA.Vals[v]->get_type()->get_type() == TypeEnum::F32)
+            {
+                int rk = 0;
+                for (auto it : *(p_func->get_params()))
+                    if (it->get_type()->get_type() == TypeEnum::F32)
+                    {
+                        rk++;
+                        if (it == LA.Vals[v])
+                            break;
+                    }
+                if (rk <= Para_S)
+                    flag = true;
+            }
+            else
+            {
+                int rk = 0;
+                for (auto it : *(p_func->get_params()))
+                    if (it->get_type()->get_type() != TypeEnum::F32)
+                    {
+                        rk++;
+                        if (it == LA.Vals[v])
+                            break;
+                    }
+                if (rk <= Para_R)
+                    flag = true;
+            }
+            if (!flag)
+            {
                 paraMap[alloc] = dynamic_cast<Param *>(LA.Vals[v]);
+                alloc->insertInstr(alloc->get_BB(), alloc->get_BB()->get_instrs()->size());
+                alloc->get_BB()->get_instrs()->pop_back();
+            }
+        }
+        if (dynamic_cast<Assign *>(LA.Vals[v]) != nullptr)
+        {
+            Assign *assign = dynamic_cast<Assign *>(LA.Vals[v]);
+            GlobalVariable *val = dynamic_cast<GlobalVariable *>(assign->get_value_list()->front()->get_val());
+            if (val != nullptr)
+            {
+                gvMap[alloc] = val;
+                alloc->insertInstr(alloc->get_BB(), alloc->get_BB()->get_instrs()->size());
+                alloc->get_BB()->get_instrs()->pop_back();
+            }
+        }
     }
 
     for (auto v : spilledNodes)
@@ -991,6 +1053,8 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         }
         else if (ins != nullptr)
         {
+            if (is_a<Assign>(ins) && is_a<GlobalVariable>(ins->get_value_list()->front()->get_val()))
+                continue;
             Store *store = new Store(allocMap[v], ins, false, ins->get_parent());
             auto insList = store->get_parent()->get_instrs();
             int pos = std::find(insList->begin(), insList->end(), ins) - insList->begin() + 1;
@@ -1004,6 +1068,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
             store->insertInstr(p_func->get_entryBB(), pos);
         }*/
     }
+
     for (auto v : spilledNodes)
     {
         Value *val = LA.Vals[v];
@@ -1016,15 +1081,35 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 continue;
             }
             bool flag = true;
-            if (dynamic_cast<Call *>(use) != nullptr && use->get_value_list()->size() > Para_num + 1)
+            if (dynamic_cast<Call *>(use) != nullptr)
             {
                 flag = false;
-                for (int i = 1; i <= Para_num; i++)
-                    if (use->get_value_list()->at(i)->get_val() == val)
-                    {
+                if (val->get_type()->get_type() == TypeEnum::F32)
+                {
+                    int rk = 0;
+                    for (auto it : *(use->get_value_list()))
+                        if (it->get_val()->get_type()->get_type() == TypeEnum::F32)
+                        {
+                            rk++;
+                            if (it->get_val() == val)
+                                break;
+                        }
+                    if (rk <= Para_S)
                         flag = true;
-                        break;
-                    }
+                }
+                else
+                {
+                    int rk = 0;
+                    for (auto it : *(use->get_value_list()))
+                        if (it->get_val()->get_type()->get_type() != TypeEnum::F32)
+                        {
+                            rk++;
+                            if (it->get_val() == val)
+                                break;
+                        }
+                    if (rk <= Para_R)
+                        flag = true;
+                }
             }
             auto insList = use->get_parent()->get_instrs();
             if (std::find(insList->begin(), insList->end(), use) != insList->end())

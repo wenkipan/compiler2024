@@ -65,19 +65,28 @@ bool LivenessAnalysis::work_BB(BasicBlock *bb)
         InDis[bb][i] = OutDis[bb][i] + bb->get_instrs()->size();
     for (int i = 0; i < bb->get_instrs()->size(); i++)
     {
-        int cnt = 0;
+        int cnt_R = 0, cnt_S = 0;
         for (Edge *edge : *(bb->get_instrs()->at(i)->get_value_list()))
         {
             Value *val = edge->get_val();
             if (dynamic_cast<Function *>(val) != nullptr)
                 continue;
+            if (val->get_type()->get_type() == TypeEnum::F32)
+            {
+                cnt_S++;
+                if (cnt_S > Para_S)
+                    continue;
+            }
+            else
+            {
+                cnt_R++;
+                if (cnt_R > Para_R)
+                    continue;
+            }
             if (ValueIdMap.find(val) != ValueIdMap.end())
             {
                 InDis[bb][ValueIdMap[val]] = std::min(InDis[bb][ValueIdMap[val]], i);
             }
-            cnt++;
-            if (cnt == Para_num)
-                break;
         }
     }
     if (!change && InSet[bb] != tmp)
@@ -104,20 +113,29 @@ void LivenessAnalysis::DefAndUseAnalysis()
         for (auto ins : *(bb->get_instrutions()))
         {
             Value *val = dynamic_cast<Value *>(ins);
-            int cnt = 0;
+            int cnt_R = 0, cnt_S = 0;
             for (auto edge : *(ins->get_value_list()))
             {
                 Value *tmp = edge->get_val();
                 if (dynamic_cast<Function *>(tmp) != nullptr)
                     continue;
+                if (tmp->get_type()->get_type() == TypeEnum::F32)
+                {
+                    cnt_S++;
+                    if (cnt_S > Para_S)
+                        continue;
+                }
+                else
+                {
+                    cnt_R++;
+                    if (cnt_R > Para_R)
+                        continue;
+                }
                 if (ValueIdMap.find(tmp) != ValueIdMap.end())
                 {
                     if (!DefSet[bb].at(ValueIdMap[tmp]))
                         UseSet[bb].set(ValueIdMap[tmp], true);
                 }
-                cnt++;
-                if (cnt == Para_num)
-                    break;
             }
             if (ValueIdMap.find(val) != ValueIdMap.end())
                 DefSet[bb].set(ValueIdMap[val], true);

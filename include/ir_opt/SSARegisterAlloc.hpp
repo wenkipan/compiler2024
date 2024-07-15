@@ -16,6 +16,7 @@ class SSARegisterAlloc
     std::vector<std::vector<int>> G;
     std::unordered_set<std::pair<int, int>, pair_hash> AdjSet;
     std::unordered_map<Alloca *, Param *> paraMap;
+    std::unordered_map<Alloca *, GlobalVariable *> gvMap;
     std::unordered_map<Call *, std::vector<int>> callLiveVreg;
     std::unordered_map<int, Alloca *> allocMap;
     std::unordered_map<Value *, int> valueMapRegister;
@@ -38,11 +39,12 @@ public:
     void run(Function *p_func);
     int getReg(Value *val);
     Param *whichPara(Alloca *alloc);
+    GlobalVariable *whichGV(Alloca *alloc);
     std::vector<int> regsStillAliveAfterCall(Call *call);
     Move *getFirstMoveofCall(Call *call)
     {
         if (firstMoveofCall.find(call) == firstMoveofCall.end())
-            assert(0);
+            return nullptr;
         return firstMoveofCall[call];
     }
 };
