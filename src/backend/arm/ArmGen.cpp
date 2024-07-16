@@ -445,32 +445,37 @@ static inline void gen_str(ArmReg *stored, ArmReg *addr, ArmBlock *b, int pos)
 static inline void gen_ldr(ArmReg *stored, ArmReg *addr, ArmBlock *b, int pos)
 {
     if (stored->is_r_reg())
-        gen_instr_op2_before(ARMENUM::arm_str, stored, addr, b, pos);
+        gen_instr_op2_before(ARMENUM::arm_ldr, stored, addr, b, pos);
     else if (stored->is_s_reg())
-        gen_instr_op2_before(ARMENUM::arm_vstr_32, stored, addr, b, pos);
+        gen_instr_op2_before(ARMENUM::arm_vldr_32, stored, addr, b, pos);
     else
         assert(0);
 }
 void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
 {
     // still alives to stack
+    int pos;
     if (ssara->getFirstMoveofCall((Call *)i))
     {
-        auto alives = ssara->regsStillAliveAfterCall((Call *)i);
         auto firstmv = ssara->getFirstMoveofCall((Call *)i);
         assert(val2val_map.find(firstmv) != val2val_map.end());
-        int pos = b->find_instr_pos((ArmInstr *)val2val_map.find(firstmv)->second);
-        int stackparamsize = paraminfomap.find(i->get_BB()->get_func())->second.allcount();
-        int off = 0;
-        for (auto alive : alives)
-        {
-            gen_str(new ArmReg(alive), new ArmReg(SP, stackparamsize + off), b, pos);
-            off += 4;
-        }
+        pos = b->find_instr_pos((ArmInstr *)val2val_map.find(firstmv)->second);
+    }
+    else
+    {
+        pos = b->get_instrs().size();
+    }
+    auto alives = ssara->regsStillAliveAfterCall((Call *)i);
+    int stackparamsize = paraminfomap.find(i->get_BB()->get_func())->second.allcount();
+    int off = 0;
+    for (auto alive : alives)
+    {
+        gen_str(new ArmReg(alive), new ArmReg(SP, stackparamsize + off), b, pos);
+        off += 4;
     }
 
     // params to stack
-    int off = 0;
+    off = 0;
     for (auto patostack : paraminfomap.find((Function *)i->get_operand_at(0))->second.paramstostack)
     {
         Value *tostack = i->get_operand_at(posofpa((Function *)i->get_operand_at(0), patostack) + 1);

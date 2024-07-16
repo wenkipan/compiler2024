@@ -1,16 +1,15 @@
 #!/bin/bash
 TIMEOUT="timeout 150s"
-CPU="cortex-a72"
-MACHINE_TYPE="virt"
+
 test_file=$1
 run_out_file="${test_file%.*}.output"
 time_file="${test_file%.*}.time"
 input_file="${test_file%.*}.in"
 
 if [ -f $input_file ]; then
-    cat $input_file | $TIMEOUT qemu-system-arm -machine $MACHINE_TYPE-cpu $CPU $test_file > $run_out_file 2> $time_file &
+    cat $input_file | $TIMEOUT qemu-arm $test_file > $run_out_file 2> $time_file &
 else
-    $TIMEOUT qemu-system-arm -machine $MACHINE_TYPE-cpu $CPU $test_file > $run_out_file 2> $time_file &
+    $TIMEOUT qemu-arm $test_file > $run_out_file 2> $time_file &
 fi
 
 wait $!
