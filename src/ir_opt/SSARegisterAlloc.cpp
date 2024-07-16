@@ -166,131 +166,170 @@ void SSARegisterAlloc::run(Function *p_func)
     }*/
 }
 
-/*void SSARegisterAlloc::ReSortForPara(Function *p_func)
+void SSARegisterAlloc::ReSortForPara(Function *p_func)
 {
-    std::unordered_map<int, int> Register_Para;
+    std::unordered_map<int, int> Regs, RegsID;
     for (int i = 0; i < 4; i++)
-        Register_Para[i] = i;
+    {
+        Regs[i] = i;
+        RegsID[i] = i;
+    }
     for (int i = 16; i < 32; i++)
-        Register_Para[i - 16] = i;
+    {
+        Regs[i - 12] = i;
+        RegsID[i] = i - 12;
+    }
     int nowPos = 0;
-    for (auto it : *(p_func->get_entryBB()->get_instrs()))
-        if (dynamic_cast<Alloca *>(it) != nullptr)
+    BasicBlock *ebb = p_func->get_entryBB();
+    for (auto it : *(ebb->get_instrs()))
+        if (is_a<Alloca>(it))
             nowPos++;
         else
             break;
-    auto paras = p_func->get_params();
+    auto Paras = p_func->get_params();
+    int cnt_R = 0, cnt_S = 0;
     std::vector<int> d(Para_Sum, 0);
     std::vector<Value *> In(Para_Sum, nullptr);
-    for (int i = 0; i < paras->size(); i++)
+    for (auto para : *Paras)
     {
-        if (i < Para_num)
+        if (para->get_type()->get_type() == TypeEnum::F32)
         {
-            if (spilledNodes.find(LA.ValueIdMap[paras->at(i)]) != spilledNodes.end())
+            cnt_S++;
+            if (cnt_S <= Para_S)
             {
-                Store *store = new Store(allocMap[LA.ValueIdMap[paras->at(i)]], Register[i], false, p_func->get_entryBB());
-                store->insertInstr(p_func->get_entryBB(), nowPos++);
-            }
-            else
-            {
-                int tmpR = getReg(paras->at(i));
-                if (tmpR >= Para_num)
+                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
                 {
-                    Move *move = new Move(InstrutionEnum::Move, Register[tmpR], Register[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos++);
+                    int reg = getReg(para);
+                    int reg_now = cnt_S + 15;
+                    if (RegsID.find(reg) != RegsID.end()) // reg_now -> reg;
+                    {
+                        d[RegsID[reg_now]]++;
+                        In[RegsID[reg]] = Register[reg_now];
+                    }
+                    else
+                    {
+                        Move *move = new Move(InstrutionEnum::Move, Register[reg], Register[reg_now], ebb);
+                        move->insertInstr(ebb, nowPos++);
+                    }
                 }
                 else
                 {
-                    if (i != tmpR)
-                    {
-                        d[i]++;
-                        In[tmpR] = Register[i];
-                        printf("yes %d %d\n", tmpR, i);
-                    }
-                    else
-                        d[i] = -1;
+                    int reg_now = cnt_S + 15;
+                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
+                    store->insertInstr(ebb, nowPos++);
+                }
+            }
+            else
+            {
+                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
+                {
+                    int reg = getReg(para);
+                    Alloca *alloc = new Alloca(ebb, para->get_type(), 1);
+                    allocMap[LA.ValueIdMap.at(para)] = alloc;
+                    paraMap[alloc] = para;
+                    ebb->get_instrs()->pop_back();
+                    Load *load = new Load(alloc, false, ebb);
+                    load->insertInstr(ebb, nowPos++);
+                    valueMapRegister[load] = reg;
+                    if (RegsID.find(reg) != RegsID.end())
+                        In[RegsID[reg]] = load;
                 }
             }
         }
         else
         {
-            if (spilledNodes.find(LA.ValueIdMap[paras->at(i)]) != spilledNodes.end())
+            cnt_R++;
+            if (cnt_R <= Para_R)
             {
-                // noting to do
-            }
-            else
-            {
-                Alloca *alloc = new Alloca(p_func->get_entryBB(), paras->at(i)->get_type(), 1);
-                p_func->get_entryBB()->get_instrs()->pop_back();
-                paraMap[alloc] = paras->at(i);
-                int tmpR = getReg(paras->at(i));
-                Load *load = new Load(alloc, false, p_func->get_entryBB());
-                load->insertInstr(p_func->get_entryBB(), nowPos++);
-                if (tmpR >= Para_num)
+                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
                 {
-                    valueMapRegister[load] = tmpR;
+                    int reg = getReg(para);
+                    int reg_now = cnt_R;
+                    if (RegsID.find(reg) != RegsID.end()) // reg_now -> reg;
+                    {
+                        d[RegsID[reg_now]]++;
+                        In[RegsID[reg]] = Register[reg_now];
+                    }
+                    else
+                    {
+                        Move *move = new Move(InstrutionEnum::Move, Register[reg], Register[reg_now], ebb);
+                        move->insertInstr(ebb, nowPos++);
+                    }
                 }
                 else
                 {
-                    In[tmpR] = load;
+                    int reg_now = cnt_R;
+                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
+                    store->insertInstr(ebb, nowPos++);
+                }
+            }
+            else
+            {
+                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
+                {
+                    int reg = getReg(para);
+                    Alloca *alloc = new Alloca(ebb, para->get_type(), 1);
+                    allocMap[LA.ValueIdMap.at(para)] = alloc;
+                    paraMap[alloc] = para;
+                    ebb->get_instrs()->pop_back();
+                    Load *load = new Load(alloc, false, ebb);
+                    load->insertInstr(ebb, nowPos++);
+                    valueMapRegister[load] = reg;
+                    if (RegsID.find(reg) != RegsID.end())
+                        In[RegsID[reg]] = load;
                 }
             }
         }
     }
-    int n = Para_num;
     while (1)
     {
         bool flag = false;
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < Para_Sum; i++)
             if (In[i] != nullptr && d[i] >= 0)
+            {
                 flag = true;
+                break;
+            }
         if (!flag)
             break;
         flag = false;
-        for (int i = 0; i < n; i++)
-        {
-            fflush(stdout);
-            if (In[i] == nullptr)
-                continue;
-            if (d[i] == 0)
+        for (int i = 0; i < Para_Sum; i++)
+            if (In[i] != nullptr && d[i] == 0)
             {
-                flag = true;
-                if (dynamic_cast<Load *>(In[i]) == nullptr)
-                {
-
-                    Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos++);
-                    if (getReg(In[i]) < n)
-                        d[getReg(In[i])]--;
-                }
+                if (is_a<Load>(In[i]))
+                    dynamic_cast<Load *>(In[i])->insertInstr(ebb, nowPos);
                 else
                 {
-                    dynamic_cast<Instrution *>(In[i])->insertInstr(p_func->get_entryBB(), nowPos);
-                    valueMapRegister[In[i]] = i;
+                    Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], ebb);
+                    move->insertInstr(ebb, nowPos++);
+                    if (RegsID.find(getReg(In[i])) != RegsID.end())
+                        d[RegsID[getReg(In[i])]]--;
                 }
+                flag = true;
                 d[i] = -1;
                 break;
             }
-        }
         if (!flag)
         {
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < Para_Sum; i++)
                 if (d[i] > 0)
                 {
-                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos++);
-                    assert(In[i] != nullptr);
-                    move = new Move(InstrutionEnum::Move, Register[i], In[i], p_func->get_entryBB());
-                    move->insertInstr(p_func->get_entryBB(), nowPos++);
-                    assert(std::find(Register.begin(), Register.end(), In[i]) != Register.end());
-                    d[std::find(Register.begin(), Register.end(), In[i]) - Register.begin()]--;
-                    d[i] = -1;
-                    for (int j = 0; j < n; j++)
-                        if (d[j] >= 0 && In[j] == Register[i])
-                        {
+                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[Regs[i]], ebb);
+                    move->insertInstr(ebb, nowPos++);
+                    if (is_a<Load>(In[i]))
+                        dynamic_cast<Load *>(In[i])->insertInstr(ebb, nowPos);
+                    else
+                    {
+                        Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], ebb);
+                        move->insertInstr(ebb, nowPos++);
+                        if (RegsID.find(getReg(In[i])) != RegsID.end())
+                            d[RegsID[getReg(In[i])]]--;
+                    }
+                    for (int j = 0; j < Para_Sum; j++)
+                        if (d[j] > 0 && In[j] == Register[Regs[i]])
                             In[j] = Register[12];
-                        }
                     flag = true;
+                    d[i] = -1;
                     break;
                 }
         }
@@ -301,35 +340,66 @@ void SSARegisterAlloc::run(Function *p_func)
 void SSARegisterAlloc::ReSortForCall(Call *call)
 {
     int nowPos = std::find(call->get_parent()->get_instrs()->begin(), call->get_parent()->get_instrs()->end(), call) - call->get_parent()->get_instrs()->begin();
-    std::vector<int> d(Para_num, 0);
-    std::vector<Value *> In(Para_num, nullptr);
-    int cnt = 0;
+    std::vector<int> d(Para_Sum, 0);
+    std::vector<Value *> In(Para_Sum, nullptr);
+    std::unordered_map<int, int> Regs, RegsID;
+    for (int i = 0; i < 4; i++)
+    {
+        Regs[i] = i;
+        RegsID[i] = i;
+    }
+    for (int i = 16; i < 32; i++)
+    {
+        Regs[i - 12] = i;
+        RegsID[i] = i - 12;
+    }
+    int cnt_R = 0, cnt_S = 0;
     for (auto edge : *(call->get_value_list()))
     {
-        Value *val = edge->get_val();
-        if (dynamic_cast<Function *>(val) != nullptr)
+        Value *op = edge->get_val();
+        if (is_a<Function>(op))
             continue;
-        int regFrom = getReg(val);
-        assert(regFrom != -1 || dynamic_cast<Constant *>(val) != nullptr);
-        if (regFrom == cnt)
+        if (op->get_type()->get_type() == TypeEnum::F32)
         {
-            d[cnt] = -1;
+            cnt_S++;
+            if (cnt_S <= Para_S)
+            {
+                int Reg = 15 + cnt_S;
+                int Reg_now = getReg(op);
+                if (Reg == Reg_now)
+                {
+                    d[RegsID[Reg]] = -1;
+                    continue;
+                }
+                In[RegsID[Reg]] = Register[Reg_now];
+                if (RegsID.find(Reg_now) != RegsID.end())
+                    d[RegsID[Reg_now]]++;
+            }
         }
         else
         {
-            if (regFrom < Para_num && regFrom >= 0)
-                d[regFrom]++;
-            In[cnt] = val;
+            cnt_R++;
+            if (cnt_R <= Para_R)
+            {
+                int Reg = cnt_R;
+                int Reg_now = getReg(op);
+                if (Reg == Reg_now)
+                {
+                    d[RegsID[Reg]] = -1;
+                    continue;
+                }
+                In[RegsID[Reg]] = Register[Reg_now];
+                if (RegsID.find(Reg_now) != RegsID.end())
+                    d[RegsID[Reg_now]]++;
+            }
         }
-        cnt++;
-        if (cnt == Para_num)
-            break;
     }
+    BasicBlock *bb = call->get_BB();
     while (1)
     {
         bool flag = false;
-        for (int i = 0; i < cnt; i++)
-            if (d[i] >= 0)
+        for (int i = 0; i < Para_Sum; i++)
+            if (In[i] != nullptr && d[i] >= 0)
             {
                 flag = true;
                 break;
@@ -337,42 +407,38 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
         if (!flag)
             break;
         flag = false;
-        for (int i = 0; i < cnt; i++)
+        for (int i = 0; i < Para_Sum; i++)
             if (In[i] != nullptr && d[i] == 0)
             {
-                int regFrom = getReg(In[i]);
-                Move *move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
-                if (firstMoveofCall.find(call) == firstMoveofCall.end())
-                {
-                    firstMoveofCall[call] = move;
-                }
-                move->insertInstr(move->get_parent(), nowPos++);
-                if (regFrom < cnt && regFrom >= 0)
-                    d[regFrom]--;
-                d[i] = -1;
+                Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], bb);
+                move->insertInstr(bb, nowPos++);
+                if (RegsID.find(getReg(In[i])) != RegsID.end())
+                    d[RegsID[getReg(In[i])]]--;
                 flag = true;
+                d[i] = -1;
                 break;
             }
         if (!flag)
         {
-            for (int i = 0; i < cnt; i++)
+            for (int i = 0; i < Para_Sum; i++)
                 if (d[i] > 0)
                 {
-                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[i], call->get_parent());
-                    if (firstMoveofCall.find(call) == firstMoveofCall.end())
+                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[Regs[i]], bb);
+                    move->insertInstr(bb, nowPos++);
+                    if (is_a<Load>(In[i]))
+                        dynamic_cast<Load *>(In[i])->insertInstr(bb, nowPos);
+                    else
                     {
-                        firstMoveofCall[call] = move;
+                        Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], bb);
+                        move->insertInstr(bb, nowPos++);
+                        if (RegsID.find(getReg(In[i])) != RegsID.end())
+                            d[RegsID[getReg(In[i])]]--;
                     }
-                    move->insertInstr(move->get_parent(), nowPos++);
-                    move = new Move(InstrutionEnum::Move, Register[i], In[i], call->get_parent());
-                    move->insertInstr(move->get_parent(), nowPos++);
-                    if (getReg(In[i]) < cnt)
-                        d[getReg(In[i])]--;
-                    for (int j = 0; j < cnt; j++)
-                        if (In[j] == Register[i])
+                    for (int j = 0; j < Para_Sum; j++)
+                        if (d[j] > 0 && In[j] == Register[Regs[i]])
                             In[j] = Register[12];
-                    d[i] = -1;
                     flag = true;
+                    d[i] = -1;
                     break;
                 }
         }
@@ -458,7 +524,7 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
             assert(flag);
         }
     }
-}*/
+}
 void SSARegisterAlloc::AddEdge(int x, int y)
 {
     if (x == y || LA.is_float[x] != LA.is_float[y] || AdjSet.find(std::make_pair(x, y)) != AdjSet.end())
