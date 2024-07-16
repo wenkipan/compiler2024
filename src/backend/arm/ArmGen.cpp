@@ -1,6 +1,37 @@
 #include <backend/arm/ArmGen.hpp>
 #include <cstdint>
 #include <cstdio>
+
+static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
+{
+    auto newi = new ArmInstr(ae);
+    newi->ops_push_back(o1);
+    newi->ops_push_back(o2);
+    b->instrs_push_back(newi);
+}
+static inline void gen_instr_op2_before(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b, int pos)
+{
+    auto newi = new ArmInstr(ae);
+    newi->ops_push_back(o1);
+    newi->ops_push_back(o2);
+    b->instrs_insert_before(pos, newi);
+}
+static inline void gen_instr_op3(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmBlock *b)
+{
+    auto newi = new ArmInstr(ae);
+    newi->ops_push_back(o1);
+    newi->ops_push_back(o2);
+    newi->ops_push_back(o3);
+    b->instrs_push_back(newi);
+}
+static inline void gen_instr_op3_before(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmBlock *b, int pos)
+{
+    auto newi = new ArmInstr(ae);
+    newi->ops_push_back(o1);
+    newi->ops_push_back(o2);
+    newi->ops_push_back(o3);
+    b->instrs_insert_before(pos, newi);
+}
 void ArmGen::init(Module *m)
 {
     arm_module = new ArmModule(m->get_infile(), m->get_outfile());
@@ -205,22 +236,10 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
     int sp_sub_offset = allocsize + max_pushed_callee_param;
     if (sp_sub_offset != 0)
     {
-        auto newsubsp = new ArmInstr(ARMENUM::arm_sub);
-        newsubsp->ops_push_back(new ArmReg(SP));
-        newsubsp->ops_push_back(new ArmReg(SP));
-        if (is_legal_ldr_str_imme(sp_sub_offset))
-        {
-            printf("ASDDDDDDDDDD%d\n", max_pushed_callee_param);
-            printf("ASDDDDDDDDDD%d\n", allocsize);
-            printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
-            newsubsp->ops_push_back(new ArmImme((uint32_t)sp_sub_offset));
-        }
-        else
-        {
-            gen_mov_imme32(RTMP, sp_sub_offset, b);
-            newsubsp->ops_push_back(new ArmReg(RTMP));
-        }
-        b->instrs_push_back(newsubsp);
+        gen_instr_op3(ARMENUM::arm_sub, new ArmReg(SP), new ArmReg(SP), gen_legal_imme(sp_sub_offset, b), b);
+        printf("ASDDDDDDDDDD%d\n", max_pushed_callee_param);
+        printf("ASDDDDDDDDDD%d\n", allocsize);
+        printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
     }
 
     // gen_sp_offset_for_alloc_and_params
@@ -248,27 +267,17 @@ void ArmGen::gen_sp_add_and_pop(Function *f, ArmBlock *b)
     int sp_sub_offset = spinfomap.find(f)->second.sp_sub_offset;
     if (sp_sub_offset != 0)
     {
-        auto newsubsp = new ArmInstr(ARMENUM::arm_add);
-        newsubsp->ops_push_back(new ArmReg(SP));
-        if (is_legal_ldr_str_imme(sp_sub_offset))
-        {
-            newsubsp->ops_push_back(new ArmReg(SP));
-            newsubsp->ops_push_back(new ArmImme((uint32_t)sp_sub_offset));
-        }
-        else
-        {
-            gen_mov_imme32(RTMP, sp_sub_offset, b);
-            newsubsp->ops_push_back(new ArmReg(RTMP));
-        }
-        b->instrs_insert_before(b->get_instrs().size() - 1, newsubsp);
+        gen_instr_op3_before(ARMENUM::arm_add, new ArmReg(SP), new ArmReg(SP), gen_legal_imme(sp_sub_offset, b), b, b->get_instrs().size() - 1);
     }
     // gen pop
     gen_push_or_pop(ARMENUM::arm_pop, spinfomap.find(f)->second.used_reg, b, b->get_instrs().size() - 1);
 }
 void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb)
 {
-    uint32_t low = ((1 << 16) - 1) & imme;
-    uint32_t high = (imme >> 16);
+    uint32_t low = ((1 << 16) - 1) & (uint32_t)imme;
+    uint32_t high = ((uint32_t)imme >> 16);
+    std::cout << "---imme high";
+    std::cout << high << std::endl;
     ArmInstr *newi = new ArmInstr(ARMENUM::arm_movw);
     newi->ops_push_back(new ArmReg(Rno));
     newi->ops_push_back(new ArmImme(low));
@@ -282,36 +291,7 @@ void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb)
     }
     return;
 }
-static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
-{
-    auto newi = new ArmInstr(ae);
-    newi->ops_push_back(o1);
-    newi->ops_push_back(o2);
-    b->instrs_push_back(newi);
-}
-static inline void gen_instr_op2_before(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b, int pos)
-{
-    auto newi = new ArmInstr(ae);
-    newi->ops_push_back(o1);
-    newi->ops_push_back(o2);
-    b->instrs_insert_before(pos, newi);
-}
-static inline void gen_instr_op3(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmBlock *b)
-{
-    auto newi = new ArmInstr(ae);
-    newi->ops_push_back(o1);
-    newi->ops_push_back(o2);
-    newi->ops_push_back(o3);
-    b->instrs_push_back(newi);
-}
-// static inline void gen_instr_op3_before(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmBlock *b, int pos)
-// {
-//     auto newi = new ArmInstr(ae);
-//     newi->ops_push_back(o1);
-//     newi->ops_push_back(o2);
-//     newi->ops_push_back(o3);
-//     b->instrs_insert_before(pos, newi);
-// }
+
 void ArmGen::gen_mov_imme(int dst, int imme, ArmBlock *b)
 {
     if (imme >= 0)
@@ -416,7 +396,7 @@ int ArmGen::find_max_pushed_callee_param(Function *f)
             {
                 int wqzhemechang = ssaramap.find(f)->second->regsStillAliveAfterCall((Call *)i).size();
                 int parmstostack = paraminfomap.find(f)->second.allcount();
-                if (max_pushed_callee_param > wqzhemechang + parmstostack)
+                if (max_pushed_callee_param < wqzhemechang + parmstostack)
                     max_pushed_callee_param = wqzhemechang + parmstostack;
             }
     return max_pushed_callee_param *= 4;

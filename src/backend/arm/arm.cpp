@@ -3,17 +3,18 @@
 #include <ostream>
 #include <string>
 #include <iostream>
-
+#include <regex>
 #include <stdio.h>
 #include <unistd.h>
 
 #define ENUM_TO_STRING_CASE(enumeration, value) \
     case enumeration::value:                    \
         print_enum = #value;                    \
-        return print_enum.substr(4, print_enum.size() - 4);
+        return std::regex_replace(print_enum.substr(4, print_enum.size() - 4), underscore, ".");
 std::string printENUM(ARMENUM ARMENUM)
 {
     std::string print_enum;
+    std::regex underscore("_");
     switch (ARMENUM)
     {
         ENUM_TO_STRING_CASE(ARMENUM, arm_add)
@@ -168,19 +169,18 @@ void ArmModule::print(int test)
     if (!test)
         freopen(outfile.c_str(), "w", stdout);
 
-    std::cout << ".file \"" << infile << "\"" << std::endl;
-    std::cout << "   .arch armv7ve" << std::endl;
-    std::cout << "   .arm" << std::endl;
-    std::cout << "   .fpu neon-vfpv4" << std::endl
-              << std::endl;
+    printf(".file \"%s\"\n", infile.c_str());
+    printf("   .arch armv7ve\n");
+    printf("   .arm\n");
+    printf("   .fpu neon-vfpv4\n\n");
 
-    std::cout << "   .section .data " << std::endl;
+    printf("   .section .data \n");
     for (auto g : globals)
     {
         g->print();
     }
-    std::cout << std::endl;
-    std::cout << "   .section .text" << std::endl;
+    printf("\n");
+    printf("   .section .text\n");
     for (auto f : funcs)
     {
         if (f->is_external())
@@ -194,15 +194,20 @@ void ArmModule::print(int test)
 }
 void ArmGlobalVariable::print()
 {
-    std::cout << name << ":" << std::endl;
+    printf("%s:\n", name.c_str());
     for (auto word : words)
-        std::cout << "   .word " << word << std::endl;
+        printf("   .word %d\n", word);
     if (words.size() != 1)
-        std::cout << "   .space " << space << std::endl;
+        printf("   .space %d\n", space);
 }
 void ArmFunc::print()
 {
-    std::cout << name << ":" << std::endl;
+    if (name == "main")
+    {
+        printf(".global main\n");
+        printf("   .type main, %%function\n");
+    }
+    printf("%s:\n", name.c_str());
     // use with print
     // auto BBs = RPO(this);
     // for (int i = 0; i < BBs.size() - 1; i++)
@@ -222,50 +227,49 @@ void ArmFunc::print()
 }
 void ArmBlock::print()
 {
-    std::cout << name << ":" << std::endl;
+    printf("%s:\n", name.c_str());
     for (auto instr : instrs)
         instr->print();
 }
 void Armconstlable::print()
 {
-    std::cout << name << ":" << std::endl;
-    std::cout << "   .word " << word << std::endl;
+    printf("%s:\n", name.c_str());
+    printf("   .word %d\n", word);
 }
 static inline void print_pop_push(ArmInstr *i)
 {
-    std::cout << " ";
+    printf(" ");
     assert(i->is_arm_push_pop());
-    std::cout << "{";
+    printf("{");
     for (auto op : i->get_ops())
     {
         op->print();
         if (op != i->get_ops().back())
             std::cout << ", ";
     }
-    std::cout << "}";
-    std::cout << std::endl;
+    printf("}\n");
 }
 static inline void print_movw_gv(ArmInstr *i)
 {
-    std::cout << " ";
+    printf(" ");
     assert(i->get_ops().size() == 2);
     i->get_ops()[0]->print();
-    std::cout << ", " << "#:lower16:";
+    printf(", #:lower16:");
     i->get_ops()[1]->print();
-    std::cout << std::endl;
+    printf("\n");
 }
 static inline void print_movt_gv(ArmInstr *i)
 {
-    std::cout << " ";
+    printf(" ");
     assert(i->get_ops().size() == 2);
     i->get_ops()[0]->print();
-    std::cout << ", " << "#:upper16:";
+    printf(", #:upper16:");
     i->get_ops()[1]->print();
-    std::cout << std::endl;
+    printf("\n");
 }
 void ArmInstr::print()
 {
-    std::cout << "   " << printENUM(armenum);
+    printf("   %s", printENUM(armenum).c_str());
 
     if (armenum == ARMENUM::arm_movw && is_a<ArmAddr>(ops[1]))
     {
@@ -282,7 +286,7 @@ void ArmInstr::print()
         assert(is_a<ArmReg>(ops[0]));
         if (((ArmReg *)ops[0])->is_s_reg())
             if ((is_a<ArmReg>(ops[1]) && ((ArmReg *)ops[1])->is_s_reg()) || is_a<ArmImmef>(ops[1]))
-                std::cout << ".f32";
+                printf(".f32");
     }
     else if (is_arm_push_pop())
     {
@@ -290,57 +294,56 @@ void ArmInstr::print()
         return;
     }
 
-    std::cout << " ";
+    printf(" ");
     for (auto op : ops)
     {
         op->print();
         if (op != ops.back())
-            std::cout << ", ";
+            printf(", ");
     }
-    std::cout << std::endl;
-    // magic code
+    printf("\n");
     if (armenum == ARMENUM::arm_vcmp_f32)
-        std::cout << "   vmrs APSR_nzcv, FPSCR" << std::endl;
+        printf("   vmrs APSR_nzcv, FPSCR\n");
 }
 void ArmAddr::print()
 {
     if (is_a<ArmGlobalVariable>(addr))
-        std::cout << ((ArmGlobalVariable *)addr)->get_name();
+        printf("%s", ((ArmGlobalVariable *)addr)->get_name().c_str());
     else if (is_a<ArmBlock>(addr))
-        std::cout << ((ArmBlock *)addr)->get_name();
+        printf("%s", ((ArmBlock *)addr)->get_name().c_str());
     else if (is_a<ArmFunc>(addr))
-        std::cout << ((ArmFunc *)addr)->get_name();
+        printf("%s", ((ArmFunc *)addr)->get_name().c_str());
 }
 void ArmReg::print()
 {
     if (is_addr)
-        std::cout << "[";
+        printf("[");
     if (regno == SP)
-        std::cout << "sp";
+        printf("sp");
     else if (regno == PC)
-        std::cout << "pc";
+        printf("pc");
     else if (regno == LR)
-        std::cout << "lr";
+        printf("lr");
     else if (regno <= 15)
-        std::cout << "r" << regno;
+        printf("r%d", regno);
     else if (regno <= 15 + 32)
-        std::cout << "s" << regno - 16;
+        printf("s%d", regno - 16);
     else
         assert(0);
     if (is_addr)
     {
         if (offset)
-            std::cout << ", " << "#" << offset;
-        std::cout << "]";
+            printf(", #%d", offset);
+        printf("]");
     }
 }
 void ArmImme::print()
 {
-    std::cout << "#" << imme_int;
+    printf("#%d", imme_int);
 }
 void ArmImmef::print()
 {
-    std::cout << "#" << imme_float;
+    printf("#%f", imme_float);
 }
 // deletes
 ArmModule::~ArmModule()

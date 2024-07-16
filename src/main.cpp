@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     ArmGen backend;
     backend.run(manager->get_module());
     ArmModule *am = backend.get_arm();
-    // am->print(1);
+    am->print(0);
     delete am;
     // 2lir
     // module->lowerIR();
