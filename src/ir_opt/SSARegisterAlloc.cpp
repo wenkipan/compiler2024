@@ -242,7 +242,12 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
                 {
                     int reg = getReg(para);
-                    int reg_now = cnt_R;
+                    int reg_now = cnt_R - 1;
+                    if (reg == reg_now)
+                    {
+                        d[RegsID[reg]] = -1;
+                        continue;
+                    }
                     if (RegsID.find(reg) != RegsID.end()) // reg_now -> reg;
                     {
                         d[RegsID[reg_now]]++;
@@ -384,7 +389,7 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             cnt_R++;
             if (cnt_R <= Para_R)
             {
-                int Reg = cnt_R;
+                int Reg = cnt_R - 1;
                 int Reg_now = getReg(op);
                 if (Reg == Reg_now)
                 {
