@@ -329,7 +329,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                             d[RegsID[getReg(In[i])]]--;
                     }
                     for (int j = 0; j < Para_Sum; j++)
-                        if (d[j] > 0 && In[j] == Register[Regs[i]])
+                        if (d[j] >= 0 && In[j] == Register[Regs[i]])
                             In[j] = Register[12];
                     flag = true;
                     d[i] = -1;
@@ -425,6 +425,8 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             {
                 Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], bb);
                 move->insertInstr(bb, nowPos++);
+                if (firstMoveofCall.find(call) == firstMoveofCall.end())
+                    firstMoveofCall[call] = move;
                 if (RegsID.find(getReg(In[i])) != RegsID.end())
                     d[RegsID[getReg(In[i])]]--;
                 flag = true;
@@ -438,17 +440,21 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                 {
                     Move *move = new Move(InstrutionEnum::Move, Register[12], Register[Regs[i]], bb);
                     move->insertInstr(bb, nowPos++);
+                    if (firstMoveofCall.find(call) == firstMoveofCall.end())
+                        firstMoveofCall[call] = move;
                     if (is_a<Load>(In[i]))
                         dynamic_cast<Load *>(In[i])->insertInstr(bb, nowPos);
                     else
                     {
                         Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], bb);
                         move->insertInstr(bb, nowPos++);
+                        if (firstMoveofCall.find(call) == firstMoveofCall.end())
+                            firstMoveofCall[call] = move;
                         if (RegsID.find(getReg(In[i])) != RegsID.end())
                             d[RegsID[getReg(In[i])]]--;
                     }
                     for (int j = 0; j < Para_Sum; j++)
-                        if (d[j] > 0 && In[j] == Register[Regs[i]])
+                        if (d[j] >= 0 && In[j] == Register[Regs[i]])
                             In[j] = Register[12];
                     flag = true;
                     d[i] = -1;
