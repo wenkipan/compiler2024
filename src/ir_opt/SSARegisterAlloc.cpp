@@ -127,7 +127,6 @@ void SSARegisterAlloc::run(Function *p_func)
     MakeGraph(p_func);
     AssignColor_R(p_func);
     AssignColor_S(p_func);
-    return;
     Register.resize(48);
     for (int i = 0; i < 48; i++)
     {
@@ -148,7 +147,6 @@ void SSARegisterAlloc::run(Function *p_func)
 
     for (auto bb : *(p_func->get_blocks()))
         ReSortForPhi(bb);
-
     /*for (auto it : LA.Vals)
     {
         printf("R %d : ", getReg(it));
@@ -371,9 +369,14 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                     d[RegsID[Reg]] = -1;
                     continue;
                 }
-                In[RegsID[Reg]] = Register[Reg_now];
-                if (RegsID.find(Reg_now) != RegsID.end())
-                    d[RegsID[Reg_now]]++;
+                if (Reg_now >= 0)
+                {
+                    In[RegsID[Reg]] = Register[Reg_now];
+                    if (RegsID.find(Reg_now) != RegsID.end())
+                        d[RegsID[Reg_now]]++;
+                }
+                else
+                    In[RegsID[Reg]] = op;
             }
         }
         else
@@ -388,9 +391,14 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                     d[RegsID[Reg]] = -1;
                     continue;
                 }
-                In[RegsID[Reg]] = Register[Reg_now];
-                if (RegsID.find(Reg_now) != RegsID.end())
-                    d[RegsID[Reg_now]]++;
+                if (Reg_now >= 0)
+                {
+                    In[RegsID[Reg]] = Register[Reg_now];
+                    if (RegsID.find(Reg_now) != RegsID.end())
+                        d[RegsID[Reg_now]]++;
+                }
+                else
+                    In[RegsID[Reg]] = op;
             }
         }
     }
