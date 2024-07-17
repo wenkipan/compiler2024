@@ -220,7 +220,7 @@ void ArmFunc::print()
     //     }
     // }
 
-    for (auto B : RPO(this))
+    for (auto B : blocks)
     {
         B->print();
     }

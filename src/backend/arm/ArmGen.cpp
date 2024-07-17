@@ -65,7 +65,7 @@ void ArmGen::init(Module *m)
         }
         else if (pointeetype->get_type() == TypeEnum::Array)
         {
-            newgv->set_space(((ArrayType *)pointeetype)->get_size());
+            newgv->set_space(4 * ((ArrayType *)pointeetype)->get_size());
             if (GV->get_init())
             {
                 if (is_a<ConstantI32>(GV->get_init()))
@@ -688,10 +688,28 @@ ArmReg *ArmGen::gen_sp_and_offset_op(int offset, ArmBlock *b)
 {
     if (0 <= offset && offset < imm_12_max)
     {
-        return new ArmReg(SP, (uint32_t)offset);
+        return new ArmReg(SP, offset);
     }
     else
     {
+        gen_mov_imme32(RTMP, offset, b);
+        return new ArmReg(RTMP, 0);
+    }
+}
+ArmReg *ArmGen::gen_sp_and_offset_op_float(int offset, ArmBlock *b)
+{
+    printf("manyparams\n");
+    printf("offset%d", offset);
+    if (-1020 <= offset && offset <= 1020)
+    {
+        printf("111manyparams\n");
+        printf("offsetintheascs%d", offset);
+
+        return new ArmReg(SP, offset);
+    }
+    else
+    {
+        printf("manyparamscccc\n");
         gen_mov_imme32(RTMP, offset, b);
         return new ArmReg(RTMP, 0);
     }
@@ -709,7 +727,7 @@ void ArmGen::gen_load(Instrution *i, ArmBlock *b)
     }
     else if (is_s_reg(ssara->getReg(i)))
     {
-        gen_instr_op2(ARMENUM::arm_vldr_32, new ArmReg(ssara->getReg(i)), get_op_addr(addr, b), b);
+        gen_instr_op2(ARMENUM::arm_vldr_32, new ArmReg(ssara->getReg(i)), get_op_addr_float(addr, b), b);
     }
     else
         assert(0);
@@ -738,7 +756,7 @@ void ArmGen::gen_store(Instrution *i, ArmBlock *b)
     }
     else if (((ArmReg *)op1)->is_s_reg())
     {
-        gen_instr_op2(ARMENUM::arm_vldr_32, op1, get_op_addr(addr, b), b);
+        gen_instr_op2(ARMENUM::arm_vstr_32, op1, get_op_addr_float(addr, b), b);
     }
     else
         assert(0);
@@ -906,6 +924,20 @@ ArmOperand *ArmGen::get_op_addr(Value *addr, ArmBlock *b)
     else if (is_a<Alloca>(addr))
     {
         return gen_sp_and_offset_op(get_offset(addr), b);
+    }
+    else // gep results
+        return new ArmReg(ssara->getReg(addr), 0);
+}
+ArmOperand *ArmGen::get_op_addr_float(Value *addr, ArmBlock *b)
+{
+    if (is_a<GlobalVariable>(addr))
+    {
+        gen_load_GV_addr(ssara->getReg(addr), addr, b);
+        return new ArmReg(ssara->getReg(addr), 0);
+    }
+    else if (is_a<Alloca>(addr))
+    {
+        return gen_sp_and_offset_op_float(get_offset(addr), b);
     }
     else // gep results
         return new ArmReg(ssara->getReg(addr), 0);

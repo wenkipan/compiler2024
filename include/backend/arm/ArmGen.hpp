@@ -45,11 +45,13 @@ public:
     int find_max_pushed_callee_param(Function *f);
     ArmOperand *get_op(Value *i, ArmBlock *b, int must_reg);
     ArmOperand *get_op_addr(Value *i, ArmBlock *b);
+    ArmOperand *get_op_addr_float(Value *addr, ArmBlock *b);
     void gen_mov_imme32(int Rno, int imme, ArmBlock *bb);
     ArmOperand *gen_legal_imme(int imme, ArmBlock *b);
     void gen_mov_imme(int dst, int imme, ArmBlock *b);
     ArmInstr *gen_mov(Value *dst, Value *src, ArmBlock *bb);
     ArmReg *gen_sp_and_offset_op(int offset, ArmBlock *b);
+    ArmReg *gen_sp_and_offset_op_float(int offset, ArmBlock *b);
     int find_all_alloc_size(Function *f);
     void gen_push_or_pop(ARMENUM ae, std::vector<int> v, ArmBlock *b, int pos);
 
