@@ -534,7 +534,7 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
                         if (getReg(a[i]) >= 0 && Q.find(getReg(a[i])) != Q.end())
                             d[Q[getReg(a[i])]]--;
                         for (int j = 0; j < n; j++)
-                            if (In[j] == Register[b[i]])
+                            if (d[j] >= 0 && getReg(In[j]) == b[i])
                                 In[j] = Register[12];
                         flag = true;
                         break;
