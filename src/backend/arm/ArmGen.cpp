@@ -269,11 +269,16 @@ void ArmGen::gen_sp_add_and_pop(Function *f, ArmBlock *b)
 {
     // gen_sp_sadd
     // sp add sp sp_sub_offset
+    printf("before spadd\n");
+    b->print();
     int sp_sub_offset = spinfomap.find(f)->second.sp_sub_offset;
     if (sp_sub_offset != 0)
     {
-        gen_instr_op3_before(ARMENUM::arm_add, new ArmReg(SP), new ArmReg(SP), gen_legal_imme(sp_sub_offset, b), b, b->get_instrs().size() - 1);
+        gen_instr_op3_before(ARMENUM::arm_add, new ArmReg(SP), new ArmReg(SP),
+                             gen_legal_imme(sp_sub_offset, b, b->get_instrs().size() - 1), b, b->get_instrs().size() - 1);
     }
+    printf("before pop\n");
+    b->print();
     // gen pop
     gen_push_or_pop(ARMENUM::arm_pop, spinfomap.find(f)->second.used_reg, b, b->get_instrs().size() - 1);
 }
@@ -293,6 +298,25 @@ void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb)
         newi->ops_push_back(new ArmReg(Rno));
         newi->ops_push_back(new ArmImme(high));
         bb->instrs_push_back(newi);
+    }
+    return;
+}
+void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb, int pos)
+{
+    uint32_t low = ((1 << 16) - 1) & (uint32_t)imme;
+    uint32_t high = ((uint32_t)imme >> 16);
+    std::cout << "---imme high";
+    std::cout << high << std::endl;
+    ArmInstr *newi = new ArmInstr(ARMENUM::arm_movw);
+    newi->ops_push_back(new ArmReg(Rno));
+    newi->ops_push_back(new ArmImme(low));
+    bb->instrs_insert_before(pos, newi);
+    if (high != 0)
+    {
+        newi = new ArmInstr(ARMENUM::arm_movt);
+        newi->ops_push_back(new ArmReg(Rno));
+        newi->ops_push_back(new ArmImme(high));
+        bb->instrs_insert_before(pos, newi);
     }
     return;
 }
@@ -538,6 +562,8 @@ void ArmGen::gen_call(Instrution *i, ArmBlock *b)
 
     // call after
     gen_call_after(i, b);
+    printf("callend!\n");
+    b->print();
 }
 void ArmGen::gen_push_or_pop(ARMENUM ae, std::vector<int> v, ArmBlock *b, int pos)
 {
@@ -910,6 +936,36 @@ ArmOperand *ArmGen::gen_legal_imme(int imme, ArmBlock *b)
         else
         {
             gen_mov_imme32(RTMP, imme, b);
+            return new ArmReg(RTMP);
+        }
+    }
+}
+ArmOperand *ArmGen::gen_legal_imme(int imme, ArmBlock *b, int pos)
+{
+    if (imme >= 0)
+    {
+        if (is_legal_rotate_imme(imme))
+            return new ArmImme((uint32_t)imme);
+        else
+        {
+            gen_mov_imme32(RTMP, imme, b, pos);
+            return new ArmReg(RTMP);
+        }
+    }
+    else
+    {
+        int neg = -imme - 1;
+        if (is_legal_rotate_imme(neg))
+        {
+            ArmInstr *newi = new ArmInstr(ARMENUM::arm_mvn);
+            newi->ops_push_back(new ArmReg(RTMP));
+            newi->ops_push_back(new ArmImme((uint32_t)neg));
+            b->instrs_insert_before(pos, newi);
+            return new ArmReg(RTMP);
+        }
+        else
+        {
+            gen_mov_imme32(RTMP, imme, b, pos);
             return new ArmReg(RTMP);
         }
     }
