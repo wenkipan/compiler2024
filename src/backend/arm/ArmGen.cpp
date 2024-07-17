@@ -399,9 +399,9 @@ int ArmGen::find_max_pushed_callee_param(Function *f)
         for (auto i : *B->get_instrs())
             if (i->isCall())
             {
-                assert(ssaramap.find((Function *)i->get_operand_at(0)) != ssaramap.end());
+                assert(ssaramap.find(f) != ssaramap.end());
                 assert(paraminfomap.find((Function *)i->get_operand_at(0)) != paraminfomap.end());
-                int wqzhemechang = ssaramap.find((Function *)i->get_operand_at(0))->second->regsStillAliveAfterCall((Call *)i).size();
+                int wqzhemechang = ssaramap.find(f)->second->regsStillAliveAfterCall((Call *)i).size();
                 int parmstostack = paraminfomap.find((Function *)i->get_operand_at(0))->second.allcount();
                 printf("wqzhemechang:%d\n", wqzhemechang);
                 printf("wqzhemechang:%d\n", parmstostack);
