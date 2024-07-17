@@ -110,6 +110,11 @@ ArmFunc *ArmGen::init_func(Function *f)
         else
             assert(0);
     }
+    printf("---test-paramstostack\n");
+    for (auto pa : paramstostack)
+    {
+        pa->print();
+    }
     paraminfomap.emplace(f, paramsinfo(paramstostack));
     if (f->get_isExternal())
     {
@@ -394,12 +399,16 @@ int ArmGen::find_max_pushed_callee_param(Function *f)
         for (auto i : *B->get_instrs())
             if (i->isCall())
             {
-                int wqzhemechang = ssaramap.find(f)->second->regsStillAliveAfterCall((Call *)i).size();
-                int parmstostack = paraminfomap.find(f)->second.allcount();
+                assert(ssaramap.find((Function *)i->get_operand_at(0)) != ssaramap.end());
+                assert(paraminfomap.find((Function *)i->get_operand_at(0)) != paraminfomap.end());
+                int wqzhemechang = ssaramap.find((Function *)i->get_operand_at(0))->second->regsStillAliveAfterCall((Call *)i).size();
+                int parmstostack = paraminfomap.find((Function *)i->get_operand_at(0))->second.allcount();
+                printf("wqzhemechang:%d\n", wqzhemechang);
+                printf("wqzhemechang:%d\n", parmstostack);
                 if (max_pushed_callee_param < wqzhemechang + parmstostack)
                     max_pushed_callee_param = wqzhemechang + parmstostack;
             }
-    return max_pushed_callee_param *= 4;
+    return max_pushed_callee_param * 4;
 }
 int ArmGen::find_all_alloc_size(Function *f)
 {
@@ -457,12 +466,14 @@ void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
     int pos;
     if (ssara->getFirstMoveofCall((Call *)i))
     {
+        printf("!!!hasmove");
         auto firstmv = ssara->getFirstMoveofCall((Call *)i);
         assert(val2val_map.find(firstmv) != val2val_map.end());
         pos = b->find_instr_pos((ArmInstr *)val2val_map.find(firstmv)->second);
     }
     else
     {
+        printf("!!!nomove");
         pos = b->get_instrs().size();
     }
     auto alives = ssara->regsStillAliveAfterCall((Call *)i);
@@ -473,7 +484,8 @@ void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
         gen_str(new ArmReg(alive), new ArmReg(SP, stackparamsize + off), b, pos);
         off += 4;
     }
-
+    printf("fistmov");
+    b->print();
     // params to stack
     off = 0;
     for (auto patostack : paraminfomap.find((Function *)i->get_operand_at(0))->second.paramstostack)
