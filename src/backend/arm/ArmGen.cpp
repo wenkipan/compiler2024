@@ -1,3 +1,4 @@
+#include "ir/Instrution.hpp"
 #include <backend/arm/ArmGen.hpp>
 #include <cstdint>
 #include <cstdio>
@@ -494,8 +495,8 @@ static inline void gen_ldr(ArmReg *stored, ArmReg *addr, ArmBlock *b, int pos)
 void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
 {
     // |stillalive|
-    //| mov mmovmov|
-    //| stack param|
+    // |(movs)not in stack|
+    // |stack param|
 
     // params to stack
     int off = 0;
@@ -503,13 +504,13 @@ void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
     {
         Value *tostack = i->get_operand_at(posofpa((Function *)i->get_operand_at(0), patostack) + 1);
         ArmReg *op1;
-        // if (ssara.whichoverflow(tostack))
-        // {
-        //     gen_ldr(new ArmReg(RTMP), (ArmReg *)get_op_addr(tostack, b), b, b->get_instrs().size());
-        //     op1 = new ArmReg(RTMP);
-        // }
-        // else
-        op1 = (ArmReg *)get_op(tostack, b, 1);
+        if (is_a<Alloca>(tostack) && ssara->isSpill((Alloca *)tostack))
+        {
+            gen_ldr(new ArmReg(RTMP), (ArmReg *)get_op_addr(tostack, b), b, b->get_instrs().size());
+            op1 = new ArmReg(RTMP);
+        }
+        else
+            op1 = (ArmReg *)get_op(tostack, b, 1);
         gen_str(op1, new ArmReg(SP, off), b, b->get_instrs().size());
         off += 4;
     }
