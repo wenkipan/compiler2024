@@ -74,11 +74,7 @@ int main(int argc, char *argv[])
     }
     manager->printModule();
     manager->run<immeFloatToLoad>();
-    printf("float");
-    manager->printModule();
     manager->run<LargeToGlobal>();
-    printf("globa");
-    manager->printModule();
     manager->FuncRun<GEPToALU>();
     printf("GEPTO__________\n");
     manager->printModule();

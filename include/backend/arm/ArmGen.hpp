@@ -4,6 +4,19 @@
 #include <ir/ir.hpp>
 #include <ir_opt/SSARegisterAlloc.hpp>
 
+class funcinfo
+{
+public:
+    ArmFunc *arm_f;
+    Function *link_f;
+    int sp_sub_offset;
+    int max_pushed_callee_param;
+    int allocsize;
+    std::vector<Param *> paramstostack;
+    std::vector<int> reg_need_push_pop;
+    SSARegisterAlloc *ssara;
+};
+
 class ArmGen
 {
     std::unordered_map<Value *, ArmValue *> val2val_map;

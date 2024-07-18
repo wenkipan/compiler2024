@@ -196,7 +196,7 @@ void ArmGlobalVariable::print()
 {
     printf("%s:\n", name.c_str());
     for (auto word : words)
-        printf("   .word %d\n", word);
+        printf("   .word %u\n", word);
     if (words.size() != 1)
         printf("   .space %d\n", space);
 }
@@ -234,7 +234,7 @@ void ArmBlock::print()
 void Armconstlable::print()
 {
     printf("%s:\n", name.c_str());
-    printf("   .word %d\n", word);
+    printf("   .word %u\n", word);
 }
 static inline void print_pop_push(ArmInstr *i)
 {
@@ -339,7 +339,7 @@ void ArmReg::print()
 }
 void ArmImme::print()
 {
-    printf("#%d", imme_int);
+    printf("#%u", imme_int);
 }
 void ArmImmef::print()
 {

@@ -208,10 +208,18 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
     for (auto BB : *f->get_blocks())
         for (auto instr : *BB->get_instrs())
         {
-            if (!is_a<Alloca>(instr))
+            if (is_a<Move>(instr))
+            {
+                used_reg.emplace(ssara->getReg(instr->get_operand_at(0)));
+                // used_reg.emplace(ssara->getReg(instr->get_operand_at(1)));
+            }
+            if (ssara->getReg(instr) != -1)
                 used_reg.emplace(ssara->getReg(instr));
         }
-    std::vector<int> r;
+    printf("usedr");
+    for (auto k : used_reg)
+        printf("~~%d", k);
+    std::vector<int> topushstack;
     for (auto k : used_reg)
     {
         if (k == SP || k == PC)
@@ -220,18 +228,19 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
         {
         }
         else if (k <= 15)
-            r.push_back(k);
+            topushstack.push_back(k);
         else if (k <= 15 + 16)
         {
         }
         else if (k <= 15 + 32)
-            r.push_back(k);
+            topushstack.push_back(k);
         else
             assert(0);
     }
-    gen_push_or_pop(ARMENUM::arm_push, r, b, b->get_instrs().size());
+    gen_push_or_pop(ARMENUM::arm_push, topushstack, b, b->get_instrs().size());
 
-    int pushedsize = 4 * used_reg.size();
+    int pushedsize = 4 * topushstack.size();
+
     // total alloc size, max  callee param size
     int max_pushed_callee_param = find_max_pushed_callee_param(f);
     int allocsize = find_all_alloc_size(f);
@@ -239,12 +248,12 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
     // gen_sp_sub
     // sp sub sp_sub_offset
     int sp_sub_offset = allocsize + max_pushed_callee_param;
+    printf("ASDDDDDDDDDD%d\n", max_pushed_callee_param);
+    printf("ASDDDDDDDDDD%d\n", allocsize);
+    printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
     if (sp_sub_offset != 0)
     {
         gen_instr_op3(ARMENUM::arm_sub, new ArmReg(SP), new ArmReg(SP), gen_legal_imme(sp_sub_offset, b), b);
-        printf("ASDDDDDDDDDD%d\n", max_pushed_callee_param);
-        printf("ASDDDDDDDDDD%d\n", allocsize);
-        printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
     }
 
     // gen_sp_offset_for_alloc_and_params
@@ -263,22 +272,18 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
             if (is_a<Alloca>(instr))
                 set_offset(instr, max_pushed_callee_param + get_offset(instr));
 
-    spinfomap.emplace(f, SPinfo(sp_sub_offset, r));
+    spinfomap.emplace(f, SPinfo(sp_sub_offset, topushstack));
 }
 void ArmGen::gen_sp_add_and_pop(Function *f, ArmBlock *b)
 {
     // gen_sp_sadd
     // sp add sp sp_sub_offset
-    printf("before spadd\n");
-    b->print();
     int sp_sub_offset = spinfomap.find(f)->second.sp_sub_offset;
     if (sp_sub_offset != 0)
     {
         gen_instr_op3_before(ARMENUM::arm_add, new ArmReg(SP), new ArmReg(SP),
                              gen_legal_imme(sp_sub_offset, b, b->get_instrs().size() - 1), b, b->get_instrs().size() - 1);
     }
-    printf("before pop\n");
-    b->print();
     // gen pop
     gen_push_or_pop(ARMENUM::arm_pop, spinfomap.find(f)->second.used_reg, b, b->get_instrs().size() - 1);
 }
@@ -441,6 +446,8 @@ int ArmGen::find_all_alloc_size(Function *f)
         for (auto instr : *BB->get_instrs())
             if (is_a<Alloca>(instr))
             {
+                printf("--alllocsize");
+                printf("%d", allocsize);
                 printf("----alloc----");
                 instr->print();
                 set_offset(instr, allocsize);
@@ -486,38 +493,50 @@ static inline void gen_ldr(ArmReg *stored, ArmReg *addr, ArmBlock *b, int pos)
 }
 void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
 {
+    // |stillalive|
+    //| mov mmovmov|
+    //| stack param|
+
+    // params to stack
+    int off = 0;
+    for (auto patostack : paraminfomap.find((Function *)i->get_operand_at(0))->second.paramstostack)
+    {
+        Value *tostack = i->get_operand_at(posofpa((Function *)i->get_operand_at(0), patostack) + 1);
+        ArmReg *op1;
+        // if (ssara.whichoverflow(tostack))
+        // {
+        //     gen_ldr(new ArmReg(RTMP), (ArmReg *)get_op_addr(tostack, b), b, b->get_instrs().size());
+        //     op1 = new ArmReg(RTMP);
+        // }
+        // else
+        op1 = (ArmReg *)get_op(tostack, b, 1);
+        gen_str(op1, new ArmReg(SP, off), b, b->get_instrs().size());
+        off += 4;
+    }
+
     // still alives to stack
     int pos;
     if (ssara->getFirstMoveofCall((Call *)i))
     {
-        printf("!!!hasmove");
         auto firstmv = ssara->getFirstMoveofCall((Call *)i);
         assert(val2val_map.find(firstmv) != val2val_map.end());
         pos = b->find_instr_pos((ArmInstr *)val2val_map.find(firstmv)->second);
     }
     else
     {
-        printf("!!!nomove");
         pos = b->get_instrs().size();
     }
     auto alives = ssara->regsStillAliveAfterCall((Call *)i);
-    int stackparamsize = paraminfomap.find(i->get_BB()->get_func())->second.allcount();
-    int off = 0;
     for (auto alive : alives)
     {
-        gen_str(new ArmReg(alive), new ArmReg(SP, stackparamsize + off), b, pos);
+        printf("alives:::%d\n", alive);
+        gen_str(new ArmReg(alive), new ArmReg(SP, off), b, pos);
         off += 4;
     }
-    printf("fistmov");
+    printf("alivesend--\n");
+
+    printf("beforeccall");
     b->print();
-    // params to stack
-    off = 0;
-    for (auto patostack : paraminfomap.find((Function *)i->get_operand_at(0))->second.paramstostack)
-    {
-        Value *tostack = i->get_operand_at(posofpa((Function *)i->get_operand_at(0), patostack) + 1);
-        gen_str((ArmReg *)get_op(tostack, b, 1), new ArmReg(SP, off), b, b->get_instrs().size());
-        off += 4;
-    }
 }
 void ArmGen::gen_call_after(Instrution *i, ArmBlock *b)
 {
@@ -533,13 +552,14 @@ void ArmGen::gen_call_after(Instrution *i, ArmBlock *b)
     else if (i->get_type()->get_type() == TypeEnum::F32)
     {
         assert(is_s_reg(ssara->getReg(i)));
-        gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(i)), new ArmReg(S0), b);
+        if (ssara->getReg(i) != S0)
+            gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(i)), new ArmReg(S0), b);
     }
     else
         assert(0);
 
     // ldr still alive
-    int stackparamsize = paraminfomap.find(i->get_BB()->get_func())->second.allcount();
+    int stackparamsize = 4 * paraminfomap.find((Function *)i->get_operand_at(0))->second.allcount();
     auto alives = ssara->regsStillAliveAfterCall((Call *)i);
     int off = 0;
     for (auto alive : alives)
@@ -562,8 +582,6 @@ void ArmGen::gen_call(Instrution *i, ArmBlock *b)
 
     // call after
     gen_call_after(i, b);
-    printf("callend!\n");
-    b->print();
 }
 void ArmGen::gen_push_or_pop(ARMENUM ae, std::vector<int> v, ArmBlock *b, int pos)
 {
