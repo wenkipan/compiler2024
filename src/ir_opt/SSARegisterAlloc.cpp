@@ -6,10 +6,10 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
     std::vector<int> ret;
     for (auto it : vrs)
     {
-        if (spilledNodes.find(it) != spilledNodes.end())
+        if (spilledVals.find(it) != spilledVals.end())
             continue;
-        int c = color[it];
-        if (LA.is_float[it])
+        int c = color[LA.ValueIdMap[it]];
+        if (LA.is_float[LA.ValueIdMap[it]])
         {
             if (c <= 15)
                 ret.push_back(c + 16);
@@ -132,6 +132,28 @@ void SSARegisterAlloc::run(Function *p_func)
     LA.run(p_func);
     vregNum = LA.Vals.size();
     Spill(p_func);
+    for (auto it : spilledNodes)
+        spilledVals.insert(LA.Vals[it]);
+    /*puts("before rewrite");
+    p_func->print();
+    for (auto bb : *(p_func->get_blocks()))
+    {
+        for (auto ins : *(bb->get_instrs()))
+        {
+            if (is_a<Call>(ins))
+            {
+                Call *call = dynamic_cast<Call *>(ins);
+                puts("fuck");
+                call->print();
+                for (auto it : callLiveVreg[call])
+                {
+                    if (spilledNodes.find(it) != spilledNodes.end())
+                        continue;
+                    LA.Vals[it]->print();
+                }
+            }
+        }
+    }*/
     RewriteProgram(p_func);
     MakeGraph(p_func);
     AssignColor_R(p_func);
@@ -189,7 +211,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             cnt_S++;
             if (cnt_S <= Para_S)
             {
-                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
+                if (spilledVals.find(para) == spilledVals.end())
                 {
                     int reg = getReg(para);
                     int reg_now = cnt_S + 15;
@@ -213,7 +235,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             }
             else
             {
-                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
+                if (spilledVals.find(para) == spilledVals.end())
                 {
                     int reg = getReg(para);
                     Alloca *alloc = new Alloca(ebb, para->get_type(), 1);
@@ -233,7 +255,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             cnt_R++;
             if (cnt_R <= Para_R)
             {
-                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
+                if (spilledVals.find(para) == spilledVals.end())
                 {
                     int reg = getReg(para);
                     int reg_now = cnt_R - 1;
@@ -262,7 +284,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             }
             else
             {
-                if (spilledNodes.find(LA.ValueIdMap.at(para)) == spilledNodes.end())
+                if (spilledVals.find(para) == spilledVals.end())
                 {
                     int reg = getReg(para);
                     Alloca *alloc = new Alloca(ebb, para->get_type(), 1);
@@ -799,6 +821,8 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                 continue;
             if (edge->get_val()->get_type()->get_type() != TypeEnum::F32)
                 cnt_R++;
+            else
+                continue;
             if (cnt_R <= Para_R)
             {
                 if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
@@ -875,7 +899,7 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
         if (dynamic_cast<Call *>(ins) != nullptr)
         {
             for (auto reg : Regs)
-                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(reg.second);
+                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(LA.Vals[reg.second]);
         }
         if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 0)
         {
@@ -937,6 +961,8 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
                 continue;
             if (edge->get_val()->get_type()->get_type() == TypeEnum::F32)
                 cnt_S++;
+            else
+                continue;
             if (cnt_S <= Para_S)
             {
                 if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 1)
@@ -1013,7 +1039,7 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
         if (dynamic_cast<Call *>(ins) != nullptr)
         {
             for (auto reg : Regs)
-                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(reg.second);
+                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(LA.Vals[reg.second]);
         }
         if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 1)
         {

@@ -24,6 +24,10 @@ void LivenessAnalysis::init()
         for (auto ins : *(bb->get_instrutions()))
         {
             Value *val = dynamic_cast<Value *>(ins);
+            if (is_a<Call>(ins) && ins->get_user_list()->empty())
+            {
+                ins->get_type()->reset(TypeEnum::Void);
+            }
             if (val->get_type()->get_type() != TypeEnum::Void && !dynamic_cast<Alloca *>(ins) && !dynamic_cast<Ret *>(ins) && (!dynamic_cast<Cmp *>(ins) || !dynamic_cast<Cmp *>(ins)->isCond()))
             {
                 ValueIdMap[val] = allocaCounter++;

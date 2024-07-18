@@ -13,11 +13,12 @@ class SSARegisterAlloc
     std::vector<Value *> Register;
     std::unordered_map<int, int> color;
     std::unordered_set<int> spilledNodes;
+    std::unordered_set<Value *> spilledVals;
     std::vector<std::vector<int>> G;
     std::unordered_set<std::pair<int, int>, pair_hash> AdjSet;
     std::unordered_map<Alloca *, Param *> paraMap;
     std::unordered_map<Alloca *, GlobalVariable *> gvMap;
-    std::unordered_map<Call *, std::vector<int>> callLiveVreg;
+    std::unordered_map<Call *, std::vector<Value *>> callLiveVreg;
     std::unordered_map<int, Alloca *> allocMap;
     std::unordered_map<Value *, int> valueMapRegister;
     std::unordered_map<Call *, Move *> firstMoveofCall;
