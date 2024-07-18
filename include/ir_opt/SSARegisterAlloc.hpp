@@ -21,6 +21,7 @@ class SSARegisterAlloc
     std::unordered_map<int, Alloca *> allocMap;
     std::unordered_map<Value *, int> valueMapRegister;
     std::unordered_map<Call *, Move *> firstMoveofCall;
+    std::unordered_set<Alloca *> spillAllocs;
     void Spill(Function *p_func);
     void SpillBB_R(BasicBlock *bb);
     void SpillBB_S(BasicBlock *bb);
@@ -46,5 +47,11 @@ public:
         if (firstMoveofCall.find(call) == firstMoveofCall.end())
             return nullptr;
         return firstMoveofCall[call];
+    }
+    bool isSpill(Alloca *alloc)
+    {
+        if (spillAllocs.find(alloc) != spillAllocs.end())
+            return true;
+        return false;
     }
 };

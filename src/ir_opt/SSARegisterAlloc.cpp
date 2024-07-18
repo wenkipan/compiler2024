@@ -9,8 +9,17 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
         if (spilledNodes.find(it) != spilledNodes.end())
             continue;
         int c = color[it];
-        if (c <= 3 || c == 12 || (c >= 16 && c <= 31))
-            ret.push_back(c);
+        if (LA.is_float[it])
+        {
+            if (c <= 15)
+                ret.push_back(c + 16);
+        }
+        else
+        {
+            assert(c != 12);
+            if (c <= 3)
+                ret.push_back(c);
+        }
     }
     return ret;
 }
@@ -147,21 +156,6 @@ void SSARegisterAlloc::run(Function *p_func)
 
     for (auto bb : *(p_func->get_blocks()))
         ReSortForPhi(bb);
-    /*for (auto it : LA.Vals)
-    {
-        printf("R %d : ", getReg(it));
-        it->print();
-    }
-    for (auto it : valueMapRegister)
-    {
-        printf("R %d ", it.second);
-        it.first->print();
-    }
-    for (int i = 0; i < 48; i++)
-    {
-        printf("R %d ", i);
-        Register[i]->print();
-    }*/
 }
 
 void SSARegisterAlloc::ReSortForPara(Function *p_func)
@@ -1062,6 +1056,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
     for (auto v : spilledNodes)
     {
         Alloca *alloc = new Alloca(ebb, LA.Vals[v]->get_type(), 1);
+        spillAllocs.insert(alloc);
         assert(alloc->get_type()->get_type() == TypeEnum::Ptr);
         alloc->insertInstr(ebb, 0);
         allocMap[v] = alloc;
