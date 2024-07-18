@@ -1,70 +1,62 @@
-int M;
-int L;
-int N;
-
-
-int add(float a0[],float a1[], float a2[],float b0[],float b1[],float b2[],float c0[],float c1[],float c2[])
+int MAX(int a, int b)
 {
-    int i;
-    i=0;
-    while(i<M)
-    {
-        c0[i]=a0[i]+b0[i];
-        c1[i]=a1[i]+b1[i];
-        c2[i]=a2[i]+b2[i];
-        i=i+1;
-    } 
+    if (a == b)
+        return a;
+    else if (a > b)
+        return a;
+    else
+        return b;
+}
 
-    return 0;
+int max_sum_nonadjacent(int arr[], int n)
+{
+    int temp[16] = {};
+    temp[0] = arr[0];
+    temp[1] = MAX(arr[0], arr[1]);
+    int i = 2;
+    while (i < n) {
+        temp[i] = MAX(temp[i - 2] + arr[i], temp[i - 1]);
+        i = i + 1;
+    }
+    return temp[n - 1];
+}
 
+int longest_common_subseq(int arr1[], int len1,
+                          int arr2[], int len2)
+{
+    int p[16][16] = {};
+    int i, j;
+    i = 1;
+    while (i <= len1) {
+        j = 1;
+        putch(65);
+        putch(10);
+        while (j <= len2) {
+            if (arr1[i - 1] == arr2[j - 1]) {
+              putch(66);
+                p[i][j] = p[i - 1][j - 1] + 1;
+            } else {
+              putch(67);
+                p[i][j] = MAX(p[i - 1][j], p[i][j - 1]);
+            }
+            putch(68);
+            putch(10);
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return p[len1][len2];
 }
 
 int main()
 {
-    N=3;
-    M=3;
-    L=3;
-    float a0[3], a1[3], a2[3], b0[3], b1[3], b2[3], c0[6], c1[3], c2[3];
-    int i;
-    i=0;
-    while(i<M)
-    {
-        a0[i]=i;
-        a1[i]=i;
-        a2[i]=i;
-        b0[i]=i;
-        b1[i]=i;
-        b2[i]=i;
-        i=i+1;
-    }
-    i=add( a0, a1,  a2, b0, b1, b2, c0, c1, c2);
-    int x;
-    while(i<N)
-    {
-        x = c0[i];
-        putint(x);
-        i=i+1;
-    }
-    x = 10;
-    putch(x);
-    i=0;
-    while(i<N)
-    {
-        x = c1[i];
-        putint(x);
-        i=i+1;
-    }
-    x = 10;
-    putch(x);
-    i=0;
-    while(i<N)
-    {
-        x = c2[i];
-        putint(x);
-        i=i+1;
-    }
-    x = 10;
-    putch(x);
+    int A[15] = {8, 7, 4, 1, 2, 7, 0, 1, 9, 3, 4, 8, 3, 7, 0};
+    int B[13] = {3, 9, 7, 1, 4, 2, 4, 3, 6, 8, 0, 1, 5};
+    int An, Bn;
 
+ 
+
+    putint(longest_common_subseq(A, 15, B, 13));
+    putch(10);
     return 0;
 }

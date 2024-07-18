@@ -255,7 +255,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 }
                 else
                 {
-                    int reg_now = cnt_R;
+                    int reg_now = cnt_R - 1;
                     Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }

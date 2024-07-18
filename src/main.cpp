@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
+    // freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -72,15 +72,15 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         // manager->printModule();
     }
-    manager->printModule();
+    // manager->printModule();
     manager->run<immeFloatToLoad>();
     manager->run<LargeToGlobal>();
     manager->FuncRun<GEPToALU>();
     printf("GEPTO__________\n");
-    manager->printModule();
+    // manager->printModule();
     printf("________mod___\n");
     manager->FuncRun<modTosubmul>();
-    manager->printModule();
+    // manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");
     manager->printModule();
