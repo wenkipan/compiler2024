@@ -1,4 +1,3 @@
-#include "ir/Instrution.hpp"
 #include <backend/arm/ArmGen.hpp>
 #include <cstdint>
 #include <cstdio>
@@ -158,6 +157,8 @@ void ArmGen::run(Module *m)
             continue;
         gen_func(f);
     }
+    printf("total arm--\n");
+    arm_module->print(1);
 }
 void ArmGen::gen_func(Function *f)
 {
@@ -167,8 +168,6 @@ void ArmGen::gen_func(Function *f)
     f->print();
     fflush(stdout);
     gen_sp_sub_and_offset_for_alloc_and_param(f, get_ab(f->get_entryBB()));
-    printf("--------sp_sub---------\n");
-    ((ArmFunc *)val2val_map.find(f)->second)->print();
 
     for (auto BB : *f->get_blocks())
     {
@@ -183,9 +182,6 @@ void ArmGen::gen_func(Function *f)
     }
     // pop { r4,r5,lr,r11}
     gen_sp_add_and_pop(f, get_ab(f->get_retBB()));
-
-    printf("--------total arm---------\n");
-    ((ArmFunc *)val2val_map.find(f)->second)->print();
 }
 static inline bool find_if_call(Function *f)
 {
@@ -290,6 +286,8 @@ void ArmGen::gen_sp_add_and_pop(Function *f, ArmBlock *b)
 }
 void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb)
 {
+    printf("to uint32\n");
+    printf("%u", (uint32_t)imme);
     uint32_t low = ((1 << 16) - 1) & (uint32_t)imme;
     uint32_t high = ((uint32_t)imme >> 16);
     std::cout << "---imme high";
@@ -307,10 +305,29 @@ void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb)
     }
     return;
 }
-void ArmGen::gen_mov_imme32(int Rno, int imme, ArmBlock *bb, int pos)
+void ArmGen::gen_mov_imme32(int Rno, uint32_t imme, ArmBlock *bb)
 {
-    uint32_t low = ((1 << 16) - 1) & (uint32_t)imme;
-    uint32_t high = ((uint32_t)imme >> 16);
+    uint32_t low = 0xFFFF & (uint32_t)imme;
+    uint32_t high = ((uint32_t)imme >> 16) & 0xFFFF;
+    std::cout << "---imme high";
+    std::cout << high << std::endl;
+    ArmInstr *newi = new ArmInstr(ARMENUM::arm_movw);
+    newi->ops_push_back(new ArmReg(Rno));
+    newi->ops_push_back(new ArmImme(low));
+    bb->instrs_push_back(newi);
+    if (high != 0)
+    {
+        newi = new ArmInstr(ARMENUM::arm_movt);
+        newi->ops_push_back(new ArmReg(Rno));
+        newi->ops_push_back(new ArmImme(high));
+        bb->instrs_push_back(newi);
+    }
+    return;
+}
+void ArmGen::gen_mov_imme32(int Rno, uint32_t imme, ArmBlock *bb, int pos)
+{
+    uint32_t low = 0xFFFF & (uint32_t)imme;
+    uint32_t high = ((uint32_t)imme >> 16) & 0xFFFF;
     std::cout << "---imme high";
     std::cout << high << std::endl;
     ArmInstr *newi = new ArmInstr(ARMENUM::arm_movw);
@@ -531,13 +548,11 @@ void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
     for (auto alive : alives)
     {
         printf("alives:::%d\n", alive);
+        // problem if off is big
         gen_str(new ArmReg(alive), new ArmReg(SP, off), b, pos);
         off += 4;
     }
     printf("alivesend--\n");
-
-    printf("beforeccall");
-    b->print();
 }
 void ArmGen::gen_call_after(Instrution *i, ArmBlock *b)
 {
@@ -1031,12 +1046,10 @@ ArmOperand *ArmGen::get_op(Value *i, ArmBlock *b, int must_reg)
     }
     else if (is_a<ConstantF32>(i))
     {
-        // 比较幽默的是，寄存器分配没考虑这个，float的mov用的ldr
-        // 比较幽默的是，全部做完之后我发现arm也有mov伪指令，意思是浮点数可以用mov r12 来做      mmp
-        // float f = ((ConstantF32 *)i)->get_32_at(0);
-        // gen_instr_op2(ARMENUM::arm_mov, new ArmReg(RTMP), new ArmImme(*(uint32_t *)(&f)), b);
-        // gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(dst)), new ArmReg(RTMP), bb);
         assert(0);
+        float f = ((ConstantF32 *)i)->get_32_at(0);
+        gen_mov_imme32(RTMP, *(uint32_t *)(&f), b);
+        return new ArmReg(RTMP);
     }
     else if (is_a<Alloca>(i)) // for geps
     {
@@ -1172,16 +1185,13 @@ void ArmGen::gen_unary(Instrution *i, ArmBlock *b)
     case InstrutionEnum::F2I:
         assert(!is_s_reg(ssara->getReg(i)));
         assert(is_s_reg(ssara->getReg(src1)));
-        // VCVT.S32.F32 S1, S0：将S0中的浮点数转换为32位整数，结果存入单精度浮点寄存器S1。
+        // VCVT.S32.F32 S1, S1：将S1中的浮点数转换为32位整数，结果存入单精度浮点寄存器S1。
         // VMOV R0, S1：将转换后的整数值从浮点寄存器S1传送到常规寄存器R0。
-        newi = new ArmInstr(ARMENUM::arm_vcvt_s32_f32);
-        newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
-        newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
-        b->instrs_push_back(newi);
-        newi = new ArmInstr(ARMENUM::arm_vmov);
-        newi->ops_push_back(new ArmReg(ssara->getReg(i)));
-        newi->ops_push_back(new ArmReg(ssara->getReg(src1)));
-        b->instrs_push_back(newi);
+        // 恢复(哥们儿看了一个小时bug终于看出来了)
+        gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(RTMP), new ArmReg(ssara->getReg(src1)), b);
+        gen_instr_op2(ARMENUM::arm_vcvt_s32_f32, new ArmReg(ssara->getReg(src1)), new ArmReg(ssara->getReg(src1)), b);
+        gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(i)), new ArmReg(ssara->getReg(src1)), b);
+        gen_instr_op2(ARMENUM::arm_vmov, new ArmReg(ssara->getReg(src1)), new ArmReg(RTMP), b);
         break;
     case InstrutionEnum::I2F:
         // VMOV S1, R1：将R1中的整数值传送到单精度浮点寄存器S1。

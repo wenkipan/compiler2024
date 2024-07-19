@@ -60,7 +60,8 @@ public:
     ArmOperand *get_op_addr(Value *i, ArmBlock *b);
     ArmOperand *get_op_addr_float(Value *addr, ArmBlock *b);
     void gen_mov_imme32(int Rno, int imme, ArmBlock *bb);
-    void gen_mov_imme32(int Rno, int imme, ArmBlock *bb, int pos);
+    void gen_mov_imme32(int Rno, uint32_t imme, ArmBlock *bb, int pos);
+    void gen_mov_imme32(int Rno, uint32_t imme, ArmBlock *bb);
     ArmOperand *gen_legal_imme(int imme, ArmBlock *b);
     ArmOperand *gen_legal_imme(int imme, ArmBlock *b, int pos);
     void gen_mov_imme(int dst, int imme, ArmBlock *b);

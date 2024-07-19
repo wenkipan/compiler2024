@@ -72,7 +72,8 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         // manager->printModule();
     }
-    // manager->printModule();
+    printf("lir\n");
+    manager->printModule();
     manager->run<immeFloatToLoad>();
     manager->run<LargeToGlobal>();
     manager->FuncRun<GEPToALU>();

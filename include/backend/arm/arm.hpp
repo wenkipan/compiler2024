@@ -133,6 +133,7 @@ s28-s31 	d14-d15 	q7 	非易失性的
 #define LR 14
 #define PC 15
 #define S0 16
+#define S31 47
 std::string printENUM(ARMENUM ARMENUM);
 
 class ArmEdge;

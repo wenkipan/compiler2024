@@ -1,8 +1,13 @@
 #include <lir/immeIntTomove.hpp>
-#include <iostream>
 #include <algorithm>
 #include <lir/ArmStand.hpp>
 
+// static inline bool is_move_case(Instrution *i)
+// {
+//     if (i->isBinary() && (i->get_Instrtype() == InstrutionEnum::IMUL || i->get_Instrtype() == InstrutionEnum::IDIV))
+//         return true;
+//     return false;
+// }
 void immeIntTomove::run(Module *m)
 {
     for (auto f : *m->get_funcs())
@@ -61,7 +66,7 @@ void immeIntTomove::run(Module *m)
             }
         }
     }
-    // imul op must be reg
+    // imul op must be reg,float must be reg
     for (auto f : *m->get_funcs())
     {
         if (f->get_isExternal())
