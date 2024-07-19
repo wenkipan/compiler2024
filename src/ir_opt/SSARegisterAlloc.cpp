@@ -1194,7 +1194,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 {
                     int rk = 0;
                     for (auto it : *(use->get_value_list()))
-                        if (it->get_val()->get_type()->get_type() == TypeEnum::F32)
+                        if (!is_a<Function>(it->get_val()) && it->get_val()->get_type()->get_type() == TypeEnum::F32)
                         {
                             rk++;
                             if (it->get_val() == val)
@@ -1207,7 +1207,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 {
                     int rk = 0;
                     for (auto it : *(use->get_value_list()))
-                        if (it->get_val()->get_type()->get_type() != TypeEnum::F32)
+                        if (!is_a<Function>(it->get_val()) && it->get_val()->get_type()->get_type() != TypeEnum::F32)
                         {
                             rk++;
                             if (it->get_val() == val)

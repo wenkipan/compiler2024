@@ -5,6 +5,7 @@
 #include <ir/ir.hpp>
 #include <ir_opt/BitVector.hpp>
 #include <unordered_set>
+#include <ir_opt/DCE.hpp>
 
 const int K_R = 12, K_S = 32, Para_R = 4, Para_S = 16, Para_Sum = 20;
 class LivenessAnalysis

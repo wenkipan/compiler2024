@@ -13,6 +13,8 @@ void LivenessAnalysis::init()
         Vals.push_back(val);
         is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
     }
+    DCE dce;
+    dce.run(parent);
     for (auto bb : BBs)
     {
         for (auto phi : *(bb->get_phinodes()))
