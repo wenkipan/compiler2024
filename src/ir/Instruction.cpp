@@ -217,7 +217,7 @@ Alloca::Alloca(BasicBlock *_perant, p_symbol_var p_var)
 Alloca::Alloca(BasicBlock *_parent, Type *_type, int is_copy)
     : Instrution(_parent, InstrutionEnum::Alloca, _type, is_copy)
 {
-    assert(is_copy == 0);
+    assert(is_copy == 1);
 }
 
 Alloca::Alloca(BasicBlock *_parent, Type *_type)
@@ -508,6 +508,14 @@ void GEP::print()
 {
     Value *p_addr = (*this->get_value_list())[0]->get_val();
     printf("    %%%d = getelementptr inbounds ", this->get_ID());
+    if (p_addr->get_type()->get_type() != TypeEnum::Ptr)
+    {
+        puts("");
+        p_addr->print();
+        puts("");
+        fflush(stdout);
+        assert(0);
+    }
     assert(p_addr->get_type()->get_type() == TypeEnum::Ptr);
     ((Ptr *)p_addr->get_type())->print_btype();
     printf(", ptr ");
@@ -631,7 +639,10 @@ void Binary::print()
     else
         this->get_type()->print();
     putchar(' ');
-    p_src1->print_ID();
+    if (is_a<GlobalValue>(p_src1))
+        std::cout << "@" << ((GlobalValue *)p_src1)->get_name();
+    else
+        p_src1->print_ID();
     putchar(',');
     putchar(' ');
     p_src2->print_ID();
@@ -781,4 +792,28 @@ void Assign::print()
         p_src->print_ID();
         printf("\n");
     }
+}
+
+Move::Move(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
+    : Instrution(_parent, type, TypeEnum::Void)
+{
+    new Edge(this, _src1);
+    new Edge(this, _src2);
+}
+
+void Move::print()
+{
+    printf("mov");
+    putchar(' ');
+    Value *p_src1 = get_src1(), *p_src2 = get_src2();
+    if (is_a<Cmp>(p_src1) || is_a<Cmp>(p_src2))
+        printf("i1");
+    else
+        this->get_type()->print();
+    putchar(' ');
+    p_src1->print_ID();
+    putchar(',');
+    putchar(' ');
+    p_src2->print_ID();
+    putchar('\n');
 }

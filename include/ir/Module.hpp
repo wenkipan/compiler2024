@@ -33,4 +33,7 @@ public:
 
     void print();
     void print(std::string _sub);
+
+    std::string get_infile() { return infile; }
+    std::string get_outfile() { return outfile; }
 };

@@ -2,6 +2,7 @@
 #include <iostream>
 void immeFloatToLoad::run(Module *m)
 {
+    std::unordered_map<float, GlobalVariable *> same_float2gv;
     int immifcount = 0;
     for (auto f : *m->get_funcs())
     {
@@ -13,13 +14,20 @@ void immeFloatToLoad::run(Module *m)
             if (is_a<ConstantF32>(val))
             {
                 GlobalVariable *GV;
-                std::vector<float> vf;
-                vf.push_back(((ConstantF32 *)val)->get_32_at(0));
-                std::string name = "_immif_" + std::to_string(immifcount++);
-                std::cout << name << std::endl;
-                Ptr *ptr = new Ptr(((ConstantI32 *)val)->get_type());
-                GV = new GlobalVariable(ptr, name, vf, false);
-                delete ptr;
+                bool isnew = same_float2gv.find(((ConstantF32 *)val)->get_32_at(0)) == same_float2gv.end();
+                if (isnew)
+                {
+                    std::vector<float> vf;
+                    vf.push_back(((ConstantF32 *)val)->get_32_at(0));
+                    std::string name = "_immif_" + std::to_string(immifcount++);
+                    std::cout << name << std::endl;
+                    Ptr *ptr = new Ptr(((ConstantI32 *)val)->get_type());
+                    GV = new GlobalVariable(ptr, name, vf, false);
+                    delete ptr;
+                    same_float2gv.emplace(((ConstantF32 *)val)->get_32_at(0), GV);
+                }
+                else
+                    GV = same_float2gv.find(((ConstantF32 *)val)->get_32_at(0))->second;
 
                 // deal with user
                 for (auto useredge : *val->get_user_list())
@@ -64,7 +72,8 @@ void immeFloatToLoad::run(Module *m)
                 }
                 val->get_user_list()->clear();
 
-                m->get_globals()->push_back(GV);
+                if (isnew)
+                    m->get_globals()->push_back(GV);
             }
         }
     }
