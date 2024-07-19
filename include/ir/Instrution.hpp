@@ -58,6 +58,7 @@ enum class InstrutionEnum
     I2F,
     AddSP,
     UnaryEnd,
+    Move,
 };
 
 class Instrution : public User
@@ -98,6 +99,7 @@ public:
     bool isBinary() { return instr_type >= InstrutionEnum::BinaryBegin && instr_type < InstrutionEnum::BinaryEnd; }
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
     bool isIBinary() { return instr_type >= InstrutionEnum::IADD && instr_type <= InstrutionEnum::IMOD; }
+    bool isMove() { return instr_type == InstrutionEnum::Move; }
 
     BasicBlock *get_parent() { return parent; }
     InstrutionEnum get_Instype() { return instr_type; }
@@ -265,5 +267,16 @@ public:
         : Unary(type, _src1, _parent) {}
     Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
         : Unary(type, _src1, _parent, notPush) {}
+    void print();
+};
+
+class Move : public Instrution
+{
+public:
+    Move(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent);
+
+    Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
+    Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }
+
     void print();
 };

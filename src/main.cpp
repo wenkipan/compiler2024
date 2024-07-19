@@ -5,10 +5,11 @@
 #include <frontend/use.hpp>
 #include <ir/ir.hpp>
 #include <ir_opt/Manager.hpp>
+#include <backend/arm/ArmGen.hpp>
 
 int main(int argc, char *argv[])
 {
-    // freopen("in.txt", "r", stdin);
+    freopen("in.txt", "r", stdin);
     // freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
     // gen ir
     Manager *manager = new Manager(new Module(Infile, Outfile));
     p_program p_program = frontend_trans(in_file, out_file, manager->get_module());
-    p_program->program_variable_print();
+    // p_program->program_variable_print();
     delete p_program;
     // IR
     // manager->printModule("O0");
@@ -51,7 +52,7 @@ int main(int argc, char *argv[])
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
-    manager->printModule();
+    // manager->printModule();
     manager->FuncRun<SimplifyCFG>();
     for (int i = 0; i < 3; i++)
     {
@@ -69,23 +70,28 @@ int main(int argc, char *argv[])
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         // manager->run<Inline>();
-        manager->printModule();
+        //   manager->printModule();
     }
+    printf("lir\n");
+    manager->printModule();
+    manager->run<immeFloatToLoad>();
+    manager->run<LargeToGlobal>();
+    manager->FuncRun<GEPToALU>();
+    printf("GEPTO__________\n");
+    // manager->printModule();
+    printf("________mod___\n");
+    manager->FuncRun<modTosubmul>();
+    // manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");
     manager->printModule();
-    manager->run<immeFloatToLoad>();
-    printf("float");
-    manager->printModule();
-    manager->run<LargeToGlobal>();
-    printf("globa");
-    manager->printModule();
-    manager->FuncRun<GEPToALU>();
-    manager->printModule();
     fflush(stdout);
-    //  2lir
-    //  module->lowerIR();
-    //  module->print();
+
+    ArmGen backend;
+    backend.run(manager->get_module());
+    ArmModule *am = backend.get_arm();
+    am->print(0);
+    delete am;
 
     delete manager;
     return 0;

@@ -21,6 +21,9 @@
 
 #include <lir/ArmStand.hpp>
 #include <ir_opt/uselessBBDel.hpp>
+#include <ir_opt/LivenessAnalysis.hpp>
+#include <ir_opt/RegisterAlloc.hpp>
+#include <ir_opt/SSARegisterAlloc.hpp>
 #include <ir_opt/DPE.hpp>
 
 class Module;

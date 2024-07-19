@@ -1,9 +1,5 @@
 #include <lir/ArmStand.hpp>
 
-#define imm_8_max 255
-#define imm_12_max 4095
-#define imm_16_max 65535
-
 #define ror(value, bits) ((value >> bits) | (value << (sizeof(value) * 8 - bits)))
 
 bool is_legal_rotate_imme(int a)
@@ -25,5 +21,14 @@ bool is_legal_rotate_imme(int a)
             return true;
         window = ror(window, 2);
     }
+    return false;
+}
+
+bool is_legal_ldr_str_imme(int a)
+{
+    // careful, you need write specific symbol when neg
+    // 格式：LDR <Rt>, [<Rn>, #+/-<imm12>]! 和 STR <Rt>, [<Rn>, #+/-<imm12>]!
+    if (a < imm_12_max && a > -imm_12_max)
+        return true;
     return false;
 }
