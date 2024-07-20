@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     delete p_program;
     // IR
     // manager->printModule("O0");
-    manager->run<GlobalVariableopt>();
+    // manager->run<GlobalVariableopt>();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
@@ -57,20 +57,27 @@ int main(int argc, char *argv[])
     for (int i = 0; i < 3; i++)
     {
         manager->FuncRun<SCCP>();
+        printf("-------------------\n");
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        printf("---------SCCP--------\n");
+        manager->printModule();
         manager->FuncRun<GVN>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        printf("-------------------\n");
         manager->FuncRun<GCM>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        printf("----------GCM---------\n");
+        manager->printModule();
         manager->run<DeadParamElimate>();
+        printf("-------------------\n");
         manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         manager->run<Inline>();
-        manager->printModule();
+        //      manager->printModule();
     }
     printf("lir\n");
     manager->printModule();

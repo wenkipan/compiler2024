@@ -157,7 +157,7 @@ void ArmGen::run(Module *m)
             continue;
         gen_func(f);
     }
-    printf("total arm--\n");
+    printf("--total arm\n");
     arm_module->print(1);
 }
 void ArmGen::gen_func(Function *f)
@@ -245,6 +245,9 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
     // gen_sp_sub
     // sp sub sp_sub_offset
     int sp_sub_offset = allocsize + max_pushed_callee_param;
+
+    if ((sp_sub_offset + pushedsize) % 8) // allgin
+        sp_sub_offset += 4;
     printf("ASDDDDDDDDDD%d\n", max_pushed_callee_param);
     printf("ASDDDDDDDDDD%d\n", allocsize);
     printf("ASDDDDDDDDDD%d\n", sp_sub_offset);
@@ -387,8 +390,7 @@ ArmInstr *ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
     {
         // 比较幽默的是，寄存器分配没考虑这个，float的mov用的ldr
         // 比较幽默的是，全部做完之后我发现arm也有mov伪指令，意思是浮点数可以用mov r12 来做      mmp
-        assert(0);
-        std::string na = ".Lconst" + std::to_string(bb->get_parent()->get_constlable().size());
+        std::string na = ".Lconst" + bb->get_parent()->get_name() + std::to_string(bb->get_parent()->get_constlable().size());
         float f = ((ConstantF32 *)src)->get_32_at(0);
         auto constlable = new Armconstlable(na, *(uint32_t *)(&f), bb->get_parent());
         bb->get_parent()->constlable_push_back(constlable);

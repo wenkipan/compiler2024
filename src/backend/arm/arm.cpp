@@ -224,6 +224,8 @@ void ArmFunc::print()
     {
         B->print();
     }
+    for (auto l : constantlables)
+        l->print();
 }
 void ArmBlock::print()
 {
@@ -313,6 +315,8 @@ void ArmAddr::print()
         printf("%s", ((ArmBlock *)addr)->get_name().c_str());
     else if (is_a<ArmFunc>(addr))
         printf("%s", ((ArmFunc *)addr)->get_name().c_str());
+    else if (is_a<Armconstlable>(addr))
+        printf("%s", ((Armconstlable *)addr)->get_name().c_str());
 }
 void ArmReg::print()
 {
@@ -361,6 +365,8 @@ ArmFunc::~ArmFunc()
             delete e;
         delete B;
     }
+    for (auto l : constantlables)
+        delete l;
 }
 ArmBlock::~ArmBlock()
 {
