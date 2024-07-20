@@ -279,6 +279,7 @@ public:
     Armconstlable(std::string na, uint32_t w, ArmFunc *f) : name(na), word(w), parent(f) {}
     Armconstlable(std::string na, int w, ArmFunc *f) : name(na), word((uint32_t)w), parent(f) {}
     ArmFunc *gen_parent() { return parent; }
+    std::string get_name() { return name; }
     void print();
 };
 class ArmGlobal : public ArmValue
