@@ -134,30 +134,12 @@ void SSARegisterAlloc::run(Function *p_func)
     Spill(p_func);
     for (auto it : spilledNodes)
         spilledVals.insert(LA.Vals[it]);
-    /*puts("before rewrite");
-    p_func->print();
-    for (auto bb : *(p_func->get_blocks()))
-    {
-        for (auto ins : *(bb->get_instrs()))
-        {
-            if (is_a<Call>(ins))
-            {
-                Call *call = dynamic_cast<Call *>(ins);
-                puts("fuck");
-                call->print();
-                for (auto it : callLiveVreg[call])
-                {
-                    if (spilledNodes.find(it) != spilledNodes.end())
-                        continue;
-                    LA.Vals[it]->print();
-                }
-            }
-        }
-    }*/
+
     RewriteProgram(p_func);
     MakeGraph(p_func);
     AssignColor_R(p_func);
     AssignColor_S(p_func);
+
     Register.resize(48);
     for (int i = 0; i < 48; i++)
     {
@@ -837,6 +819,7 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                 }
             }
         }
+
         for (auto op : ops)
         {
             if (inReg.find(op) == inReg.end())
@@ -871,19 +854,24 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                 inReg.insert(op);
             }
         }
+        std::set<std::pair<int, int>> del_reg;
         for (auto reg : Regs)
         {
             if (spilledNodes.find(reg.second) != spilledNodes.end())
             {
                 inReg.erase(reg.second);
-                Regs.erase(reg);
+                // Regs.erase(reg);
+                del_reg.insert(reg);
             }
             if (LA.OutSet[bb].at(reg.second))
+            {
                 continue;
+            }
             bool live = false;
             for (auto edge : *(LA.Vals[reg.second]->get_user_list()))
             {
                 Value *use = edge->get_user();
+
                 if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
                 {
                     live = true;
@@ -893,13 +881,18 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
             if (!live)
             {
                 inReg.erase(reg.second);
-                Regs.erase(reg);
+                // Regs.erase(reg);
+                del_reg.insert(reg);
             }
         }
+        for (auto reg : del_reg)
+            Regs.erase(reg);
         if (dynamic_cast<Call *>(ins) != nullptr)
         {
             for (auto reg : Regs)
+            {
                 callLiveVreg[dynamic_cast<Call *>(ins)].push_back(LA.Vals[reg.second]);
+            }
         }
         if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 0)
         {
@@ -1011,12 +1004,14 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
                 inReg.insert(op);
             }
         }
+        std::set<std::pair<int, int>> del_reg;
         for (auto reg : Regs)
         {
             if (spilledNodes.find(reg.second) != spilledNodes.end())
             {
                 inReg.erase(reg.second);
-                Regs.erase(reg);
+                // Regs.erase(reg);
+                del_reg.insert(reg);
             }
             if (LA.OutSet[bb].at(reg.second))
                 continue;
@@ -1033,9 +1028,12 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
             if (!live)
             {
                 inReg.erase(reg.second);
-                Regs.erase(reg);
+                // Regs.erase(reg);
+                del_reg.insert(reg);
             }
         }
+        for (auto reg : del_reg)
+            Regs.erase(reg);
         if (dynamic_cast<Call *>(ins) != nullptr)
         {
             for (auto reg : Regs)
