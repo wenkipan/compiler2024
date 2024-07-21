@@ -1,3 +1,4 @@
+#include "lir/ArmStand.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -57,27 +58,20 @@ int main(int argc, char *argv[])
     for (int i = 0; i < 3; i++)
     {
         manager->FuncRun<SCCP>();
-        printf("-------------------\n");
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
-        printf("---------SCCP--------\n");
-        manager->printModule();
         manager->FuncRun<GVN>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
-        printf("-------------------\n");
         manager->FuncRun<GCM>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
-        printf("----------GCM---------\n");
-        manager->printModule();
         manager->run<DeadParamElimate>();
-        printf("-------------------\n");
         manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         manager->run<Inline>();
-        //      manager->printModule();
+        //        manager->printModule();
     }
     printf("lir\n");
     manager->printModule();
@@ -87,7 +81,7 @@ int main(int argc, char *argv[])
     printf("GEPTO__________\n");
     // manager->printModule();
     printf("________mod___\n");
-    manager->FuncRun<modTosubmul>();
+    manager->run<modTosubmul>();
     // manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");

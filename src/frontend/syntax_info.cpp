@@ -141,7 +141,8 @@ static inline size_t syntax_init_by_assign_gen(p_symbol_type p_type, p_syntax_in
 p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_syntax_decl p_decl)
 {
     p_syntax_info p_info = this;
-    p_symbol_type p_type = p_decl->p_array->syntax_type_trans(p_head->type);
+    // p_symbol_type p_type = p_decl->p_array->syntax_type_trans(p_head->type);
+    p_symbol_type p_type = syntax_type_trans1(p_decl->p_array, p_head->type);
     p_syntax_init p_s_init = p_decl->p_init->syntax_init_regular(p_type);
     bool is_const = p_head->is_const;
     const char *name = p_decl->name;
