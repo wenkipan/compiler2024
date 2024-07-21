@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     freopen("in.txt", "r", stdin);
-    // freopen("out.txt", "w", stdout);
+    freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     delete p_program;
     // IR
     // manager->printModule("O0");
-    // manager->run<GlobalVariableopt>();
+    manager->run<GlobalVariableopt>();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<DCE>();
     manager->run<Mem2Reg>();
