@@ -1,7 +1,8 @@
 #pragma once
-#include <ir/ir.hpp>
-#include <ir_opt/Loop.hpp>
 #include <unordered_map>
+
+#include "../../include/ir/ir.hpp"
+#include "../../include/ir_opt/Loop.hpp"
 
 enum class SCEVType
 {

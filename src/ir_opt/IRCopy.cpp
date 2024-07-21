@@ -1,7 +1,8 @@
 
-#include "ir/Value.hpp"
-#include <ir_opt/IRCopy.hpp>
-#include <util/RPO.hpp>
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir_opt/IRCopy.hpp"
+#include "../../include/util/RPO.hpp"
+
 Value *IRCopy::get_mapval(Value *a)
 {
     if (is_a<GlobalValue>(a))

@@ -1,4 +1,5 @@
-#include <frontend/log.hpp>
+#include "../../include/frontend/log.hpp"
+
 int yylloc2str(char *yyo, YYLTYPE *yylocp)
 {
     int res = 0;

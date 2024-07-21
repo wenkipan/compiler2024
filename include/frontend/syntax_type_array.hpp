@@ -1,7 +1,7 @@
 #pragma once
 
-#include <symbol/symbol.hpp>
-#include <symbol/type.hpp>
+#include "../../include/symbol/symbol.hpp"
+#include "../../include/symbol/type.hpp"
 typedef class syntax_type_array *p_syntax_type_array;
 class syntax_type_array
 {

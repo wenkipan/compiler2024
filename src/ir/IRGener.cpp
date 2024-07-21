@@ -1,4 +1,4 @@
-#include <ir/IRGener.hpp>
+#include "../../include/ir/IRGener.hpp"
 
 Module *GenFunction::module = nullptr;
 std::unordered_map<p_symbol_var, Value *> *GenFunction::_global_map = new std::unordered_map<p_symbol_var, Value *>();

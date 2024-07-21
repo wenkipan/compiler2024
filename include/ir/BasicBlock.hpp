@@ -1,8 +1,10 @@
 #pragma once
-#include <ir/Value.hpp>
-#include <ir/Function.hpp>
-#include <ir/Instrution.hpp>
 #include <set>
+
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir/Instrution.hpp"
+
 void dropInstrs(const std::vector<Instrution *> &dropList);
 class BasicBlock : public Value
 {

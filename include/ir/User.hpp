@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ir/Value.hpp>
-#include <ir/Edge.hpp>
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir/Edge.hpp"
 
 class User : public Value
 {

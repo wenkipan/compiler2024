@@ -1,4 +1,4 @@
-#include <backend/arm/BlockMerge.hpp>
+#include "../../../include/backend/arm/BlockMerge.hpp"
 
 void BlockMerge::run(ArmModule *m)
 {

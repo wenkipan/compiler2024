@@ -1,8 +1,8 @@
 #pragma once
 
-#include <symbol/symbol.hpp>
-#include <frontend/syntax_type_array.hpp>
-#include <frontend/syntax_init.hpp>
+#include "../../include/symbol/symbol.hpp"
+#include "../../include/frontend/syntax_type_array.hpp"
+#include "../../include/frontend/syntax_init.hpp"
 typedef class syntax_decl *p_syntax_decl;
 class syntax_decl
 {

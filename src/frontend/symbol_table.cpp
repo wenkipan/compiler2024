@@ -1,4 +1,4 @@
-#include <frontend/symbol_table.hpp>
+#include "../../include/frontend/symbol_table.hpp"
 
 static inline size_t symbol_str_tag(const char *name)
 {

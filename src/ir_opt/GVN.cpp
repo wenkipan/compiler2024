@@ -1,9 +1,11 @@
-#include "ir/Value.hpp"
-#include <ir_opt/GVN.hpp>
-#include <util/RPO.hpp>
 #include <iostream>
 #include <sstream>
-#include <ir_opt/ConstFold.hpp>
+
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir_opt/GVN.hpp"
+#include "../../include/util/RPO.hpp"
+#include "../../include/ir_opt/ConstFold.hpp"
+
 // TODO :miss
 std::unordered_map<InstrutionEnum, std::string> enum_map = {
     {InstrutionEnum::GEP, "GEP"},

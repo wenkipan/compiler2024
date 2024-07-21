@@ -1,4 +1,4 @@
-#include <ir_opt/SSARegisterAlloc.hpp>
+#include "../../include/ir_opt/SSARegisterAlloc.hpp"
 
 std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
 {

@@ -1,12 +1,13 @@
-#include "ir/BasicBlock.hpp"
-#include "ir/Function.hpp"
-#include "ir/Value.hpp"
+
 #include <iostream>
-#include <ir_opt/Inline.hpp>
-#include <ostream>
 #include <unordered_set>
 #include <algorithm>
 #include <vector>
+
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir_opt/Inline.hpp"
 
 //
 CallGraphNode::CallGraphNode(Function *f)

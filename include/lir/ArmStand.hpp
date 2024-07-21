@@ -1,11 +1,11 @@
 #pragma once
 
-#include <lir/immeFloatToLoad.hpp>
-#include <lir/immeIntTomove.hpp>
-#include <lir/LargeToGlobal.hpp>
-#include <lir/GEPToALU.hpp>
-#include <lir/modTosubmul.hpp>
-#include <lir/GVtoAssgin.hpp>
+#include "../../include/lir/immeFloatToLoad.hpp"
+#include "../../include/lir/immeIntTomove.hpp"
+#include "../../include/lir/LargeToGlobal.hpp"
+#include "../../include/lir/GEPToALU.hpp"
+#include "../../include/lir/modTosubmul.hpp"
+#include "../../include/lir/GVtoAssgin.hpp"
 
 #define imm_8_max 255
 #define imm_12_max 4095

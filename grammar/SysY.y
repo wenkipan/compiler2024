@@ -6,14 +6,14 @@
 %param { yyscan_t yyscanner }
 
 %{
-#include <frontend/lexer.hpp>
-#include <frontend/log.hpp>
+#include "../../include/frontend/lexer.hpp"
+#include "../../include/frontend/log.hpp"
 
-#include <frontend/syntax_init.hpp>
-#include <frontend/syntax_decl_head.hpp>
-#include <frontend/syntax_decl.hpp>
+#include "../../include/frontend/syntax_init.hpp"
+#include "../../include/frontend/syntax_decl_head.hpp"
+#include "../../include/frontend/syntax_decl.hpp"
 
-#include <ast/ast.hpp>
+#include "../../include/ast/ast.hpp"
 
 #define extra yyget_extra(yyscanner)
 
@@ -23,7 +23,7 @@
 %}
 
 %code requires{
-#include <frontend/use.hpp>
+#include "../../include/frontend/use.hpp"
 }
 
 %define api.pure full

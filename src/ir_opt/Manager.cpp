@@ -1,4 +1,4 @@
-#include <ir_opt/Manager.hpp>
+#include "../../include/ir_opt/Manager.hpp"
 
 Manager::Manager(Module *_module)
     : p_module(_module)

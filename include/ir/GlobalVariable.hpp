@@ -1,8 +1,8 @@
 #pragma once
-
-#include <ir/GlobalValue.hpp>
-#include <ir/Constant.hpp>
 #include <string>
+
+#include "../../include/ir/GlobalValue.hpp"
+#include "../../include/ir/Constant.hpp"
 
 class GlobalVariable : public GlobalValue
 {

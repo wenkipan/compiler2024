@@ -3,11 +3,12 @@
  */
 
 %{
-#include <frontend/parser.hpp>
-#include <frontend/log.hpp>
-
 #include <limits.h>
 #include <string.h>
+
+#include "../../include/frontend/parser.hpp"
+#include "../../include/frontend/log.hpp"
+
 I32CONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
 F32CONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
 YY_BUFFER_STATE yy_create_buffer_string (const char * yystr , yyscan_t yyscanner);

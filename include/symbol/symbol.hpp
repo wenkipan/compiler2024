@@ -1,6 +1,8 @@
 #pragma once
-#include <util/util.hpp>
 #include <stdio.h>
+
+#include "../../include/util/util.hpp"
+
 typedef enum
 {
     type_void,

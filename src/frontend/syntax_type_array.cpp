@@ -1,4 +1,4 @@
-#include <frontend/syntax_type_array.hpp>
+#include "../../include/frontend/syntax_type_array.hpp"
 
 syntax_type_array::syntax_type_array(uint64_t size)
     : size(size),
@@ -8,12 +8,26 @@ syntax_type_array::syntax_type_array(uint64_t size)
 
 p_symbol_type syntax_type_array::syntax_type_trans(basic_type b_type)
 {
+    puts("ssssss");
+
     p_syntax_type_array p_array = this;
+    puts("111111");
+
     p_symbol_type p_type = new symbol_type(b_type);
+    puts("2222222");
+
+    if (p_array == nullptr)
+        puts("?????");
     while (p_array)
     {
+        puts("333333");
+
         p_syntax_type_array p_del = p_array;
+        puts("444444");
+
         p_array = p_array->p_prev;
+        puts("5555555");
+
         if (p_del->size)
         {
             // printf("%lu\n", p_del->size);

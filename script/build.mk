@@ -37,7 +37,7 @@ LDSETS   = $($(VERSION)_LDSETS)
 LDLIBS   = $($(VERSION)_LDLIBS)
 
 CC_STD   = --std=c11
-CXXSTD   = --std=c++17
+CXXSTD   = --std=c++20
 
 CCFLAGS      = $(LDSETS) $(C_SETS) $(INCLUDES) $(CC_STD) $(NOTMP_C_SETS)
 CXXFLAGS     = $(LDSETS) $(C_SETS) $(INCLUDES) $(CXXSTD) $(NOTMP_C_SETS)

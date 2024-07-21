@@ -1,7 +1,7 @@
 #pragma once
-
-#include <ir/ir.hpp>
 #include <unordered_map>
+
+#include "../../include/ir/ir.hpp"
 
 class Module;
 

@@ -1,16 +1,17 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <program/program.hpp>
-#include <frontend/use.hpp>
-#include <ir/ir.hpp>
-#include <ir_opt/Manager.hpp>
-#include <backend/arm/ArmGen.hpp>
+
+#include "../include/program/program.hpp"
+#include "../include/frontend/use.hpp"
+#include "../include/ir/ir.hpp"
+#include "../include/ir_opt/Manager.hpp"
+#include "../include/backend/arm/ArmGen.hpp"
 
 int main(int argc, char *argv[])
 {
     freopen("in.txt", "r", stdin);
-    // freopen("out.txt", "w", stdout);
+    //  freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -49,56 +50,56 @@ int main(int argc, char *argv[])
     // IR
     // manager->printModule("O0");
     // manager->run<GlobalVariableopt>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<DCE>();
-    manager->run<Mem2Reg>();
+    // manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<DCE>();
+    // manager->run<Mem2Reg>();
+    // // manager->printModule();
+    // manager->FuncRun<SimplifyCFG>();
+    // for (int i = 0; i < 3; i++)
+    // {
+    //     manager->FuncRun<SCCP>();
+    //     printf("-------------------\n");
+    //     manager->FuncRun<DCE>();
+    //     manager->FuncRun<SimplifyCFG>();
+    //     printf("---------SCCP--------\n");
+    //     manager->printModule();
+    //     manager->FuncRun<GVN>();
+    //     manager->FuncRun<DCE>();
+    //     manager->FuncRun<SimplifyCFG>();
+    //     printf("-------------------\n");
+    //     manager->FuncRun<GCM>();
+    //     manager->FuncRun<DCE>();
+    //     manager->FuncRun<SimplifyCFG>();
+    //     printf("----------GCM---------\n");
+    //     manager->printModule();
+    //     manager->run<DeadParamElimate>();
+    //     printf("-------------------\n");
+    //     manager->FuncRun<THBalancing>();
+    //     manager->FuncRun<DCE>();
+    //     manager->FuncRun<SimplifyCFG>();
+    //     manager->run<Inline>();
+    //     //       manager->printModule();
+    // }
+    // printf("lir\n");
     // manager->printModule();
-    manager->FuncRun<SimplifyCFG>();
-    for (int i = 0; i < 3; i++)
-    {
-        manager->FuncRun<SCCP>();
-        printf("-------------------\n");
-        manager->FuncRun<DCE>();
-        manager->FuncRun<SimplifyCFG>();
-        printf("---------SCCP--------\n");
-        manager->printModule();
-        manager->FuncRun<GVN>();
-        manager->FuncRun<DCE>();
-        manager->FuncRun<SimplifyCFG>();
-        printf("-------------------\n");
-        manager->FuncRun<GCM>();
-        manager->FuncRun<DCE>();
-        manager->FuncRun<SimplifyCFG>();
-        printf("----------GCM---------\n");
-        manager->printModule();
-        manager->run<DeadParamElimate>();
-        printf("-------------------\n");
-        manager->FuncRun<THBalancing>();
-        manager->FuncRun<DCE>();
-        manager->FuncRun<SimplifyCFG>();
-        manager->run<Inline>();
-        //      manager->printModule();
-    }
-    printf("lir\n");
-    manager->printModule();
-    manager->run<immeFloatToLoad>();
-    manager->run<LargeToGlobal>();
-    manager->FuncRun<GEPToALU>();
-    printf("GEPTO__________\n");
+    // manager->run<immeFloatToLoad>();
+    // manager->run<LargeToGlobal>();
+    // manager->FuncRun<GEPToALU>();
+    // printf("GEPTO__________\n");
+    // // manager->printModule();
+    // printf("________mod___\n");
+    // manager->FuncRun<modTosubmul>();
+    // // manager->printModule();
+    // manager->run<immeIntTomove>();
+    // printf("int");
     // manager->printModule();
-    printf("________mod___\n");
-    manager->FuncRun<modTosubmul>();
-    // manager->printModule();
-    manager->run<immeIntTomove>();
-    printf("int");
-    manager->printModule();
-    fflush(stdout);
+    // fflush(stdout);
 
-    ArmGen backend;
-    backend.run(manager->get_module());
-    ArmModule *am = backend.get_arm();
-    am->print(0);
-    delete am;
+    // ArmGen backend;
+    // backend.run(manager->get_module());
+    // ArmModule *am = backend.get_arm();
+    // am->print(0);
+    // delete am;
 
     delete manager;
     return 0;

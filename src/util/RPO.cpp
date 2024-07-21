@@ -1,5 +1,6 @@
-#include <util/RPO.hpp>
 #include <algorithm>
+
+#include "../../include/util/RPO.hpp"
 
 static void inline visit(BasicBlock *bb, std::set<BasicBlock *> &visited, std::vector<BasicBlock *> &order)
 {

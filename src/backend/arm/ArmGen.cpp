@@ -1,6 +1,8 @@
-#include <backend/arm/ArmGen.hpp>
 #include <cstdint>
 #include <cstdio>
+#include <iostream>
+
+#include "../../../include/backend/arm/ArmGen.hpp"
 
 static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
 {

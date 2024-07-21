@@ -1,7 +1,8 @@
 #pragma once
 
-#include <util/util.hpp>
-#include <symbol/symbol.hpp>
+#include "../../include/util/util.hpp"
+#include "../../include/symbol/symbol.hpp"
+
 typedef class symbol_type_array *p_symbol_type_array;
 typedef class symbol_type *p_symbol_type;
 class symbol_type_array

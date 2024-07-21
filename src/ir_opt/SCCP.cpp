@@ -1,11 +1,13 @@
-#include "ir/BasicBlock.hpp"
-#include "ir/Constant.hpp"
-#include "ir/Function.hpp"
-#include "ir/Instrution.hpp"
-#include <ir_opt/SCCP.hpp>
 #include <fstream>
 #include <ostream>
 #include <set>
+
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir/Constant.hpp"
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir/Instrution.hpp"
+#include "../../include/ir_opt/SCCP.hpp"
+
 void SCCP::run(Function *func)
 {
     function = func;

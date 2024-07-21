@@ -1,7 +1,8 @@
 #pragma once
-
-#include <ir/ir.hpp>
 #include <unordered_set>
+
+#include "../../include/ir/ir.hpp"
+
 class GlobalVariableopt
 {
     Module *m;

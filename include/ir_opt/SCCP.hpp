@@ -1,11 +1,10 @@
 #pragma once
-
-#include "ir/Instrution.hpp"
-#include "ir/Value.hpp"
-#include <ir/ir.hpp>
 #include <queue>
 #include <map>
 #include <iostream>
+
+#include "../../include/ir/ir.hpp"
+
 class Lattice
 {
 public:

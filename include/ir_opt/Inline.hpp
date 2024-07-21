@@ -1,11 +1,11 @@
 #pragma once
-
-#include "ir/Function.hpp"
-#include <ir/ir.hpp>
-#include <ir_opt/IRCopy.hpp>
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "../../include/ir/ir.hpp"
+#include "../../include/ir_opt/IRCopy.hpp"
+
 class CallGraphNode : public Value
 {
 public:

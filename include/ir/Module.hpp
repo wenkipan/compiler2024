@@ -1,9 +1,9 @@
 #pragma once
 
-#include <ir/Function.hpp>
-#include <ir/GlobalValue.hpp>
-#include <ir/GlobalVariable.hpp>
-#include <program/program.hpp>
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir/GlobalValue.hpp"
+#include "../../include/ir/GlobalVariable.hpp"
+#include "../../include/program/program.hpp"
 
 // class loop
 // {

@@ -1,11 +1,11 @@
 #pragma once
-
-#include "ir/Function.hpp"
-#include <ir/ir.hpp>
 #include <vector>
 #include <unordered_map>
 #include <set>
 #include <unordered_set>
+
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir/ir.hpp"
 
 class DomTreeNode
 {

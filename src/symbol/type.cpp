@@ -1,5 +1,5 @@
 
-#include <symbol/type.hpp>
+#include "../../include/symbol/type.hpp"
 uint64_t basic_type_get_size(basic_type b_type)
 {
     return 4;
@@ -15,12 +15,12 @@ uint64_t symbol_type_array_get_size(p_symbol_type_array p_array)
 }
 
 symbol_type::symbol_type(basic_type basic)
-    : ref_level(0),
-      // array(list_init_head(&this->array)),
+    : array(list_init_head(&this->array)),
+      ref_level(0),
       basic(basic),
       size(1)
 {
-    array = list_init_head(&this->array);
+    // array = list_init_head(&this->array);
 }
 
 void symbol_type::symbol_type_push_ptr()

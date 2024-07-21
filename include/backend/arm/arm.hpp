@@ -1,6 +1,8 @@
+#pragma once
 #include <string>
-#include <lir/ArmStand.hpp>
 #include <vector>
+
+#include "../../../include/lir/ArmStand.hpp"
 
 enum class ARMENUM
 {

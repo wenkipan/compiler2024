@@ -1,6 +1,6 @@
 #pragma once
-#include <ir_opt/DomTree.hpp>
-#include <ir/ir.hpp>
+#include "../../include/ir_opt/DomTree.hpp"
+#include "../../include/ir/ir.hpp"
 
 class GVtoA
 {

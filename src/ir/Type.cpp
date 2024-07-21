@@ -1,4 +1,4 @@
-#include <ir/Type.hpp>
+#include "../../include/ir/Type.hpp"
 
 Type::Type(TypeEnum _type)
     : type(_type)

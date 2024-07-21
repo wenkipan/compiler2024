@@ -1,9 +1,11 @@
-#include "ir/BasicBlock.hpp"
-#include "ir/Instrution.hpp"
-#include "ir/Value.hpp"
-#include <ir_opt/THBalancing.hpp>
 #include <vector>
 #include <iostream>
+
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir/Instrution.hpp"
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir_opt/THBalancing.hpp"
+
 static inline int is_root(Instrution *i)
 {
     if (i->get_user_list()->size() > 1)

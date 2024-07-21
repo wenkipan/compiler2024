@@ -1,7 +1,7 @@
 #pragma once
 
-#include <util/util.hpp>
-#include <symbol/symbol.hpp>
+#include "../../include/util/util.hpp"
+#include "../../include/symbol/symbol.hpp"
 
 typedef class symbol_str *p_symbol_str;
 class symbol_str

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <backend/arm/arm.hpp>
-#include <ir/ir.hpp>
-#include <ir_opt/SSARegisterAlloc.hpp>
+#include "../../../include/backend/arm/arm.hpp"
+#include "../../../include/ir/ir.hpp"
+#include "../../../include/ir_opt/SSARegisterAlloc.hpp"
 
 class funcinfo
 {

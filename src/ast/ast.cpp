@@ -1,5 +1,5 @@
-#include "symbol/symbol.hpp"
-#include <ast/ast.hpp>
+#include "../../include/symbol/symbol.hpp"
+#include "../../include/ast/ast.hpp"
 // ast_block
 ast_block::ast_block()
     : length(0),

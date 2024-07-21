@@ -1,3 +1,3 @@
 #pragma once
 
-#include <grammar/SysY.tab.hpp>
+#include "../../tmp-src/grammar/SysY.tab.hpp"

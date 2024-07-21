@@ -1,5 +1,5 @@
-#include <ir_opt/Mem2Reg.hpp>
-#include <ir_opt/DCE.hpp>
+#include "../../include/ir_opt/Mem2Reg.hpp"
+#include "../../include/ir_opt/DCE.hpp"
 
 int Mem2Reg::get_Instr_id(BasicBlock *BB, Instrution *instr)
 {

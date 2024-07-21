@@ -1,8 +1,10 @@
-#include "ir/Instrution.hpp"
-#include "ir/Type.hpp"
-#include <ir/Value.hpp>
 #include <algorithm>
-#include <ir/Edge.hpp>
+
+#include "../../include/ir/Instrution.hpp"
+#include "../../include/ir/Type.hpp"
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir/Edge.hpp"
+
 int Value::CurID = 0;
 
 Value::Value()

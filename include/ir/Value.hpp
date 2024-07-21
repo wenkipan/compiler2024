@@ -1,10 +1,8 @@
 #pragma once
 
-#include <ir/Type.hpp>
-// #include <ir/Edge.hpp>
-
-#include <symbol/var.hpp>
-#include <symbol/func.hpp>
+#include "../../include/ir/Type.hpp"
+#include "../../include/symbol/var.hpp"
+#include "../../include/symbol/func.hpp"
 
 class Edge;
 class Value

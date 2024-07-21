@@ -1,5 +1,6 @@
-#include <symbol/func.hpp>
-#include <symbol/symbol.hpp>
+#include "../../include/symbol/func.hpp"
+#include "../../include/symbol/symbol.hpp"
+
 symbol_func::symbol_func(const char *name, basic_type b_type, bool is_va)
     : is_va(is_va),
       ret_type(b_type),

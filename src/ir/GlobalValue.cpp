@@ -1,5 +1,6 @@
-#include <ir/GlobalValue.hpp>
 #include <string.h>
+
+#include "../../include/ir/GlobalValue.hpp"
 
 GlobalValue::GlobalValue(p_symbol_var p_var)
     : User(p_var)

@@ -1,5 +1,5 @@
 #pragma once
-#include <ir/ir.hpp>
+#include "../../include/ir/ir.hpp"
 
 class LargeToGlobal
 {
