@@ -11,14 +11,15 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
         int c = color[LA.ValueIdMap[it]];
         if (LA.is_float[LA.ValueIdMap[it]])
         {
-            if (c <= 15)
+            if (c <= 15 && c >= 0)
                 ret.push_back(c + 16);
         }
         else
         {
-            assert(c != 12);
             if (c <= 3)
                 ret.push_back(c);
+            else if (c == 12)
+                ret.push_back(14);
         }
     }
     return ret;
@@ -41,14 +42,18 @@ int SSARegisterAlloc::getReg(Value *val)
     int c = color[x];
     if (LA.is_float[x])
     {
+        if (c < 0 || c > 31)
+            assert(0);
         return 16 + c;
     }
     else
     {
-        if (c <= 10)
+        if (c <= 11)
             return c;
-        else
+        else if (c == 12)
             return 14;
+        else
+            assert(0);
     }
 }
 
@@ -661,12 +666,19 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
         for (auto tmp : G[id_R[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 0; i < K_R; i++)
+        for (int i = 3; i >= 0; i--)
             if (color_set.find(i) == color_set.end())
             {
                 color[id_R[x]] = i;
                 break;
             }
+        if (color[id_R[x]] == -1)
+            for (int i = 4; i < K_R; i++)
+                if (color_set.find(i) == color_set.end())
+                {
+                    color[id_R[x]] = i;
+                    break;
+                }
         if (color[id_R[x]] == -1)
         {
             assert(0);
@@ -721,12 +733,19 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
         for (auto tmp : G[id_S[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 0; i < K_S; i++)
+        for (int i = 15; i >= 0; i--)
             if (color_set.find(i) == color_set.end())
             {
                 color[id_S[x]] = i;
                 break;
             }
+        if (color[id_S[x]] == -1)
+            for (int i = 16; i < K_S; i++)
+                if (color_set.find(i) == color_set.end())
+                {
+                    color[id_S[x]] = i;
+                    break;
+                }
         if (color[id_S[x]] == -1)
         {
             assert(0);
