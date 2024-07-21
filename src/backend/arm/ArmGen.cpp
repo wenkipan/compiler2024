@@ -1,3 +1,4 @@
+#include "ir/Function.hpp"
 #include <backend/arm/ArmGen.hpp>
 #include <cstdint>
 #include <cstdio>
@@ -564,7 +565,12 @@ void ArmGen::gen_call_after(Instrution *i, ArmBlock *b)
     else if (i->get_type()->get_type() == TypeEnum::I32)
     {
         assert(!is_s_reg(ssara->getReg(i)));
-        if (ssara->getReg(i) != R0)
+        if (((Function *)i->get_operand_at(0))->get_name() == "__aeabi_idivmod") // special
+        {
+            if (ssara->getReg(i) != R0 + 1)
+                gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(i)), new ArmReg(R0 + 1), b);
+        }
+        else if (ssara->getReg(i) != R0)
             gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(i)), new ArmReg(R0), b);
     }
     else if (i->get_type()->get_type() == TypeEnum::F32)

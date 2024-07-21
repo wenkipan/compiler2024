@@ -128,6 +128,15 @@ Function::Function(std::string _name)
       blocks(new std::vector<BasicBlock *>)
 {
 }
+Function::Function(Type *ty, std::string _name)
+    : GlobalValue(ty, _name),
+      currentbblabel(0),
+      params(new std::vector<Param *>),
+      values(new std::vector<Value *>),
+      entry_block(nullptr),
+      blocks(new std::vector<BasicBlock *>)
+{
+}
 Function::Function()
     : GlobalValue(),
       currentbblabel(0),

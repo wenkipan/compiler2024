@@ -37,6 +37,7 @@ class Function : public GlobalValue
 public:
     Function(p_symbol_func _p_func);
     Function(std::string _name);
+    Function(Type *ty, std::string _name);
     Function();
     ~Function() override;
 

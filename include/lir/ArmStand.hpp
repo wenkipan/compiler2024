@@ -6,6 +6,7 @@
 #include <lir/GEPToALU.hpp>
 #include <lir/modTosubmul.hpp>
 #include <lir/GVtoAssgin.hpp>
+#include <lir/modTofunc.hpp>
 
 #define imm_8_max 255
 #define imm_12_max 4095
