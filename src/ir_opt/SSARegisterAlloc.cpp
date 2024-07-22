@@ -1,3 +1,4 @@
+#include "ir/Instrution.hpp"
 #include <ir_opt/SSARegisterAlloc.hpp>
 
 std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
@@ -202,6 +203,11 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 {
                     int reg = getReg(para);
                     int reg_now = cnt_S + 15;
+                    if (reg == reg_now)
+                    {
+                        d[RegsID[reg]] = -1;
+                        continue;
+                    }
                     if (RegsID.find(reg) != RegsID.end()) // reg_now -> reg;
                     {
                         d[RegsID[reg_now]]++;
@@ -389,6 +395,8 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
         }
         else
         {
+            if (is_a<Alloca>(op) && isSpill(dynamic_cast<Alloca *>(op)))
+                continue;
             cnt_R++;
             if (cnt_R <= Para_R)
             {
@@ -445,9 +453,9 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                     move->insertInstr(bb, nowPos++);
                     if (firstMoveofCall.find(call) == firstMoveofCall.end())
                         firstMoveofCall[call] = move;
-                    if (is_a<Load>(In[i]))
-                        dynamic_cast<Load *>(In[i])->insertInstr(bb, nowPos);
-                    else
+                    // if (is_a<Load>(In[i]))
+                    //     dynamic_cast<Load *>(In[i])->insertInstr(bb, nowPos);
+                    // else
                     {
                         Move *move = new Move(InstrutionEnum::Move, Register[Regs[i]], In[i], bb);
                         move->insertInstr(bb, nowPos++);
@@ -1224,7 +1232,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 {
                     int rk = 0;
                     for (auto it : *(use->get_value_list()))
-                        if (!is_a<Function>(it->get_val()) && it->get_val()->get_type()->get_type() != TypeEnum::F32)
+                        if (!is_a<Function>(it->get_val()) && it->get_val()->get_type()->get_type() != TypeEnum::F32 && (!is_a<Alloca>(it->get_val()) || !isSpill(dynamic_cast<Alloca *>(it->get_val()))))
                         {
                             rk++;
                             if (it->get_val() == val)

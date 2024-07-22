@@ -263,6 +263,9 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
     int papos = 0;
     for (auto pa : paraminfomap.find(f)->second.paramstostack)
     {
+        printf("setpaoff:%d  ", pushedsize + sp_sub_offset + 4 * papos);
+        pa->print();
+        printf("\n");
         set_offset(pa, pushedsize + sp_sub_offset + 4 * (papos++));
     }
 
@@ -775,7 +778,8 @@ ArmReg *ArmGen::gen_sp_and_offset_op(int offset, ArmBlock *b)
     else
     {
         gen_mov_imme32(RTMP, offset, b);
-        return new ArmReg(SP, new ArmReg(RTMP));
+        gen_instr_op3(ARMENUM::arm_add, new ArmReg(RTMP), new ArmReg(RTMP), new ArmReg(SP), b);
+        return new ArmReg(RTMP, 0);
     }
 }
 ArmReg *ArmGen::gen_sp_and_offset_op_float(int offset, ArmBlock *b)
@@ -793,7 +797,8 @@ ArmReg *ArmGen::gen_sp_and_offset_op_float(int offset, ArmBlock *b)
     {
         printf("manyparamscccc\n");
         gen_mov_imme32(RTMP, offset, b);
-        return new ArmReg(SP, new ArmReg(RTMP));
+        gen_instr_op3(ARMENUM::arm_add, new ArmReg(RTMP), new ArmReg(RTMP), new ArmReg(SP), b);
+        return new ArmReg(RTMP, 0);
     }
 }
 void ArmGen::gen_load(Instrution *i, ArmBlock *b)
