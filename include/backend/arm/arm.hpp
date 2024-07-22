@@ -189,16 +189,19 @@ class ArmReg : public ArmOperand
 {
     int regno;
     int offset = 0;
+    ArmReg *offreg = nullptr;
     bool is_addr = 0;
 
 public:
     ArmReg(int _regno) : regno(_regno) { assert(_regno >= 0); }
     ArmReg(int _re, int off) : regno(_re), offset(off), is_addr(1) {}
+    ArmReg(int _re, ArmReg *off) : regno(_re), offreg(off), is_addr(1) {}
     bool is_s_reg() { return regno > 15 && regno <= 15 + 32; }
     bool is_r_reg() { return 0 <= regno && regno <= 15; }
     int get_offset() { return offset; }
+    void print_reg();
     void print();
-    ~ArmReg() {}
+    ~ArmReg();
 };
 class ArmImme : public ArmOperand
 {
@@ -257,6 +260,7 @@ public:
     void instrs_insert_before(int pos, ArmInstr *i)
     {
         instrs.insert(instrs.begin() + pos, i);
+        i->print();
     }
     ArmBlock(std::string na, ArmFunc *f) : name(na), parent(f) {}
     ArmFunc *get_parent() { return parent; }

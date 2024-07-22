@@ -22,5 +22,5 @@ else
 fi
 cat tmp.s
 arm-linux-gnueabihf-gcc -static ./tmp.s -L$LIB_DIR -l$LIB_FILE -o ./tmp.out || exit 1
-qemu-arm ./tmp.out<tst.in.txt >tst.out.txt || exit 1
+qemu-arm ./tmp.out || exit 1
 echo "exit: $?"

@@ -61,8 +61,7 @@ void ArmGen::init(Module *m)
                     newgv->words_push_back(*(uint32_t *)(&f));
                 }
             }
-            else
-                newgv->set_space(4);
+            newgv->set_space(4);
         }
         else if (pointeetype->get_type() == TypeEnum::Array)
         {
@@ -523,6 +522,7 @@ void ArmGen::gen_call_before(Instrution *i, ArmBlock *b)
     for (auto patostack : paraminfomap.find((Function *)i->get_operand_at(0))->second.paramstostack)
     {
         Value *tostack = i->get_operand_at(posofpa((Function *)i->get_operand_at(0), patostack) + 1);
+        tostack->print();
         ArmReg *op1;
         if (is_a<Alloca>(tostack) && ssara->isSpill((Alloca *)tostack))
         {
@@ -623,7 +623,6 @@ void ArmGen::gen_push_or_pop(ARMENUM ae, std::vector<int> v, ArmBlock *b, int po
             if (pushs == nullptr)
             {
                 pushs = new ArmInstr(ae);
-                b->instrs_insert_before(pos, pushs);
             }
             pushs->ops_push_back(new ArmReg(no));
         }
@@ -632,13 +631,28 @@ void ArmGen::gen_push_or_pop(ARMENUM ae, std::vector<int> v, ArmBlock *b, int po
             if (vpushs == nullptr)
             {
                 vpushs = new ArmInstr(ae2);
-                b->instrs_insert_before(pos, vpushs);
             }
             vpushs->ops_push_back(new ArmReg(no));
         }
         else
             assert(0);
     }
+    if (ae == ARMENUM::arm_push)
+    {
+        if (vpushs)
+            b->instrs_insert_before(pos, vpushs);
+        if (pushs)
+            b->instrs_insert_before(pos, pushs);
+    }
+    else if (ae == ARMENUM::arm_pop)
+    {
+        if (pushs)
+            b->instrs_insert_before(pos, pushs);
+        if (vpushs)
+            b->instrs_insert_before(pos, vpushs);
+    }
+    else
+        assert(0);
 }
 void ArmGen::gen_ret(Instrution *i, ArmBlock *b)
 {
@@ -761,7 +775,7 @@ ArmReg *ArmGen::gen_sp_and_offset_op(int offset, ArmBlock *b)
     else
     {
         gen_mov_imme32(RTMP, offset, b);
-        return new ArmReg(RTMP, 0);
+        return new ArmReg(SP, new ArmReg(RTMP));
     }
 }
 ArmReg *ArmGen::gen_sp_and_offset_op_float(int offset, ArmBlock *b)
@@ -779,7 +793,7 @@ ArmReg *ArmGen::gen_sp_and_offset_op_float(int offset, ArmBlock *b)
     {
         printf("manyparamscccc\n");
         gen_mov_imme32(RTMP, offset, b);
-        return new ArmReg(RTMP, 0);
+        return new ArmReg(SP, new ArmReg(RTMP));
     }
 }
 void ArmGen::gen_load(Instrution *i, ArmBlock *b)
