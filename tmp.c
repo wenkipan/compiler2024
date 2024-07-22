@@ -37,6 +37,14 @@ float params_f40_i24(int i23, int i2, int i6, float x4, int i1, int i4, int i5,
                      float x22, float x26, float x36, float x17, int i15,
                      float x2, int i14, float x35) {
   if (i23 != 0) {
+    putch(66);
+    putfloat(x0);
+    putch(66);
+    putfloat(x1);
+    putch(66);
+    putfloat(x2);
+    putch(66);
+    putfloat(x3);
     float arr[10] = {x0 + x1 + x2 + x3,     x4 + x5 + x6 + x7,
                      x8 + x9 + x10 + x11,   x12 + x13 + x14 + x15,
                      x16 + x17 + x18 + x19, x20 + x21 + x22 + x23,
@@ -53,7 +61,14 @@ float params_f40_i24(int i23, int i2, int i6, float x4, int i1, int i4, int i5,
       i = i + 1;
     }
     return arr2[k];
-  } 
+  } else {
+    return params_f40_i24(i1, i2, i6, x4, i1, i4, i5, x8, x15, x7, i22, x3, x28,
+                          i0, x37, i19, x30, x12, x1, x11, x38, x6, i7, x32,
+                          i10, i13, x20, x33, x23, x9, x25, i8, x39, i17, x21,
+                          x16, x5, x34, i18, i9, x14, x10, x0, i12, x31, i11,
+                          i16, x27, x24, x13, x29, i3, i21, i20, x18, x19, x22,
+                          x26, x36, x17, i15, x2, i14, x35);
+  }
 }
 
 float params_fa40(float x0[], float x1[], float x2[], float x3[], float x4[],
@@ -147,6 +162,8 @@ int main() {
       arr[24][k], arr[25][k], arr[26][k], arr[27][k], arr[28][k], arr[29][k],
       arr[30][k], arr[31][k], arr[32][k], arr[33][k], arr[34][k], arr[35][k],
       arr[36][k], arr[37][k], arr[38][k], arr[39][k]);
+  putch(65);
+  putfloat(arr[2][k]);
   float ret1 = params_f40_i24(
       arr2[23][k], arr2[2][k], arr2[6][k], arr[4][k], arr2[1][k], arr2[4][k],
       arr2[5][k], arr[8][k], arr[15][k], arr[7][k], arr2[22][k], arr[3][k],
@@ -177,13 +194,9 @@ int main() {
       arr2[0][k], arr2[1], arr[30], arr[31][k], arr2[2][k], arr[32][k], arr[33],
       arr[34], arr[35][k], arr2[3][k]);
 
-  putfloat(ret0);
+
   putch(10);
-  putfloat(ret1);
   putch(10);
-  putfloat(ret2);
-  putch(10);
-  putint(ret3);
-  putch(10);
+
   return 0;
 }
