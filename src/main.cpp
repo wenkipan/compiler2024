@@ -70,8 +70,8 @@ int main(int argc, char *argv[])
         manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
-        manager->run<Inline>();
-        //        manager->printModule();
+        // manager->run<Inline>();
+        //         manager->printModule();
     }
     printf("lir\n");
     manager->printModule();
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     printf("GEPTO__________\n");
     // manager->printModule();
     printf("________mod___\n");
-    manager->run<modTosubmul>();
+    manager->FuncRun<modTosubmul>();
     // manager->printModule();
     manager->run<immeIntTomove>();
     printf("int");

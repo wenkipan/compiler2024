@@ -195,10 +195,24 @@ void ArmModule::print(int test)
 void ArmGlobalVariable::print()
 {
     printf("%s:\n", name.c_str());
-    for (auto word : words)
-        printf("   .word %u\n", word);
-    if (words.size() != 1)
+    int i = words.size() - 1;
+    for (; i >= 0; i--)
+        if (words[i] != 0)
+            break;
+
+    if (i == -1)
+    {
+        assert(space);
         printf("   .space %d\n", space);
+        return;
+    }
+
+    for (int j = 0; j <= i; j++)
+    {
+        printf("   .word %u\n", words[j]);
+    }
+    if (space - (i + 1) * 4)
+        printf("   .space %d\n", space - (i + 1) * 4);
 }
 void ArmFunc::print()
 {
@@ -318,10 +332,8 @@ void ArmAddr::print()
     else if (is_a<Armconstlable>(addr))
         printf("%s", ((Armconstlable *)addr)->get_name().c_str());
 }
-void ArmReg::print()
+void ArmReg::print_reg()
 {
-    if (is_addr)
-        printf("[");
     if (regno == SP)
         printf("sp");
     else if (regno == PC)
@@ -334,10 +346,23 @@ void ArmReg::print()
         printf("s%d", regno - 16);
     else
         assert(0);
+}
+void ArmReg::print()
+{
+    if (is_addr)
+        printf("[");
+    print_reg();
     if (is_addr)
     {
         if (offset)
             printf(", #%d", offset);
+        else if (offreg)
+        {
+            printf(", ");
+            offreg->print_reg();
+        }
+        else
+            assert(offset == 0 && offreg == nullptr);
         printf("]");
     }
 }
@@ -373,6 +398,14 @@ ArmBlock::~ArmBlock()
     for (auto i : instrs)
     {
         delete i;
+    }
+}
+ArmReg::~ArmReg()
+{
+    if (offreg)
+    {
+        assert(is_addr);
+        delete offreg;
     }
 }
 ArmInstr::~ArmInstr()
