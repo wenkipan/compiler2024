@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <ir_opt/DCE.hpp>
 
-const int K_R = 13, K_S = 32, Para_R = 4, Para_S = 16, Para_Sum = 20;
+const int K_R = 20, K_S = 20, Para_R = 8, Para_S = 8, Para_Sum = 16;
 class LivenessAnalysis
 {
     const int INF = 1000000000;
