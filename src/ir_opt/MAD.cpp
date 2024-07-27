@@ -1,42 +1,68 @@
 #include <ir_opt/MAD.hpp>
 #include <ir_opt/DCE.hpp>
 
+static inline bool check_ptr(Value *ptr1, Value *ptr2)
+{
+    if (!is_a<GEP>(ptr1) || !is_a<GEP>(ptr2))
+        return false;
+    GEP *gep1 = (GEP *)ptr1;
+    GEP *gep2 = (GEP *)ptr2;
+    while (is_a<GEP>(ptr1))
+    {
+        if (gep1->get_addr() == gep2->get_addr())
+        {
+            if (!is_a<ConstantI32>(gep1->get_offset()) || !is_a<ConstantI32>(gep2->get_offset()))
+                return true;
+            else if (((ConstantI32 *)gep1->get_offset())->get_32_at(0) != ((ConstantI32 *)gep2->get_offset())->get_32_at(0))
+                return true;
+            else
+                return false;
+        }
+        if (is_a<GEP>(gep1->get_addr()) && is_a<GEP>(gep2->get_addr()))
+        {
+            gep1 = (GEP *)gep1->get_addr();
+            gep2 = (GEP *)gep2->get_addr();
+        }
+        else
+            break;
+    }
+    return false;
+}
+
 void MAD::LDD()
 {
-    std::unordered_map<Value *, Value *> ValMap;
     for (BasicBlock *BB : *func->get_blocks())
     {
         auto instrs = BB->get_instrs();
-        ValMap.clear();
-        for (Instrution *instr : *instrs)
+        for (auto it = instrs->begin(); it != instrs->end(); ++it)
         {
-            if (instr->isStore())
+            if ((*it)->isStore())
             {
-                Store *ST = (Store *)instr;
-                auto it = ValMap.find(ST->get_addr());
-                if (it == ValMap.end())
-                    ValMap.emplace(ST->get_addr(), ST->get_src());
-                else
-                    it->second = ST->get_src();
-            }
-            else if (instr->isLoad())
-            {
-                Load *LD = (Load *)instr;
-                auto it = ValMap.find(LD->get_addr());
-                if (it != ValMap.end())
+                Store *ST = (Store *)(*it);
+                for (auto jt = it + 1; jt != instrs->end(); ++jt)
                 {
-                    Value *src = it->second;
-                    auto _list = LD->get_user_list();
-                    for (Edge *edge : *_list)
-                        edge->set_val(src);
-                    _list->clear();
+                    if ((*jt)->isCall())
+                        break;
+                    else if ((*jt)->isStore())
+                    {
+                        Store *NST = (Store *)(*jt);
+                        if (NST->get_addr() == ST->get_addr())
+                            break;
+                        if (check_ptr(ST->get_addr(), NST->get_addr()))
+                            break;
+                    }
+                    else if ((*jt)->isLoad())
+                    {
+                        Load *LD = (Load *)(*jt);
+                        if (ST->get_addr() == LD->get_addr())
+                        {
+                            auto _list = LD->get_user_list();
+                            for (Edge *edge : *_list)
+                                edge->set_val(ST->get_src());
+                            _list->clear();
+                        }
+                    }
                 }
-            }
-            else if (instr->isCall())
-            {
-                Call *p_call = (Call *)instr;
-                if (!((Function *)p_call->get_func())->get_isExternal())
-                    ValMap.clear();
             }
         }
     }
@@ -110,6 +136,8 @@ static inline Store *_IF_1ST(GEP *gep, Function *func)
     for (Edge *edge : *_list)
     {
         Instrution *user = (Instrution *)edge->get_user();
+        if (user->isGEP())
+            return nullptr;
         if (!user->isStore())
             continue;
         ++cnt;
@@ -122,6 +150,9 @@ static inline Store *_IF_1ST(GEP *gep, Function *func)
         Instrution *user = (Instrution *)edge->get_user();
         if (user->isStore() || user->get_parent() != func->get_entryBB())
             continue;
+        user->print();
+        puts("");
+        assert(is_a<Load>(user));
         auto instrs = func->get_entryBB()->get_instrs();
         for (Instrution *instr : *instrs)
         {
@@ -153,9 +184,8 @@ void MAD::UAD()
                 if (BB != func->get_entryBB())
                 {
                     BB->print();
+                    assert(0);
                 }
-                assert(BB == func->get_entryBB());
-                assert(instr->get_type()->get_type() == TypeEnum::Ptr);
                 Ptr *Tptr = (Ptr *)instr->get_type();
                 if (Tptr->get_btype()->get_type() == TypeEnum::Array)
                 {
@@ -169,6 +199,8 @@ void MAD::UAD()
                             flag = false;
                         else if (user->isGEP())
                             flag = flag & _dfs((GEP *)user, geps);
+                        else
+                            assert(0);
                         if (!flag)
                             break;
                     }
@@ -179,12 +211,16 @@ void MAD::UAD()
                         Store *ST = nullptr;
                         if ((ST = _IF_1ST(gep, func)) != nullptr)
                         {
+                            puts("\n replace \n");
                             auto users = gep->get_user_list();
                             for (Edge *edge : *users)
                             {
                                 Instrution *user = (Instrution *)edge->get_user();
                                 if (user->isLoad())
+                                {
+                                    user->print();
                                     user->replaceAllUses(ST->get_src());
+                                }
                             }
                         }
                     }
@@ -434,9 +470,12 @@ void MAD::SMO()
             cond = BB->get_last_instrution();
             BB->Ins_popBack();
         }
+
         for (GEP *gep : GEPs)
             if (gep->get_parent() != BB)
                 gep->insertInstr(BB, BB->get_instrs()->size());
+        if (CallBB != nullptr && CallBB != func->get_entryBB())
+            call->insertInstr(BB, BB->get_instrs()->size());
         for (Store *ST : STs)
             if (ST->get_parent() != BB)
                 ST->insertInstr(BB, BB->get_instrs()->size());
@@ -459,6 +498,7 @@ void MAD::FuncDealer()
 
 void MAD::PassRun(Module *p_module)
 {
+    puts("     MAD BEGIN");
     for (Function *p_func : *p_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())
@@ -466,4 +506,5 @@ void MAD::PassRun(Module *p_module)
         func = p_func;
         FuncDealer();
     }
+    puts("     MAD END");
 }
