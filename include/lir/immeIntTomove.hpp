@@ -12,4 +12,6 @@ public:
         run(m);
     }
     void run(Module *m);
+    void must_2_reg(Module *m);
+    void large_imme(Module *m);
 };

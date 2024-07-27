@@ -26,6 +26,7 @@
 #include <ir_opt/SSARegisterAlloc.hpp>
 #include <ir_opt/DPE.hpp>
 
+#include <lir/l_GVN.hpp>
 class Module;
 
 class Manager

@@ -1,3 +1,4 @@
+#pragma once
 /*
 x0	zero	常量零
 x1	ra	返回地址
@@ -87,6 +88,10 @@ f28-f31	ft8-ft11	临时浮点寄存器
 #define ft10 62 // f30 临时浮点寄存器
 #define ft11 63 // f31 临时浮点寄存器
 
+bool rv_is_r_reg(int no);
+bool rv_is_f_reg(int no);
+bool is_legal_i_s_imme_rv(int a);
+
 enum class RVENUM
 {
     rv_binary_begin,
@@ -102,7 +107,9 @@ enum class RVENUM
     rv_srl,
     rv_sra,
     rv_slt,
+    rv_sgt,
     rv_sltu,
+
     rv_fadd,
     rv_fsub,
     rv_fmul,
@@ -112,31 +119,36 @@ enum class RVENUM
     rv_fsqrt,
     rv_binary_end,
 
+    rv_unary_begin,
+    rv_seqz,
+    rv_snez,
+    rv_mv,
+    rv_neg,
+    rv_unary_end,
+
     rv_jump_begin,
     rv_b,
     rv_j,
     rv_jump_end,
 
+    rv_ret,
+
     rv_cmp_begin,
-    rv_f,
+    rv_fcmp, // for float cmp only
     rv_cmp_end,
 
     rv_load_begin,
     rv_l,
-    rv_fl,
     rv_load_end,
 
     rv_store_begin,
     rv_s,
-    rv_fs,
     rv_store_end,
 
-    rv_mv_begin,
-    rv_mv,
-    rv_fmv,
-    rv_mv_end,
+    rv_call,
 
-    rv_fcvt,
+    rv_fcvt_w_s,
+    rv_fcvt_s_w,
 };
 enum class RVextend
 {
@@ -158,16 +170,18 @@ enum class RVfloat
 };
 enum class RVcond
 {
+    nill,
+    eqz,
     eq,
     ne,
     lt,
     le,
     ge,
+    gt,
     ltu, // 无符号小于
     geu, // 无符号大于等于
 };
 
-bool is_legal_rv_imme(int a);
 /*
 指令类别	指令	描述
 整数计算指令（I-类型）	ADD	加法

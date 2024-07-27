@@ -7,6 +7,7 @@
 #include <ir/ir.hpp>
 #include <ir_opt/Manager.hpp>
 #include <backend/arm/ArmGen.hpp>
+#include <backend/rv/RVGen.hpp>
 
 int main(int argc, char *argv[])
 {
@@ -74,25 +75,24 @@ int main(int argc, char *argv[])
         //         manager->printModule();
     }
     printf("lir\n");
-    manager->printModule();
-    manager->run<immeFloatToLoad>();
     manager->run<LargeToGlobal>();
     manager->FuncRun<GEPToALU>();
-    printf("GEPTO__________\n");
-    // manager->printModule();
-    printf("________mod___\n");
-    manager->FuncRun<modTosubmul>();
-    // manager->printModule();
     manager->run<immeIntTomove>();
-    printf("int");
     manager->printModule();
     fflush(stdout);
+    // manager->FuncRun<l_GVN>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<GCM>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
+    manager->printModule();
 
-    ArmGen backend;
+    RVGen backend;
     backend.run(manager->get_module());
-    ArmModule *am = backend.get_arm();
-    am->print(0);
-    delete am;
+    RVModule *rm = backend.get_modu();
+    rm->print(0);
+    delete rm;
 
     delete manager;
     return 0;
