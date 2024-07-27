@@ -227,7 +227,10 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 else
                 {
                     int reg_now = cnt_S + 41;
-                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
+                    Value *val_tmp = new Value(para->get_type());
+                    p_func->value_pushBack(val_tmp);
+                    valueMapRegister[val_tmp] = reg_now;
+                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], val_tmp, false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }
             }
@@ -276,7 +279,10 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 else
                 {
                     int reg_now = cnt_R + 9;
-                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
+                    Value *val_tmp = new Value(para->get_type());
+                    p_func->value_pushBack(val_tmp);
+                    valueMapRegister[val_tmp] = reg_now;
+                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], val_tmp, false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }
             }
