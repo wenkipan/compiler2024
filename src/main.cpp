@@ -1,4 +1,5 @@
-#include "lir/ArmStand.hpp"
+#include "lir/GVtoAssgin.hpp"
+#include "lir/lir.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -73,18 +74,24 @@ int main(int argc, char *argv[])
         // manager->run<Inline>();
         //         manager->printModule();
     }
-    printf("lir\n");
     manager->printModule();
+    printf("lir\n");
     manager->run<immeFloatToLoad>();
     manager->run<LargeToGlobal>();
+    manager->FuncRun<GVtoA>();
+
     manager->FuncRun<GEPToALU>();
-    printf("GEPTO__________\n");
-    // manager->printModule();
-    printf("________mod___\n");
     manager->FuncRun<modTosubmul>();
-    // manager->printModule();
+    manager->FuncRun<Peekhole_s>();
+    manager->printModule();
+    // lir_opt
+    manager->FuncRun<GVN_l>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->FuncRun<GCM>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
     manager->run<immeIntTomove>();
-    printf("int");
     manager->printModule();
     fflush(stdout);
 

@@ -1040,6 +1040,11 @@ ArmOperand *ArmGen::get_op_addr(Value *addr, ArmBlock *b)
     }
     else if (is_a<Alloca>(addr))
     {
+        // if (ssara->whichGV(dynamic_cast<Alloca *>(addr)))
+        // {
+        //     gen_load_GV_addr(RTMP, ssara->whichGV(dynamic_cast<Alloca *>(addr)), b);
+        //     return new ArmReg(RTMP, 0);
+        // }
         return gen_sp_and_offset_op(get_offset(addr), b);
     }
     else // gep results
@@ -1121,7 +1126,7 @@ void ArmGen::gen_binary(Instrution *i, ArmBlock *b)
     case InstrutionEnum::SHL:
         gen_instr_op3(ARMENUM::arm_lsl, dst, op1, op2, b);
         return;
-    case InstrutionEnum::LSHR:
+    case InstrutionEnum::ASHR:
         gen_instr_op3(ARMENUM::arm_lsr, dst, op1, op2, b);
         return;
     default:
