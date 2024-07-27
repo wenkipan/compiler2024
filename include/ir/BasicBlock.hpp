@@ -32,6 +32,7 @@ public:
     void Ins_pushBack(Instrution *p_instr);
     void Ins_popBack();
     void Ins_set(int pos, Instrution *p_instr);
+    void instr_insert_before(Instrution *pos, Instrution *in);
 
     void print() override;
 

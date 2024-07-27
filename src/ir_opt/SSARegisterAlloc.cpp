@@ -131,8 +131,8 @@ GlobalVariable *SSARegisterAlloc::whichGV(Alloca *alloc)
 
 void SSARegisterAlloc::run(Function *p_func)
 {
-    GVtoA gvtoa;
-    gvtoa.run(p_func);
+    // GVtoA gvtoa;
+    // gvtoa.run(p_func);
     AddBB(p_func);
     p_func->ResetID(false);
     LA.run(p_func);

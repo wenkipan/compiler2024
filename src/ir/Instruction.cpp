@@ -345,7 +345,7 @@ Binary::Binary(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_par
     : Instrution(_parent, type,
                  (_src1->get_type()->get_type() == TypeEnum::I1 || _src2->get_type()->get_type() == TypeEnum::I1)
                      ? TypeEnum::I1
-                     : (type <= InstrutionEnum::IMOD ? TypeEnum::I32 : TypeEnum::F32))
+                     : ((type <= InstrutionEnum::IMOD || type > InstrutionEnum::FDIV) ? TypeEnum::I32 : TypeEnum::F32))
 {
     // Edge *p_in1 = new Edge(this, _src1);
     // Edge *p_in2 = new Edge(this, _src2);
@@ -789,7 +789,10 @@ void Assign::print()
     else if (p_type->get_type() == TypeEnum::Ptr)
     {
         printf("ptr todo");
-        p_src->print_ID();
+        if (is_a<GlobalValue>(p_src))
+            std::cout << '@' << ((GlobalValue *)p_src)->get_name();
+        else
+            p_src->print_ID();
         printf("\n");
     }
 }

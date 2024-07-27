@@ -13,7 +13,7 @@ BasicBlock::BasicBlock()
     : Value(),
       phinodes(new std::vector<PHINode *>),
       p_branch(nullptr),
-      instrutions(new std::vector<Instrution *>){};
+      instrutions(new std::vector<Instrution *>) {};
 
 void BasicBlock::drop()
 {
@@ -132,6 +132,18 @@ void BasicBlock::erase_phi(PHINode *phi)
 void BasicBlock::Ins_set(int pos, Instrution *p_instr)
 {
     (*instrutions)[pos] = p_instr;
+}
+void BasicBlock::instr_insert_before(Instrution *pos, Instrution *in)
+{
+    // befores
+    auto itbefore = std::find(in->get_BB()->get_instrutions()->begin(), in->get_BB()->get_instrutions()->end(), in);
+    assert(itbefore != in->get_BB()->get_instrutions()->end());
+    in->get_BB()->get_instrutions()->erase(itbefore);
+
+    // change to
+    auto it = std::find(instrutions->begin(), instrutions->end(), pos);
+    assert(it != instrutions->end());
+    instrutions->insert(it, in);
 }
 
 void dropInstrs(const std::vector<Instrution *> &dropList)
