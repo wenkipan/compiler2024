@@ -9,9 +9,8 @@ CLEAN += $(OUTPUT_DIR)/
 
 TEST_ASM_SRC = $(shell find $(TEST_DIR) -name "*.s")
 TEST_EXE_SRC = $(shell find $(TEST_DIR) -name "*.exe")
-
-ARM_ASSEMBLER = arm-linux-gnueabihf-gcc -static
-
+#-march=rv32imfd -mabi=ilp32d
+ARM_ASSEMBLER = riscv64-unknown-elf-gcc   -static 
 # Test rules
 $(OUTPUT_DIR)/%.compiler_out: %.sy $(BINARY) ALWAYS
 	@echo '  * $<'
