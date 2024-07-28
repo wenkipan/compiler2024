@@ -8,6 +8,6 @@ INCLUDE=sylib.h
 
 
 cat tmp1.s
-arm-linux-gnueabihf-gcc -static ./tmp1.s -L$LIB_DIR -l$LIB_FILE -o ./tmp.out || exit 1
-qemu-arm ./tmp.out || exit 1
+riscv64-unknown-elf-gcc  -static  ./tmp1.s  -L$LIB_DIR -l$LIB_FILE -o ./tmp.out || exit 1
+qemu-riscv64 ./tmp.out<tst.in.txt || exit 1
 echo "exit: $?"

@@ -134,8 +134,7 @@ int main(int argc, char *argv[])
     manager->FuncRun<GVtoA>();
 
     manager->FuncRun<GEPToALU>();
-    manager->FuncRun<modTosubmul>();
-    // manager->FuncRun<Peekhole_s>();
+    manager->FuncRun<Peekhole_s>();
     manager->printModule();
     // lir_opt
     // manager->FuncRun<GVN_l>();
@@ -147,12 +146,13 @@ int main(int argc, char *argv[])
     manager->run<immeIntTomove>();
     manager->printModule();
     fflush(stdout);
+    manager->printModule();
 
-    ArmGen backend;
+    RVGen backend;
     backend.run(manager->get_module());
-    ArmModule *am = backend.get_arm();
-    am->print(0);
-    delete am;
+    RVModule *rm = backend.get_modu();
+    rm->print(0);
+    delete rm;
 
     delete manager;
     return 0;

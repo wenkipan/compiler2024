@@ -11,15 +11,13 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
         int c = color[LA.ValueIdMap[it]];
         if (LA.is_float[LA.ValueIdMap[it]])
         {
-            if (c <= 15 && c >= 0)
-                ret.push_back(c + 16);
+            if (c >= 12 && c < 20)
+                ret.push_back(32 + c - 2);
         }
         else
         {
-            if (c <= 3)
-                ret.push_back(c);
-            else if (c == 12)
-                ret.push_back(14);
+            if (c >= 12 && c < 20)
+                ret.push_back(c - 2);
         }
     }
     return ret;
@@ -42,18 +40,25 @@ int SSARegisterAlloc::getReg(Value *val)
     int c = color[x];
     if (LA.is_float[x])
     {
-        if (c < 0 || c > 31)
+        if (c < 0 || c >= K_S)
             assert(0);
-        return 16 + c;
+        if (c == 0 || c == 1)
+            return 32 + 8 + c;
+        else if (c < 12)
+            return 32 + 16 + c;
+        else
+            return 32 + c - 2;
     }
     else
     {
-        if (c <= 11)
-            return c;
-        else if (c == 12)
-            return 14;
-        else
+        if (c < 0 || c >= K_R)
             assert(0);
+        if (c == 0 || c == 1)
+            return 8 + c;
+        else if (c < 12)
+            return 16 + c;
+        else
+            return c - 2;
     }
 }
 
@@ -145,10 +150,10 @@ void SSARegisterAlloc::run(Function *p_func)
     AssignColor_R(p_func);
     AssignColor_S(p_func);
 
-    Register.resize(48);
-    for (int i = 0; i < 48; i++)
+    Register.resize(64);
+    for (int i = 0; i < 64; i++)
     {
-        Register[i] = new Value(i < 16 ? TypeEnum::I32 : TypeEnum::F32);
+        Register[i] = new Value(i < 32 ? TypeEnum::I32 : TypeEnum::F32);
         p_func->value_pushBack(Register[i]);
     }
 
@@ -170,15 +175,15 @@ void SSARegisterAlloc::run(Function *p_func)
 void SSARegisterAlloc::ReSortForPara(Function *p_func)
 {
     std::unordered_map<int, int> Regs, RegsID;
-    for (int i = 0; i < 4; i++)
+    for (int i = 10; i < 18; i++)
     {
-        Regs[i] = i;
-        RegsID[i] = i;
+        Regs[i - 10] = i;
+        RegsID[i] = i - 10;
     }
-    for (int i = 16; i < 32; i++)
+    for (int i = 32 + 10; i < 32 + 18; i++)
     {
-        Regs[i - 12] = i;
-        RegsID[i] = i - 12;
+        Regs[i - 34] = i;
+        RegsID[i] = i - 34;
     }
     int nowPos = 0;
     BasicBlock *ebb = p_func->get_entryBB();
@@ -201,7 +206,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 if (spilledVals.find(para) == spilledVals.end())
                 {
                     int reg = getReg(para);
-                    int reg_now = cnt_S + 15;
+                    int reg_now = cnt_S + 41;
                     if (reg == reg_now)
                     {
                         d[RegsID[reg]] = -1;
@@ -220,8 +225,11 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 }
                 else
                 {
-                    int reg_now = cnt_S + 15;
-                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
+                    int reg_now = cnt_S + 41;
+                    Value *val_tmp = new Value(para->get_type());
+                    p_func->value_pushBack(val_tmp);
+                    valueMapRegister[val_tmp] = reg_now;
+                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], val_tmp, false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }
             }
@@ -250,7 +258,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 if (spilledVals.find(para) == spilledVals.end())
                 {
                     int reg = getReg(para);
-                    int reg_now = cnt_R - 1;
+                    int reg_now = cnt_R + 9;
                     if (reg == reg_now)
                     {
                         d[RegsID[reg]] = -1;
@@ -269,8 +277,11 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 }
                 else
                 {
-                    int reg_now = cnt_R - 1;
-                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], Register[reg_now], false, ebb);
+                    int reg_now = cnt_R + 9;
+                    Value *val_tmp = new Value(para->get_type());
+                    p_func->value_pushBack(val_tmp);
+                    valueMapRegister[val_tmp] = reg_now;
+                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], val_tmp, false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }
             }
@@ -325,7 +336,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
             for (int i = 0; i < Para_Sum; i++)
                 if (d[i] > 0)
                 {
-                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[Regs[i]], ebb);
+                    Move *move = new Move(InstrutionEnum::Move, Register[5], Register[Regs[i]], ebb);
                     move->insertInstr(ebb, nowPos++);
                     if (is_a<Load>(In[i]))
                         dynamic_cast<Load *>(In[i])->insertInstr(ebb, nowPos);
@@ -338,7 +349,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     }
                     for (int j = 0; j < Para_Sum; j++)
                         if (d[j] >= 0 && In[j] == Register[Regs[i]])
-                            In[j] = Register[12];
+                            In[j] = Register[5];
                     flag = true;
                     d[i] = -1;
                     break;
@@ -354,15 +365,15 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
     std::vector<int> d(Para_Sum, 0);
     std::vector<Value *> In(Para_Sum, nullptr);
     std::unordered_map<int, int> Regs, RegsID;
-    for (int i = 0; i < 4; i++)
+    for (int i = 10; i < 18; i++)
     {
-        Regs[i] = i;
-        RegsID[i] = i;
+        Regs[i - 10] = i;
+        RegsID[i] = i - 10;
     }
-    for (int i = 16; i < 32; i++)
+    for (int i = 32 + 10; i < 32 + 18; i++)
     {
-        Regs[i - 12] = i;
-        RegsID[i] = i - 12;
+        Regs[i - 34] = i;
+        RegsID[i] = i - 34;
     }
     int cnt_R = 0, cnt_S = 0;
     for (auto edge : *(call->get_value_list()))
@@ -375,7 +386,7 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             cnt_S++;
             if (cnt_S <= Para_S)
             {
-                int Reg = 15 + cnt_S;
+                int Reg = cnt_S + 41;
                 int Reg_now = getReg(op);
                 if (Reg == Reg_now)
                 {
@@ -399,7 +410,7 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             cnt_R++;
             if (cnt_R <= Para_R)
             {
-                int Reg = cnt_R - 1;
+                int Reg = cnt_R + 9;
                 int Reg_now = getReg(op);
                 if (Reg == Reg_now)
                 {
@@ -448,7 +459,7 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
             for (int i = 0; i < Para_Sum; i++)
                 if (d[i] > 0)
                 {
-                    Move *move = new Move(InstrutionEnum::Move, Register[12], Register[Regs[i]], bb);
+                    Move *move = new Move(InstrutionEnum::Move, Register[5], Register[Regs[i]], bb);
                     move->insertInstr(bb, nowPos++);
                     if (firstMoveofCall.find(call) == firstMoveofCall.end())
                         firstMoveofCall[call] = move;
@@ -465,7 +476,7 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                     }
                     for (int j = 0; j < Para_Sum; j++)
                         if (d[j] >= 0 && In[j] == Register[Regs[i]])
-                            In[j] = Register[12];
+                            In[j] = Register[5];
                     flag = true;
                     d[i] = -1;
                     break;
@@ -536,7 +547,7 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
                 for (int i = 0; i < n; i++)
                     if (d[i] > 0)
                     {
-                        Move *move = new Move(InstrutionEnum::Move, Register[12], Register[b[i]], bbFrom);
+                        Move *move = new Move(InstrutionEnum::Move, Register[5], Register[b[i]], bbFrom);
                         move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 1);
                         move = new Move(InstrutionEnum::Move, Register[b[i]], In[i], bbFrom);
                         move->insertInstr(bbFrom, bbFrom->get_instrs()->size() - 1);
@@ -545,7 +556,7 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
                             d[Q[getReg(a[i])]]--;
                         for (int j = 0; j < n; j++)
                             if (d[j] >= 0 && getReg(In[j]) == b[i])
-                                In[j] = Register[12];
+                                In[j] = Register[5];
                         flag = true;
                         break;
                     }
@@ -680,19 +691,12 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
         for (auto tmp : G[id_R[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 3; i >= 0; i--)
+        for (int i = K_R - 1; i >= 0; i--)
             if (color_set.find(i) == color_set.end())
             {
                 color[id_R[x]] = i;
                 break;
             }
-        if (color[id_R[x]] == -1)
-            for (int i = 4; i < K_R; i++)
-                if (color_set.find(i) == color_set.end())
-                {
-                    color[id_R[x]] = i;
-                    break;
-                }
         if (color[id_R[x]] == -1)
         {
             assert(0);
@@ -747,19 +751,12 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
         for (auto tmp : G[id_S[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 15; i >= 0; i--)
+        for (int i = K_S - 1; i >= 0; i--)
             if (color_set.find(i) == color_set.end())
             {
                 color[id_S[x]] = i;
                 break;
             }
-        if (color[id_S[x]] == -1)
-            for (int i = 16; i < K_S; i++)
-                if (color_set.find(i) == color_set.end())
-                {
-                    color[id_S[x]] = i;
-                    break;
-                }
         if (color[id_S[x]] == -1)
         {
             assert(0);
