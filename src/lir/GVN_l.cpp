@@ -1,8 +1,9 @@
-#include <util/RPO.hpp>
-#include <ir_opt/ConstFold.hpp>
-#include <lir/GVN_l.hpp>
 #include <iostream>
 #include <sstream>
+
+#include "../../include/lir/GVN_l.hpp"
+#include "../../include/util/RPO.hpp"
+#include "../../include/ir_opt/ConstFold.hpp"
 // TODO :miss
 
 void GVN_l::run(Function *func)

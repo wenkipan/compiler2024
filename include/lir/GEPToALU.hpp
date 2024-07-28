@@ -1,7 +1,6 @@
 #pragma once
 
-#include "ir/Function.hpp"
-#include <ir/ir.hpp>
+#include "../../include/ir/ir.hpp"
 
 class GEPToALU
 {

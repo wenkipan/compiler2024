@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include <symbol/type.hpp>
+#include "../../include/symbol/type.hpp"
 
 enum class TypeEnum
 {

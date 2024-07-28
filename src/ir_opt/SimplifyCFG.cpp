@@ -1,5 +1,5 @@
-#include "ir/BasicBlock.hpp"
-#include <ir_opt/SimplifyCFG.hpp>
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir_opt/SimplifyCFG.hpp"
 
 bool SimplifyCFG::run(Function *f)
 {

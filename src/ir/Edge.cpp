@@ -1,7 +1,9 @@
-#include "ir/BasicBlock.hpp"
-#include <ir/Instrution.hpp>
-#include <ir/Edge.hpp>
 #include <algorithm>
+
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir/Instrution.hpp"
+#include "../../include/ir/Edge.hpp"
+
 Edge::Edge(Value *_user, Value *_val)
     : value(_val), user(_user)
 {

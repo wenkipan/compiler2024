@@ -1,9 +1,10 @@
 #pragma once
 
-#include <ir/ir.hpp>
-#include <ir_opt/DomTree.hpp>
 #include <unordered_map>
 #include <functional>
+
+#include "../../include/ir/ir.hpp"
+#include "../../include/ir_opt/DomTree.hpp"
 
 struct ALexp
 {

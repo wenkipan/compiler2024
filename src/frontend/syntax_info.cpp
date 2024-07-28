@@ -1,5 +1,7 @@
-#include <frontend/syntax_info.hpp>
 #include <string>
+
+#include "../../include/frontend/syntax_info.hpp"
+
 syntax_info::syntax_info(const char *input, const char *output)
     : p_table(new symbol_table()),
       _p_program(new program(input, output)),

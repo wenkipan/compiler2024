@@ -1,6 +1,7 @@
-#include <ir_opt/uselessBBDel.hpp>
 #include <queue>
 #include <algorithm>
+
+#include "../../include/ir_opt/uselessBBDel.hpp"
 
 bool uselessBBDel::run(Function *f)
 {

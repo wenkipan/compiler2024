@@ -1,7 +1,7 @@
-#include <ir_opt/loopDrop.hpp>
-#include <ir_opt/SCCP.hpp>
-#include <ir_opt/DCE.hpp>
-#include <ir_opt/SimplifyCFG.hpp>
+#include "../../include/ir_opt/loopDrop.hpp"
+#include "../../include/ir_opt/SCCP.hpp"
+#include "../../include/ir_opt/DCE.hpp"
+#include "../../include/ir_opt/SimplifyCFG.hpp"
 
 static bool inline _check(Value *p_val, BasicBlock *BB)
 {

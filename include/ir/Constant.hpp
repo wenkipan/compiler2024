@@ -1,6 +1,7 @@
 #pragma once
 
-#include <ir/User.hpp>
+#include "../../include/ir/User.hpp"
+
 
 class Constant : public User
 {

@@ -1,7 +1,8 @@
-#include "ir/Constant.hpp"
-#include "ir/Type.hpp"
-#include <ir/GlobalVariable.hpp>
 #include <iostream>
+
+#include "../../include/ir/Constant.hpp"
+#include "../../include/ir/Type.hpp"
+#include "../../include/ir/GlobalVariable.hpp"
 
 GlobalVariable::GlobalVariable(p_symbol_var p_var)
     : GlobalValue(p_var),

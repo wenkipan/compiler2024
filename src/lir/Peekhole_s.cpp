@@ -1,6 +1,7 @@
-#include "ir/Constant.hpp"
-#include "ir/Instrution.hpp"
-#include <lir/Peekhole_s.hpp>
+#include "../../include/ir/Constant.hpp"
+#include "../../include/ir/Instrution.hpp"
+#include "../../include/lir/Peekhole_s.hpp"
+
 static inline int to2pow(int n)
 {
     if (n > 0 && (n & (n - 1)) == 0)

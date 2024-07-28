@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ir/BasicBlock.hpp"
-#include "ir/Function.hpp"
-#include <ir/ir.hpp>
 #include <queue>
 #include <unordered_set>
-#include <ir_opt/DomTree.hpp>
+
+#include "../../include/ir/ir.hpp"
+#include "../../include/ir_opt/DomTree.hpp"
+
 class DCE
 {
 public:

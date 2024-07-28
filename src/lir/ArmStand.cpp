@@ -1,4 +1,4 @@
-#include <lir/ArmStand.hpp>
+#include "../../include/lir/ArmStand.hpp"
 
 #define ror(value, bits) ((value >> bits) | (value << (sizeof(value) * 8 - bits)))
 

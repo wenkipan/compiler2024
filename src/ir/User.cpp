@@ -1,6 +1,6 @@
-#include "ir/Type.hpp"
-#include "ir/Value.hpp"
-#include <ir/User.hpp>
+#include "../../include/ir/Type.hpp"
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir/User.hpp"
 
 User::User(TypeEnum basic_type)
     : Value(basic_type)

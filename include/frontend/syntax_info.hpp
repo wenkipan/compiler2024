@@ -1,10 +1,10 @@
 #pragma once
-#include <frontend/symbol_table.hpp>
-#include <frontend/syntax_decl_head.hpp>
-#include <frontend/syntax_decl.hpp>
-#include <program/program.hpp>
-#include <ast/ast.hpp>
-#include <ir/Module.hpp>
+#include "../../include/frontend/symbol_table.hpp"
+#include "../../include/frontend/syntax_decl_head.hpp"
+#include "../../include/frontend/syntax_decl.hpp"
+#include "../../include/program/program.hpp"
+#include "../../include/ast/ast.hpp"
+#include "../../include/ir/Module.hpp"
 
 typedef class syntax_info *p_syntax_info;
 class syntax_info

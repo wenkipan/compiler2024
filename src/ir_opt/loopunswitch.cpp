@@ -1,7 +1,8 @@
-#include <ir_opt/loopunswitch.hpp>
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
+
+#include "../../include/ir_opt/loopunswitch.hpp"
 
 #define MustDo(it, list_) ((it) == (list_)->end() ? Assert_() : true)
 

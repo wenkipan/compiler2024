@@ -1,37 +1,35 @@
 #pragma once
 
-#include <ir/ir.hpp>
-#include <ir_opt/DCE.hpp>
-#include <ir_opt/Loop.hpp>
-#include <ir_opt/Mem2Reg.hpp>
-#include <ir_opt/SCCP.hpp>
-#include <ir_opt/DCE.hpp>
-#include <ir_opt/SimplifyCFG.hpp>
-#include <ir_opt/GlobalVariableopt.hpp>
-#include <ir_opt/GVN.hpp>
-#include <ir_opt/GCM.hpp>
+#include "../../include/ir/ir.hpp"
+#include "../../include/ir_opt/DCE.hpp"
+#include "../../include/ir_opt/Loop.hpp"
+#include "../../include/ir_opt/Mem2Reg.hpp"
+#include "../../include/ir_opt/SCCP.hpp"
+#include "../../include/ir_opt/DCE.hpp"
+#include "../../include/ir_opt/SimplifyCFG.hpp"
+#include "../../include/ir_opt/GlobalVariableopt.hpp"
+#include "../../include/ir_opt/GVN.hpp"
+#include "../../include/ir_opt/GCM.hpp"
 
-#include <lir/LargeToGlobal.hpp>
-#include <ir_opt/SCEV.hpp>
-#include <ir_opt/loopVarReduce.hpp>
-#include <ir_opt/loopVarMove.hpp>
-#include <ir_opt/loopDrop.hpp>
-#include <ir_opt/loopArgDrop.hpp>
-#include <ir_opt/THBalancing.hpp>
-#include <ir_opt/Inline.hpp>
+#include "../../include/lir/LargeToGlobal.hpp"
+#include "../../include/ir_opt/SCEV.hpp"
+#include "../../include/ir_opt/loopVarReduce.hpp"
+#include "../../include/ir_opt/loopVarMove.hpp"
+#include "../../include/ir_opt/loopDrop.hpp"
+#include "../../include/ir_opt/THBalancing.hpp"
+#include "../../include/ir_opt/Inline.hpp"
+#include "../../include/ir_opt/loopunswitch.hpp"
+#include "../../include/ir_opt/loopArgDrop.hpp"
+#include "../../include/ir_opt/loopFullunroll.hpp"
+#include "../../include/ir_opt/ALS.hpp"
+#include "../../include/ir_opt/MAD.hpp"
 
-#include <lir/ArmStand.hpp>
-#include <ir_opt/uselessBBDel.hpp>
-#include <ir_opt/LivenessAnalysis.hpp>
-#include <ir_opt/RegisterAlloc.hpp>
-#include <ir_opt/SSARegisterAlloc.hpp>
-#include <ir_opt/loopunroll.hpp>
-#include <ir_opt/looptimes.hpp>
-#include <ir_opt/loopunswitch.hpp>
-#include <ir_opt/CSE.hpp>
-#include <ir_opt/ALS.hpp>
-#include <ir_opt/DPE.hpp>
-#include <ir_opt/MAD.hpp>
+#include "../../include/lir/ArmStand.hpp"
+#include "../../include/ir_opt/uselessBBDel.hpp"
+#include "../../include/ir_opt/LivenessAnalysis.hpp"
+#include "../../include/ir_opt/SSARegisterAlloc.hpp"
+#include "../../include/ir_opt/DPE.hpp"
+
 class Module;
 
 class Manager

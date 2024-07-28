@@ -1,4 +1,4 @@
-#include <symbol/var.hpp>
+#include "../../include/symbol/var.hpp"
 
 symbol_init::symbol_init(size_t size, basic_type basic)
     : basic(basic),

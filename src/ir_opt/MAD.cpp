@@ -1,5 +1,5 @@
-#include <ir_opt/MAD.hpp>
-#include <ir_opt/DCE.hpp>
+#include "../../include/ir_opt/MAD.hpp"
+#include "../../include/ir_opt/DCE.hpp"
 
 static inline bool check_ptr(Value *ptr1, Value *ptr2)
 {

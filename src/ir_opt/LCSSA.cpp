@@ -1,5 +1,6 @@
-#include <ir_opt/LCSSA.hpp>
 #include <algorithm>
+
+#include "../../include/ir_opt/LCSSA.hpp"
 
 static inline void dealVal(Value *val, Loop *loop, DomTree &domtree)
 {

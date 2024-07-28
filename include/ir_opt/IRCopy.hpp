@@ -1,8 +1,6 @@
 #pragma once
 
-#include "ir/BasicBlock.hpp"
-#include "ir/Function.hpp"
-#include <ir/ir.hpp>
+#include "../../include/ir/ir.hpp"
 
 class IRCopy
 {

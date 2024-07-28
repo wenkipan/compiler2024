@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ir/Instrution.hpp"
-#include <ir/ir.hpp>
+#include "../../include/ir/ir.hpp"
+
 class GVN_l
 {
     std::unordered_map<InstrutionEnum, std::string> enum_map = {

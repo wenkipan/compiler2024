@@ -1,5 +1,7 @@
-#include <lir/immeFloatToLoad.hpp>
 #include <iostream>
+
+#include "../../include/lir/immeFloatToLoad.hpp"
+
 void immeFloatToLoad::run(Module *m)
 {
     std::unordered_map<float, GlobalVariable *> same_float2gv;

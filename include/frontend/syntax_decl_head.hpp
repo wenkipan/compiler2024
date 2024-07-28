@@ -1,5 +1,5 @@
 #pragma once
-#include <symbol/symbol.hpp>
+#include "../../include/symbol/symbol.hpp"
 
 typedef class syntax_decl_head *p_syntax_decl_head;
 class syntax_decl_head

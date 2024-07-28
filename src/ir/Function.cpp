@@ -1,7 +1,9 @@
-#include <ir/Function.hpp>
-#include <ir/IRGener.hpp>
 #include <iostream>
 #include <unordered_set>
+
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir/IRGener.hpp"
+
 int Param::CurID = 0;
 
 void Function::checkBBcond()

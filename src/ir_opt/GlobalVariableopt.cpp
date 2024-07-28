@@ -1,5 +1,7 @@
-#include <ir_opt/GlobalVariableopt.hpp>
 #include <vector>
+
+#include "../../include/ir_opt/GlobalVariableopt.hpp"
+
 void GlobalVariableopt::PassRun(Module *module)
 {
     m = module;

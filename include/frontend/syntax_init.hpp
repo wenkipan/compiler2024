@@ -1,8 +1,9 @@
 #pragma once
 
-#include <util/util.hpp>
-#include <frontend/syntax_type_array.hpp>
-#include <ast/ast.hpp>
+#include "../../include/util/util.hpp"
+#include "../../include/frontend/syntax_type_array.hpp"
+#include "../../include/ast/ast.hpp"
+
 typedef class syntax_init *p_syntax_init;
 class syntax_init
 {

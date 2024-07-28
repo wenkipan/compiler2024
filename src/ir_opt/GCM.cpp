@@ -1,7 +1,7 @@
-#include "ir/BasicBlock.hpp"
-#include "util/print_for_py.hpp"
-#include <ir_opt/GCM.hpp>
-#include <util/RPO.hpp>
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir_opt/GCM.hpp"
+#include "../../include/util/RPO.hpp"
+
 static inline int getnestdepth(BasicBlock *b, Loop_Analysis *tree)
 {
     if (tree->get_BBmap()->find(b) == tree->get_BBmap()->end())

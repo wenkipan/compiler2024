@@ -1,7 +1,7 @@
-#include <util/log.hpp>
-
 #include <stdarg.h>
 #include <stdio.h>
+
+#include "../../include/util/log.hpp"
 
 static loglevel lowestlevel = info;
 

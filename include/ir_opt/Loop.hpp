@@ -1,7 +1,7 @@
 #pragma once
-
-#include <ir/ir.hpp>
 #include <set>
+
+#include "../../include/ir/ir.hpp"
 
 class NaLoop
 {

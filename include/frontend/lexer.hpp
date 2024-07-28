@@ -1,4 +1,4 @@
 #pragma once
 
-#include <frontend/parser.hpp>
-#include <grammar/SysY.yy.hpp>
+#include "../../include/frontend/parser.hpp"
+#include "../../src/grammar/SysY.yy.hpp"

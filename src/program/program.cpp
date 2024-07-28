@@ -1,4 +1,4 @@
-#include <program/program.hpp>
+#include "../../include/program/program.hpp"
 
 program::program(const char *input, const char *output)
     : variable(list_head_init(&this->variable)),

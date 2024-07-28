@@ -1,11 +1,11 @@
 #pragma once
-
-#include "ir/Function.hpp"
-#include <ir/ir.hpp>
-#include <ir_opt/Manager.hpp>
 #include <set>
 #include <queue>
-#include <util/hash_pair.hpp>
+
+#include "../../include/ir/ir.hpp"
+#include "../../include/ir_opt/Manager.hpp"
+#include "../../include/util/hash_pair.hpp"
+
 class SSARegisterAlloc
 {
     LivenessAnalysis LA;

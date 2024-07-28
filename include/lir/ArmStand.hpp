@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lir/lir.hpp>
+#include "../../include/lir/lir.hpp"
 
 #define imm_8_max 255
 #define imm_12_max 4095

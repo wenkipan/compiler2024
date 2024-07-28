@@ -2,10 +2,10 @@
 #ifndef __SYMBOL_GEN_FUNC__
 #define __SYMBOL_GEN_FUNC__
 
-#include <util/util.hpp>
-#include <symbol/symbol.hpp>
-#include <symbol/var.hpp>
-// #include <ast/ast.hpp>
+#include "../../include/util/util.hpp"
+#include "../../include/symbol/symbol.hpp"
+#include "../../include/symbol/var.hpp"
+
 typedef class symbol_func *p_symbol_func;
 class symbol_func
 {

@@ -1,7 +1,8 @@
-#include <ir_opt/ALS.hpp>
-#include <ir_opt/DCE.hpp>
-#include <ir_opt/SimplifyCFG.hpp>
 #include <queue>
+
+#include "../../include/ir_opt/ALS.hpp"
+#include "../../include/ir_opt/DCE.hpp"
+#include "../../include/ir_opt/SimplifyCFG.hpp"
 
 DomTree *Vs::domtree = nullptr;
 

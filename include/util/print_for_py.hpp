@@ -1,6 +1,8 @@
 #pragma once
-#include <ir/ir.hpp>
 #include <unistd.h>
+
+#include "../../include/ir/ir.hpp"
+
 
 void print_for_py(Function *func)
 {

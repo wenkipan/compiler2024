@@ -1,5 +1,6 @@
 #include <iostream>
-#include <ir/Constant.hpp>
+
+#include "../../include/ir/Constant.hpp"
 
 Constant::Constant(TypeEnum type)
     : User(type)

@@ -1,6 +1,7 @@
-#include <lir/immeIntTomove.hpp>
 #include <algorithm>
-#include <lir/ArmStand.hpp>
+
+#include "../../include/lir/immeIntTomove.hpp"
+#include "../../include/lir/ArmStand.hpp"
 
 // static inline bool is_move_case(Instrution *i)
 // {

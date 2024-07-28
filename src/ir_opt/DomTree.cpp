@@ -1,6 +1,6 @@
-#include "ir/Edge.hpp"
-#include "ir/Function.hpp"
-#include <ir_opt/DomTree.hpp>
+#include "../../include/ir/Edge.hpp"
+#include "../../include/ir/Function.hpp"
+#include "../../include/ir_opt/DomTree.hpp"
 
 std::unordered_map<Function *, DomTree *> *Func_map_Dom = new std::unordered_map<Function *, DomTree *>;
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ir_opt/SCEV.hpp>
-#include <ir_opt/IRCopy.hpp>
-#include <ir_opt/LCSSA.hpp>
+#include "../../include/ir_opt/SCEV.hpp"
+#include "../../include/ir_opt/IRCopy.hpp"
+#include "../../include/ir_opt/LCSSA.hpp"
 
 class loopunswitch
 {

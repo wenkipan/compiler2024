@@ -2,11 +2,11 @@
 #ifndef __AST_BLOCK__
 #define __AST_BLOCK__
 
-#include <util/util.hpp>
-#include <symbol/symbol.hpp>
-#include <symbol/var.hpp>
-#include <symbol/func.hpp>
-#include <symbol/str.hpp>
+#include "../../include/util/util.hpp"
+#include "../../include/symbol/symbol.hpp"
+#include "../../include/symbol/var.hpp"
+#include "../../include/symbol/func.hpp"
+#include "../../include/symbol/str.hpp"
 
 class Value;
 
@@ -195,9 +195,9 @@ public:
             I32CONST_t i32const; // int
             F32CONST_t f32const; // float
             p_symbol_str p_str;  // str
-        };                       // null
-        p_ast_exp p_exp;         // use
-        p_symbol_var p_var;      // ptr
+        }; // null
+        p_ast_exp p_exp;    // use
+        p_symbol_var p_var; // ptr
     };
 
     enum

@@ -1,7 +1,7 @@
-#include <ir/Module.hpp>
-#include <ir/IRGener.hpp>
-
 #include <iostream>
+
+#include "../../include/ir/Module.hpp"
+#include "../../include/ir/IRGener.hpp"
 
 Module::Module(const std::string &input, const std::string &output)
     : infile(input), outfile(output),

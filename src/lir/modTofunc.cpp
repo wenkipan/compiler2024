@@ -1,4 +1,4 @@
-#include <lir/modTofunc.hpp>
+#include "../../include/lir/modTofunc.hpp"
 
 static inline Function *gen_fdiv(Module *m)
 {

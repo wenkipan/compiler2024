@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ir/Instrution.hpp"
-#include <ir/ir.hpp>
+#include "../../include/ir/Instrution.hpp"
+#include "../../include/ir/ir.hpp"
 
 Value *const_fold(Instrution *instr);
 Value *const_fold_binary(Binary *instr);

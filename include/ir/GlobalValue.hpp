@@ -1,6 +1,6 @@
 
 #pragma once
-#include <ir/User.hpp>
+#include "../../include/ir/User.hpp"
 
 class GlobalValue : public User
 {

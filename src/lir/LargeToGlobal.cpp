@@ -1,7 +1,8 @@
-#include <lir/LargeToGlobal.hpp>
-#include <ostream>
 #include <unordered_set>
 #include <iostream>
+
+#include "../../include/lir/LargeToGlobal.hpp"
+
 #define MAX_ARRAY_SIZE 2048
 #define MAX_IMMI_SIZE 4096
 

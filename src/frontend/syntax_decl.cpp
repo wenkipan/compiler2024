@@ -1,5 +1,5 @@
-#include "ast/ast.hpp"
-#include <frontend/syntax_decl.hpp>
+#include "../../include/ast/ast.hpp"
+#include "../../include/frontend/syntax_decl.hpp"
 
 syntax_decl::syntax_decl(char *name)
     : name(new char[strlen(name) + 1]),

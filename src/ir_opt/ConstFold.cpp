@@ -1,7 +1,8 @@
-#include "ir/Constant.hpp"
-#include "ir/Value.hpp"
-#include <ir_opt/ConstFold.hpp>
 #include <type_traits>
+
+#include "../../include/ir/Constant.hpp"
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir_opt/ConstFold.hpp"
 
 Value *const_fold(Instrution *instr)
 {

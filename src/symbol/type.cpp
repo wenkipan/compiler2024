@@ -1,5 +1,4 @@
-
-#include <symbol/type.hpp>
+#include "../../include/symbol/type.hpp"
 uint64_t basic_type_get_size(basic_type b_type)
 {
     return 4;

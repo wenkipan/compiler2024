@@ -1,8 +1,7 @@
 #pragma once
 
-#include <ir/GlobalValue.hpp>
-
-#include <ast/ast.hpp>
+#include "../../include/ir/GlobalValue.hpp"
+#include "../../include/ast/ast.hpp"
 
 class BasicBlock;
 class Instrution;

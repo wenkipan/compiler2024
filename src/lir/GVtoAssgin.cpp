@@ -1,6 +1,7 @@
 #include <algorithm>
-#include <lir/GVtoAssgin.hpp>
-#include <util/RPO.hpp>
+
+#include "../../include/lir/GVtoAssgin.hpp"
+#include "../../include/util/RPO.hpp"
 
 void GVtoA::add_useredge(GlobalVariable *g, Edge *e)
 {

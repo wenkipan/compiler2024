@@ -1,4 +1,4 @@
-#include <ir_opt/loopVarReduce.hpp>
+#include "../../include/ir_opt/loopVarReduce.hpp"
 
 void loopVarReduce::Reduce(Loop *loop, DomTree &_domtree)
 {

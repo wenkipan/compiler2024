@@ -1,10 +1,10 @@
-#include "ir/BasicBlock.hpp"
-#include "ir_opt/DCE.hpp"
-#include "ir_opt/SimplifyCFG.hpp"
 #include <algorithm>
 #include <iostream>
-#include <lir/GEPToALU.hpp>
-#include <ostream>
+
+#include "../../include/ir/BasicBlock.hpp"
+#include "../../include/ir_opt/DCE.hpp"
+#include "../../include/ir_opt/SimplifyCFG.hpp"
+#include "../../include/lir/GEPToALU.hpp"
 
 static inline std::vector<int> can_combine_gep(Instrution *i, std::vector<int> poss)
 {

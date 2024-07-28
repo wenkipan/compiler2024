@@ -1,5 +1,5 @@
 
-#include <frontend/syntax_init.hpp>
+#include "../../include/frontend/syntax_init.hpp"
 
 syntax_init::syntax_init()
     : is_exp(false),

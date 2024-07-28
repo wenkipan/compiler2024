@@ -1,9 +1,9 @@
 #pragma once
 
-#include <symbol/symbol.hpp>
-#include <symbol/var.hpp>
-#include <symbol/func.hpp>
-#include <symbol/str.hpp>
+#include "../../include/symbol/symbol.hpp"
+#include "../../include/symbol/var.hpp"
+#include "../../include/symbol/func.hpp"
+#include "../../include/symbol/str.hpp"
 
 typedef class symbol_item *p_symbol_item;
 typedef class symbol_name *p_symbol_name;

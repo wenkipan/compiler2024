@@ -1,7 +1,7 @@
 #pragma once
-
-#include <ir/User.hpp>
 #include <unordered_map>
+
+#include "../../include/ir/User.hpp"
 
 class BasicBlock;
 

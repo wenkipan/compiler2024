@@ -1,5 +1,7 @@
-#include <symbol/str.hpp>
 #include <stdio.h>
+
+#include "../../include/symbol/str.hpp"
+
 symbol_str::symbol_str(const char *string)
     : string(new char[strlen(string) + 1]),
       length(strlen(string)),

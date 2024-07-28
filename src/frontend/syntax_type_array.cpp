@@ -1,4 +1,4 @@
-#include <frontend/syntax_type_array.hpp>
+#include "../../include/frontend/syntax_type_array.hpp"
 
 syntax_type_array::syntax_type_array(uint64_t size)
     : size(size),

@@ -1,6 +1,8 @@
 #pragma once
-#include <ir/Value.hpp>
 #include <queue>
+
+#include "../../include/ir/Value.hpp"
+
 // class Value;
 class Edge
 {

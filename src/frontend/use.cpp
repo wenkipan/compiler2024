@@ -1,6 +1,8 @@
-#include <frontend/use.hpp>
-#include <frontend/lexer.hpp>
-#include <frontend/parser.hpp>
+#include "../../include/frontend/use.hpp"
+#include "../../include/frontend/lexer.hpp"
+#include "../../include/frontend/parser.hpp"
+
+#include <iostream>
 
 p_program frontend_trans(const char *input, const char *output, Module *module)
 {

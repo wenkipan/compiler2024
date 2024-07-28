@@ -1,6 +1,8 @@
-#include "ir/Value.hpp"
-#include <ir/BasicBlock.hpp>
 #include <algorithm>
+
+#include "../../include/ir/Value.hpp"
+#include "../../include/ir/BasicBlock.hpp"
+
 BasicBlock::BasicBlock(Function *p_func)
     : Value(), parent(p_func),
       phinodes(new std::vector<PHINode *>),

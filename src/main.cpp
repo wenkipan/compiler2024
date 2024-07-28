@@ -1,13 +1,12 @@
-#include "lir/GVtoAssgin.hpp"
-#include "lir/lir.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <program/program.hpp>
-#include <frontend/use.hpp>
-#include <ir/ir.hpp>
-#include <ir_opt/Manager.hpp>
-#include <backend/arm/ArmGen.hpp>
+
+#include "../include/program/program.hpp"
+#include "../include/frontend/use.hpp"
+#include "../include/ir/ir.hpp"
+#include "../include/ir_opt/Manager.hpp"
+#include "../include/backend/arm/ArmGen.hpp"
 
 int main(int argc, char *argv[])
 {

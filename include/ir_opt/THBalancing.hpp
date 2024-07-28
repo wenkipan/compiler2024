@@ -1,8 +1,9 @@
 #pragma once
 
 #include <functional>
-#include <ir/ir.hpp>
 #include <unordered_set>
+
+#include "../../include/ir/ir.hpp"
 
 static inline int precedence(Instrution *i)
 {

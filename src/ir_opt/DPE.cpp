@@ -1,5 +1,7 @@
-#include <ir_opt/DPE.hpp>
 #include <algorithm>
+
+#include "../../include/ir_opt/DPE.hpp"
+
 void DeadParamElimate::PassRun(Module *m)
 {
     for (auto f : *m->get_funcs())

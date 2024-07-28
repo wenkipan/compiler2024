@@ -1,6 +1,6 @@
-#include <ir_opt/loopFullunroll.hpp>
-#include <ir_opt/IRCopy.hpp>
-#include <ir_opt/LCSSA.hpp>
+#include "../../include/ir_opt/loopFullunroll.hpp"
+#include "../../include/ir_opt/IRCopy.hpp"
+#include "../../include/ir_opt/LCSSA.hpp"
 
 #define MustDo(it, list_) ((it) == (list_)->end() ? Assert_() : true)
 
