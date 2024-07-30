@@ -3,7 +3,6 @@
 #include "../../include/util/util.hpp"
 #include "../../include/frontend/syntax_type_array.hpp"
 #include "../../include/ast/ast.hpp"
-
 typedef class syntax_init *p_syntax_init;
 class syntax_init
 {
@@ -35,3 +34,5 @@ public:
     p_ast_stmt syntax_return(p_ast_exp p_exp);
 };
 p_syntax_init syntax_init_get_entry(p_list_head p_node);
+p_syntax_init syntax_init_regular_(p_syntax_init p_init, p_symbol_type p_type);
+p_ast_exp syntax_init_find_exp_(p_syntax_init p_init, p_symbol_type p_type, size_t offset);

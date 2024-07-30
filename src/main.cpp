@@ -10,8 +10,8 @@
 
 int main(int argc, char *argv[])
 {
-    freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
+    // freopen("in.txt", "r", stdin);
+    //  freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -49,31 +49,85 @@ int main(int argc, char *argv[])
     delete p_program;
     // IR
     // manager->printModule("O0");
-    manager->run<GlobalVariableopt>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<DCE>();
-    manager->run<Mem2Reg>();
-    // manager->printModule();
-    manager->FuncRun<SimplifyCFG>();
-    for (int i = 0; i < 3; i++)
+
+    int n = 5;
+    if (!is_opt)
+        n = 1;
+    for (int i = 0; i < n; i++)
     {
+        if (i == 0 || (i >= 3 && i & 1))
+        {
+            manager->run<GlobalVariableopt>();
+            manager->FuncRun<SimplifyCFG>();
+            manager->FuncRun<DCE>();
+            manager->run<Mem2Reg>();
+        }
+
+        // manager->printModule();
+        manager->FuncRun<SimplifyCFG>();
         manager->FuncRun<SCCP>();
+        printf("-------------------\n");
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        printf("---------SCCP--------\n");
+        manager->printModule();
         manager->FuncRun<GVN>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        printf("-------------------\n");
         manager->FuncRun<GCM>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
+        printf("----------GCM---------\n");
+        manager->printModule();
         manager->run<DeadParamElimate>();
+        printf("-------------------\n");
+
+        if (i == n - 1 || i & 1)
+        {
+            manager->run<LoopDrop>();
+        }
+        if (0)
+        {
+            manager->FuncRun<SCCP>();
+            printf("-------------------\n");
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+            manager->run<ALS>();
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+        }
+
         manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         manager->run<Inline>();
-        //         manager->printModule();
     }
+
+    manager->FuncRun<SCCP>();
+    printf("-------------------\n");
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    printf("---------SCCP--------\n");
     manager->printModule();
+    manager->FuncRun<GVN>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    printf("-------------------\n");
+    manager->FuncRun<GCM>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+
+    manager->run<DeadParamElimate>();
+    manager->FuncRun<THBalancing>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+
+    manager->FuncRun<SCCP>();
+    printf("-------------------\n");
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+
     printf("lir\n");
     manager->run<immeFloatToLoad>();
     manager->run<LargeToGlobal>();
@@ -81,15 +135,15 @@ int main(int argc, char *argv[])
 
     manager->FuncRun<GEPToALU>();
     manager->FuncRun<modTosubmul>();
-    manager->FuncRun<Peekhole_s>();
+    // manager->FuncRun<Peekhole_s>();
     manager->printModule();
     // lir_opt
-    manager->FuncRun<GVN_l>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<GCM>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<GVN_l>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<GCM>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
     manager->run<immeIntTomove>();
     manager->printModule();
     fflush(stdout);

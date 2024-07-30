@@ -1,11 +1,9 @@
 #pragma once
-
 #include "../../include/util/util.hpp"
 #include "../../include/symbol/symbol.hpp"
 #include "../../include/symbol/func.hpp"
 #include "../../include/symbol/var.hpp"
 #include "../../include/symbol/str.hpp"
-
 typedef class program *p_program;
 class program
 {

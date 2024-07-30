@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "../../../include/lir/ArmStand.hpp"
-
 enum class ARMENUM
 {
     arm_binary_begin,

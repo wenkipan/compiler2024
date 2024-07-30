@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __AST_BLOCK__
-#define __AST_BLOCK__
 
 #include "../../include/util/util.hpp"
 #include "../../include/symbol/symbol.hpp"
@@ -267,5 +265,3 @@ p_ast_exp syntax_val_offset(p_ast_exp p_val, p_ast_exp p_offset);
 
 p_ast_exp ast_exp_binary_gen(ast_exp_binary_op op, p_ast_exp p_src_1, p_ast_exp p_src_2);
 p_ast_exp ast_exp_unary_gen(ast_exp_unary_op op, p_ast_exp p_src);
-
-#endif

@@ -2,7 +2,6 @@
 
 #include "../../include/symbol/symbol.hpp"
 #include "../../include/symbol/type.hpp"
-
 typedef class syntax_type_array *p_syntax_type_array;
 class syntax_type_array
 {
@@ -16,4 +15,5 @@ public:
     p_symbol_type syntax_type_trans(basic_type b_type);
     p_syntax_type_array syntax_type_add_array(p_syntax_type_array p_new_head);
 };
-p_symbol_type syntax_type_trans1(p_syntax_type_array p_arr, basic_type b_type);
+p_symbol_type syntax_type_trans1(p_syntax_type_array parr, basic_type b_type);
+p_syntax_type_array syntax_type_add_array(p_syntax_type_array t, p_syntax_type_array p_new_head);

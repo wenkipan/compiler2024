@@ -113,7 +113,24 @@ p_syntax_init syntax_init::syntax_init_regular(p_symbol_type p_type)
 
     return p_init;
 }
+p_syntax_init syntax_init_regular_(p_syntax_init p_init, p_symbol_type p_type)
+{
+    if (!p_init)
+        return NULL;
 
+    if (!p_init->is_exp)
+    {
+        syntax_init_list_regular(&p_init->list, NULL, p_type);
+    }
+    else
+    {
+        assert(list_head_alone(&p_type->array));
+        p_ast_exp p_init_exp = p_init->p_exp->ast_exp_ptr_to_val_check_basic();
+        p_init->p_exp = p_init_exp->ast_exp_cov_gen(p_type->basic);
+    }
+
+    return p_init;
+}
 p_list_head syntax_init::syntax_init_get_head()
 {
     assert(!this->is_exp);
@@ -124,7 +141,40 @@ p_ast_exp syntax_init::syntax_init_get_exp()
     assert(this->is_exp);
     return this->p_exp;
 }
+p_ast_exp syntax_init_find_exp_(p_syntax_init p_init, p_symbol_type p_type, size_t offset)
+{
+    if (!p_init)
+        return NULL;
 
+    assert(offset < p_type->size);
+    if (list_head_alone(&p_type->array))
+    {
+        assert(p_init->is_exp);
+        return p_init->p_exp;
+    }
+
+    p_symbol_type_array p_pop = p_type->symbol_type_pop_array();
+    size_t len = p_type->size;
+    size_t index = offset / len;
+
+    assert(!p_init->is_exp);
+    p_list_head p_node = p_init->list.p_next;
+    for (size_t i = 0; p_node != &p_init->list && i < index; ++i)
+    {
+        p_node = p_node->p_next;
+    }
+
+    if (p_node == &p_init->list)
+    {
+        p_pop->symbol_type_push_array(p_type);
+        return NULL;
+    }
+    p_syntax_init p_inner = list_entry(p_node, syntax_init, node);
+    p_ast_exp p_ret = syntax_init_find_exp_(p_inner, p_type, offset % len);
+
+    p_pop->symbol_type_push_array(p_type);
+    return p_ret;
+}
 p_ast_exp syntax_init::syntax_init_find_exp(p_symbol_type p_type, size_t offset)
 {
     p_syntax_init p_init = this;

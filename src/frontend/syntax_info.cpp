@@ -123,7 +123,7 @@ static inline size_t syntax_init_by_assign_gen(p_symbol_type p_type, p_syntax_in
     if (list_head_alone(&p_addr->p_type->array))
     {
         assert(p_addr->p_type->ref_level == 1);
-        p_ast_exp p_rval = p_init->syntax_init_find_exp(p_type, index++);
+        p_ast_exp p_rval = syntax_init_find_exp_(p_init, p_type, index++);
         if (!p_rval)
             p_rval = new ast_exp((I32CONST_t)0);
         p_ast_stmt p_assign = ast_stmt_assign_gen(p_addr, p_rval);
@@ -145,7 +145,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
     p_syntax_info p_info = this;
     // p_symbol_type p_type = p_decl->p_array->syntax_type_trans(p_head->type);
     p_symbol_type p_type = syntax_type_trans1(p_decl->p_array, p_head->type);
-    p_syntax_init p_s_init = p_decl->p_init->syntax_init_regular(p_type);
+    p_syntax_init p_s_init = syntax_init_regular_(p_decl->p_init, p_type);
     bool is_const = p_head->is_const;
     const char *name = p_decl->name;
 
@@ -158,7 +158,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
             for (size_t i = 0; i < p_init->size; ++i)
             {
                 symbol_init_val init_val;
-                p_ast_exp p_rval = p_s_init->syntax_init_find_exp(p_type, i);
+                p_ast_exp p_rval = syntax_init_find_exp_(p_s_init, p_type, i);
                 if (!p_rval)
                     p_rval = new ast_exp((I32CONST_t)0);
                 else
@@ -195,7 +195,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
         for (size_t i = 0; i < p_type->size; ++i)
         {
             symbol_init_val init_val;
-            p_ast_exp p_rval = p_s_init->syntax_init_find_exp(p_type, i);
+            p_ast_exp p_rval = syntax_init_find_exp_(p_s_init, p_type, i);
             if (!p_rval)
                 p_rval = new ast_exp((I32CONST_t)0);
             else
@@ -221,7 +221,7 @@ p_syntax_decl_head syntax_info::syntax_declaration(p_syntax_decl_head p_head, p_
         if (list_head_alone(&p_var->p_type->array))
         {
             p_ast_exp p_lval = new ast_exp(p_var);
-            p_ast_exp p_rval = p_s_init->syntax_init_find_exp(p_type, 0);
+            p_ast_exp p_rval = syntax_init_find_exp_(p_s_init, p_type, 0);
             if (!p_rval)
                 p_rval = new ast_exp((I32CONST_t)0);
             p_ast_stmt p_assign = ast_stmt_assign_gen(p_lval, p_rval);

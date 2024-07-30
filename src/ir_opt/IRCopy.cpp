@@ -160,6 +160,18 @@ Function *IRCopy::copy_func(Function *f)
             emplace_val(instr, newinstr);
         }
     }
+    if (0)
+    {
+        for (auto param : *newfunc->get_params())
+            param->print();
+        printf("\n");
+        for (auto bb : *newfunc->get_blocks())
+        {
+            bb->print();
+        }
+        newfunc->get_retBB()->print();
+        puts("fdones");
+    }
     dealingf = nullptr;
     return newfunc;
 }

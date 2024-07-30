@@ -212,14 +212,24 @@ void ALS::FuncDealer(Function *func)
                         it->set_val(constnum);
                     _list->clear();
                 }
-                else if (exp->exps.size() == 1 && exp->Num == 0 && (((*exp->exps.begin()).second) >= 6 || (*exp->exps.begin()).second == 1))
+                else if (exp->exps.size() == 1 && exp->Num == 0 && (((*exp->exps.begin()).second) >= 10 || (*exp->exps.begin()).second == 1))
                 {
+
+                    auto _list = instr->get_user_list();
+                    bool target = false;
+                    for (auto &it : *_list)
+                    {
+                        Instrution *instr = (Instrution *)it->get_user();
+                        if (instr->isCall() || instr->isGEP() || instr->isStore() || instr->isCmp())
+                            target = true;
+                    }
+                    if (!target)
+                        continue;
                     auto srcs = *exp->exps.begin();
                     Constant *constnum = new ConstantI32(srcs.second);
                     func->value_pushBack(constnum);
                     Instrution *p_instr = new Binary(InstrutionEnum::IMUL, srcs.first, constnum, addBB);
                     addBB->Ins_popBack();
-                    auto _list = instr->get_user_list();
                     for (auto &it : *_list)
                         it->set_val(p_instr);
                     _list->clear();

@@ -3,7 +3,6 @@
 #include "../../include/util/util.hpp"
 #include "../../include/symbol/symbol.hpp"
 #include "../../include/symbol/type.hpp"
-
 typedef class symbol_init_val *p_symbol_init_val;
 typedef class symbol_init *p_symbol_init;
 typedef class symbol_var *p_symbol_var;

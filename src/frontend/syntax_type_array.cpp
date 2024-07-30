@@ -5,11 +5,11 @@ syntax_type_array::syntax_type_array(uint64_t size)
       p_prev(NULL)
 {
 }
-
-p_symbol_type syntax_type_array::syntax_type_trans(basic_type b_type)
+p_symbol_type syntax_type_trans1(p_syntax_type_array parr, basic_type b_type)
 {
-    p_syntax_type_array p_array = this;
+    p_syntax_type_array p_array = parr;
     p_symbol_type p_type = new symbol_type(b_type);
+
     while (p_array)
     {
         p_syntax_type_array p_del = p_array;
@@ -28,10 +28,11 @@ p_symbol_type syntax_type_array::syntax_type_trans(basic_type b_type)
     }
     return p_type;
 }
-p_symbol_type syntax_type_trans1(p_syntax_type_array p_arr, basic_type b_type)
+p_symbol_type syntax_type_array::syntax_type_trans(basic_type b_type)
 {
-    p_syntax_type_array p_array = p_arr;
+    p_syntax_type_array p_array = this;
     p_symbol_type p_type = new symbol_type(b_type);
+
     while (p_array)
     {
         p_syntax_type_array p_del = p_array;
@@ -53,5 +54,10 @@ p_symbol_type syntax_type_trans1(p_syntax_type_array p_arr, basic_type b_type)
 p_syntax_type_array syntax_type_array::syntax_type_add_array(p_syntax_type_array p_new_head)
 {
     p_new_head->p_prev = this;
+    return p_new_head;
+}
+p_syntax_type_array syntax_type_add_array(p_syntax_type_array t, p_syntax_type_array p_new_head)
+{
+    p_new_head->p_prev = t;
     return p_new_head;
 }

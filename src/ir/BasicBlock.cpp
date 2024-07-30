@@ -135,6 +135,7 @@ void BasicBlock::Ins_set(int pos, Instrution *p_instr)
 {
     (*instrutions)[pos] = p_instr;
 }
+
 void BasicBlock::instr_insert_before(Instrution *pos, Instrution *in)
 {
     // befores

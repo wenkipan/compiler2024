@@ -3,7 +3,6 @@
 
 #include "../../include/ir/ir.hpp"
 
-
 void print_for_py(Function *func)
 {
     int saved_stdout = dup(STDOUT_FILENO);

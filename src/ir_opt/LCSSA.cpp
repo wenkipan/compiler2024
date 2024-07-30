@@ -43,9 +43,6 @@ static inline void dealVal(Value *val, Loop *loop, DomTree &domtree)
                     }
                     Phimap.insert({_exit, Phi});
                     _exit->Insert_Phi(Phi);
-                    printf("\nb%d\n", _exit->get_ID());
-                    Phi->print();
-                    _user->print();
                     flag = true;
                     it = userList->begin();
                     break;

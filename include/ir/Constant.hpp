@@ -2,7 +2,6 @@
 
 #include "../../include/ir/User.hpp"
 
-
 class Constant : public User
 {
 public:

@@ -422,8 +422,6 @@ static inline bool PHIAnalysis(Loop *loop, SCEV *_this)
         case InstrutionEnum::ISUB:
         case InstrutionEnum::FADD:
         case InstrutionEnum::FSUB:
-            _binary->print();
-            puts("ssssssssssss");
             _dfs(_binary, loop, _this, dims, bits);
             if (!bits || bits >= 2000)
                 break;
@@ -799,7 +797,6 @@ void SCEV::PassRun(Module *_module)
     _Loop = new Loop_Analysis();
     _Loop->PassRun(_module);
     SCEVEXP::SCEVMAP = SCEVMAP;
-    _module->print();
     for (Function *p_func : *_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())
@@ -807,7 +804,7 @@ void SCEV::PassRun(Module *_module)
         LoopSCEVGen(_Loop->get_LoopInfo()->find(p_func)->second);
     }
     SetStep();
-    print();
+    // print();
 }
 
 SCEVEXP::SCEVEXP()

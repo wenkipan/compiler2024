@@ -2,7 +2,6 @@
 #include <algorithm>
 
 #include "../../include/ir_opt/uselessBBDel.hpp"
-
 bool uselessBBDel::run(Function *f)
 {
     function = f;

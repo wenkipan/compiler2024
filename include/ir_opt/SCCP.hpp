@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "../../include/ir/ir.hpp"
+
 class Lattice
 {
 public:

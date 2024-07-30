@@ -323,8 +323,6 @@ void loopunswitch::searchFunc(Loop *loop, Function *func, DomTree &domtree, bool
     if (BB == nullptr)
         return;
     flag = true;
-    BB->print();
-    puts("WWWWWWWWWWWWW\n");
     Unswitch(loop, func, BB, domtree);
 }
 
@@ -385,7 +383,6 @@ void loopunswitch::FuncDealer(Function *p_func)
     _checkloop(loop);
     DomTree domtree(p_func);
     domtree.Run();
-    p_func->print();
     bool flag = false;
     for (Loop *son : *loop->get_lpsons())
     {
@@ -408,14 +405,12 @@ void loopunswitch::PassRun(Module *p_module)
     puts("\n Unswitch\n");
     _SCEV->PassRun(p_module);
     _Loop = _SCEV->_Loop;
-    p_module->print();
     for (Function *p_func : *p_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())
             continue;
         FuncDealer(p_func);
     }
-    p_module->print();
 }
 
 loopunswitch::loopunswitch()

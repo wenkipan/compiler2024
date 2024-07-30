@@ -5,7 +5,7 @@
 #include "../../include/util/util.hpp"
 #include "../../include/symbol/symbol.hpp"
 #include "../../include/symbol/var.hpp"
-
+// #include <ast/ast.hpp>
 typedef class symbol_func *p_symbol_func;
 class symbol_func
 {
