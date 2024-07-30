@@ -4,6 +4,7 @@
 #include <cassert>
 #include <stdio.h>
 #include <unistd.h>
+#include <set>
 // RVInstr::RVInstr(RVENUM i, RVcond c, RVfloat f)
 //     : instr_enum(i), cond_enum(c)
 // {
@@ -15,6 +16,26 @@
 //     float_enums.push_back(f1);
 //     float_enums.push_back(f2);
 // }
+static void inline visit(RVBlock *bb, std::set<RVBlock *> &visited, std::vector<RVBlock *> &order)
+{
+    if (visited.find(bb) != visited.end())
+        return;
+
+    visited.emplace(bb);
+    for (auto succ : bb->get_user_list())
+    {
+        visit((RVBlock *)succ->get_user(), visited, order);
+    }
+    order.push_back(bb);
+}
+std::vector<RVBlock *> RPO(RVFunc *f)
+{
+    std::vector<RVBlock *> order;
+    std::set<RVBlock *> visited;
+    visit(f->get_blocks().front(), visited, order);
+    std::reverse(order.begin(), order.end());
+    return order;
+}
 
 void RVBlock::instr_insert_before(RVInstr *pos, RVInstr *in)
 {
@@ -42,11 +63,46 @@ void RVBlock::instr_insert_after(RVInstr *pos, RVInstr *in)
     assert(it != instrs.end());
     instrs.insert(it + 1, in);
 }
+void RVBlock::drop()
+{
+    // TODO:unfinish
+    parent->erase_block(this);
+}
+void RVFunc::erase_block(RVBlock *b)
+{
+    auto it = std::find(blocks.begin(), blocks.end(), b);
+    assert(it != blocks.end());
+    blocks.erase(it);
+}
+void RVValue::value_list_erase(RVEdge *e)
+{
+    auto it = std::find(value_list.begin(), value_list.end(), e);
+    assert(it != value_list.end());
+    value_list.erase(it);
+}
+void RVValue::user_list_erase(RVEdge *e)
+{
+    auto it = std::find(user_list.begin(), user_list.end(), e);
+    assert(it != user_list.end());
+    user_list.erase(it);
+}
 RVEdge::RVEdge(RVValue *v, RVValue *u)
     : val(v), user(u)
 {
-    val->value_list_push_back(this);
-    u->user_list_push_back(this);
+    val->user_list_push_back(this);
+    user->value_list_push_back(this);
+}
+void RVEdge::drop()
+{
+    val->user_list_erase(this);
+    user->value_list_erase(this);
+    delete this;
+}
+void RVEdge::set_user(RVValue *u)
+{
+    this->user->value_list_erase(this);
+    u->value_list_push_back(this);
+    this->user = u;
 }
 
 void RVInstr::replace_op_with(RVOperand *o, RVOperand *newo)
