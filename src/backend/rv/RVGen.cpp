@@ -1,4 +1,5 @@
 #include "backend/rv/RV.hpp"
+#include "backend/rv/RVBlockComb.hpp"
 #include "backend/rv/RVstand.hpp"
 #include "ir/Constant.hpp"
 #include "ir/Type.hpp"
@@ -118,7 +119,7 @@ RVFunc *RVGen::init_f(Function *f)
     {
         std::string na;
         na = "." + BB->get_func()->get_name() + "_b" + std::to_string(BB->get_ID());
-        RVBlock *newb = new RVBlock(na);
+        RVBlock *newb = new RVBlock(na, newf);
         val2valmap.emplace(BB, newb);
         newf->blocks_push_back(newb);
     }
@@ -128,6 +129,7 @@ RVFunc *RVGen::init_f(Function *f)
         for (auto succ : successors(BB))
         {
             new RVEdge(getrvval(BB), getrvval(succ));
+            BB->get_value_list()->size();
         }
     }
     return newf;
@@ -167,6 +169,9 @@ void RVGen::run(Module *m)
 
     RVImmeTrans after;
     after.run(rvm);
+
+    RVBlockComb bc;
+    bc.run(rvm);
     rvm->print(1);
 }
 void RVGen::gen_fnc(Function *f)

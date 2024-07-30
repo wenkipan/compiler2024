@@ -111,9 +111,6 @@ void RVImmeTrans::run(RVModule *m)
                             i->replace_op_with(op1, newreg);
                         }
                     }
-                    if (is_a<RVImme>(op2))
-                    {
-                    }
                     if (is_a<RVImme>(op2) && !is_legal_i_s_imme_rv(((RVImme *)op2)->get_imme()))
                     {
                         gen_instr_op2_before(RVENUM::rv_l, new RVReg(t0), op2, B, i);
@@ -126,8 +123,15 @@ void RVImmeTrans::run(RVModule *m)
                     RVOperand *stored = i->get_op_at(0);
                     if (is_a<RVImme>(stored))
                     {
-                        gen_instr_op2_before(RVENUM::rv_l, new RVReg(t0), (RVImme *)stored, B, i);
-                        i->replace_op_with(stored, new RVReg(t0));
+                        if (((RVImme *)stored)->get_imme() == 0)
+                        {
+                            i->replace_op_with_and_delete(stored, new RVReg(zero));
+                        }
+                        else
+                        {
+                            gen_instr_op2_before(RVENUM::rv_l, new RVReg(t0), (RVImme *)stored, B, i);
+                            i->replace_op_with(stored, new RVReg(t0));
+                        }
                     }
                 }
                 else if (i->get_enum() == RVENUM::rv_b)
@@ -136,8 +140,15 @@ void RVImmeTrans::run(RVModule *m)
                     {
                         if (is_a<RVImme>(op))
                         {
-                            gen_instr_op2_before(RVENUM::rv_l, new RVReg(t0), (RVImme *)op, B, i);
-                            i->replace_op_with(op, new RVReg(t0));
+                            if (((RVImme *)op)->get_imme() == 0)
+                            {
+                                i->replace_op_with_and_delete(op, new RVReg(zero));
+                            }
+                            else
+                            {
+                                gen_instr_op2_before(RVENUM::rv_l, new RVReg(t0), (RVImme *)op, B, i);
+                                i->replace_op_with(op, new RVReg(t0));
+                            }
                         }
                     }
                 }

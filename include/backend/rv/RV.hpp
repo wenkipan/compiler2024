@@ -10,9 +10,12 @@ class RVValue
 
 public:
     std::vector<RVEdge *> get_value_list() { return value_list; }
+    void clear_value_list() { value_list.clear(); }
     std::vector<RVEdge *> get_user_list() { return user_list; }
     void value_list_push_back(RVEdge *e) { value_list.push_back(e); }
     void user_list_push_back(RVEdge *e) { user_list.push_back(e); }
+    void value_list_erase(RVEdge *e);
+    void user_list_erase(RVEdge *e);
     virtual void print() {}
     virtual ~RVValue() {}
 };
@@ -25,6 +28,8 @@ public:
     RVEdge(RVValue *v, RVValue *u);
     RVValue *get_user() { return user; }
     RVValue *get_val() { return val; }
+    void set_user(RVValue *u);
+    void drop();
 };
 
 class RVLable : public RVValue
@@ -47,6 +52,8 @@ class RVAddr : public RVOperand
 
 public:
     RVAddr(RVLable *l) : label(l) {}
+    RVLable *get_label() { return label; }
+    void set_label(RVLable *l) { label = l; }
     void print();
     ~RVAddr() {}
 };
@@ -123,6 +130,7 @@ public:
     std::vector<RVOperand *> get_ops() { return ops; }
     bool is_binary() { return instr_enum > RVENUM::rv_binary_begin && instr_enum < RVENUM::rv_binary_end; }
     RVOperand *get_op_at(int p) { return ops[p]; }
+    RVOperand *get_last_op() { return ops.back(); }
     void replace_op_with(RVOperand *o, RVOperand *newo);
     void replace_op_with_and_delete(RVOperand *o, RVOperand *newo);
 
@@ -138,19 +146,23 @@ public:
     RVconstLable(std::string na, float w) : RVLable(na), word(w) {}
     void print();
 };
+class RVFunc;
 class RVBlock : public RVLable
 {
+    RVFunc *parent;
     std::vector<RVInstr *> instrs;
 
 public:
-    RVBlock(std::string nam) : RVLable(nam) {}
+    RVBlock(std::string nam, RVFunc *f) : RVLable(nam), parent(f) {}
     void instr_push_back(RVInstr *i) { instrs.push_back(i); }
     void instr_insert_before(RVInstr *pos, RVInstr *in);
     void instr_insert_after(RVInstr *pos, RVInstr *in);
     RVInstr *get_last_instr() { return instrs.back(); }
     std::vector<RVInstr *> get_instrs() { return instrs; }
     void print();
-
+    void instr_clear() { instrs.clear(); }
+    RVFunc *get_parent() { return parent; }
+    void drop();
     ~RVBlock();
 };
 class RVFunc : public RVLable
@@ -166,6 +178,7 @@ public:
     void blocks_push_back(RVBlock *b) { blocks.push_back(b); }
     void constlable_push_backe(RVconstLable *c) { constlables.push_back(c); }
     std::vector<RVBlock *> get_blocks() { return blocks; }
+    void erase_block(RVBlock *b);
     std::vector<RVconstLable *> get_constlables() { return constlables; }
     void print();
     ~RVFunc();
@@ -202,3 +215,4 @@ bool is_a(RVValue *p_val)
 {
     return dynamic_cast<T *>(p_val) != nullptr;
 }
+std::vector<RVBlock *> RPO(RVFunc *f);
