@@ -2,9 +2,6 @@
 BUILD_DIR = build
 CLEAN += $(BUILD_DIR)/
 
-TMP_DIR = tmp-src
-CLEAN += $(TMP_DIR)/
-
 OBJ_DIR = $(BUILD_DIR)/obj-$(NAME)-$(VERSION)
 OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRCS:%.cpp=$(OBJ_DIR)/%.o)
 

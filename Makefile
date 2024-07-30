@@ -39,8 +39,6 @@ CXXSRCS = $(shell find $(CSRC_DIR) -name "*.cpp")
 
 TESTSRC = $(shell find $(TEST_DIR) -name "*.sy")
 
-BUILD_SCIRPT = script/yacc.mk script/lex.mk
-
 
 # Rules
 include script/native.mk
@@ -49,8 +47,6 @@ include script/native.mk
 # Phony rules
 build: pre-build $(BINARY)
 	@  echo ': Compiler arguments' \
-	&& echo '  LEX  : $(LEX) $(LEXFLAGS)' \
-	&& echo '  YACC : $(YACC) $(YACCFLAGS)' \
 	&& echo '  CC   : $(CC) $(CCFLAGS)' \
 	&& echo '  CXX  : $(CXX) $(CXXFLAGS)' \
 	&& echo '  LD   : $(LD) $(LDFLAGS)'
