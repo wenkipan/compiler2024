@@ -147,6 +147,8 @@ public:
     std::vector<ArmEdge *> *get_user_list() { return user_list; }
     void value_list_push_back(ArmEdge *e) { value_list->push_back(e); }
     void user_list_push_back(ArmEdge *e) { user_list->push_back(e); }
+    void value_list_erase(ArmEdge *e);
+    void user_list_erase(ArmEdge *e);
     // virtual void print() { assert(0); }
     ArmValue();
     virtual ~ArmValue();
@@ -157,6 +159,7 @@ public:
     ArmValue *value;
     ArmValue *user;
     ArmEdge(ArmValue *val, ArmValue *u);
+    void set_user(ArmValue *u);
     void drop();
 };
 
@@ -263,6 +266,8 @@ public:
         instrs.insert(instrs.begin() + pos, i);
         i->print();
     }
+    void clear_instrs() { instrs.clear(); }
+    void instr_insert_before(ArmInstr *pos, ArmInstr *in);
     ArmBlock(std::string na, ArmFunc *f) : name(na), parent(f) {}
     ArmFunc *get_parent() { return parent; }
     void set_name(std::string na) { name = na; }
@@ -300,6 +305,7 @@ class ArmFunc : public ArmGlobal
 public:
     void blocks_push_back(ArmBlock *ab) { blocks.push_back(ab); }
     void constlable_push_back(Armconstlable *b) { constantlables.push_back(b); }
+    void blocks_erase(ArmBlock *b);
 
     void set_name(std::string na) { name = na; }
     std::string get_name() { return name; }

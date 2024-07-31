@@ -21,7 +21,7 @@ CallGraphNode::CallGraphNode(Function *f)
 }
 bool CallGraph::can_inline(CallGraphNode *n)
 {
-    if (n->instr_num > 300) // magic number dont ask me ask hujj-nb
+    if (n->instr_num > 5000) // magic number dont ask me ask hujj-nb
         return false;
     if (n->recursive)
         return false;
@@ -203,6 +203,20 @@ void Inline::run(Module *m)
                 break;
             }
         }
+        for (auto B : *f->get_blocks())
+            for (auto i : *B->get_instrs())
+            {
+                auto vallist = *i->get_value_list();
+                for (auto val : vallist)
+                    if (is_a<GlobalVariable>(val->get_val()))
+                    {
+                        auto gvuserlist = val->get_val()->get_user_list();
+                        auto it = std::find(gvuserlist->begin(), gvuserlist->end(), val);
+                        assert(it != gvuserlist->end());
+                        gvuserlist->erase(it);
+                        delete val;
+                    }
+            }
         delete f;
     }
     delete CG;

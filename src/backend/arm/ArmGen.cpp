@@ -3,6 +3,9 @@
 #include <iostream>
 
 #include "../../../include/backend/arm/ArmGen.hpp"
+#include "../../../include/backend/arm/BlockMerge.hpp"
+#include "backend/arm/arm.hpp"
+#include "ir/Instrution.hpp"
 
 static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
 {
@@ -159,6 +162,10 @@ void ArmGen::run(Module *m)
         gen_func(f);
     }
     printf("--total arm\n");
+    arm_module->print(1);
+
+    BlockMerge bm;
+    bm.run(arm_module);
     arm_module->print(1);
 }
 void ArmGen::gen_func(Function *f)
@@ -403,6 +410,11 @@ ArmInstr *ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
     else if (is_a<GlobalVariable>(src))
     {
         gen_load_GV_addr(ssara->getReg(dst), src, bb);
+    }
+    else if (is_a<Alloca>(src))
+    {
+        // assert(0);
+        gen_instr_op3(ARMENUM::arm_add, new ArmReg(ssara->getReg(dst)), new ArmReg(SP), gen_legal_imme(get_offset(src), bb), bb);
     }
     else if (!is_s_reg(ssara->getReg(dst)) && !is_s_reg(ssara->getReg(src)))
     {

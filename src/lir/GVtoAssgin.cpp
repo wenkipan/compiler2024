@@ -2,6 +2,7 @@
 
 #include "../../include/lir/GVtoAssgin.hpp"
 #include "../../include/util/RPO.hpp"
+#include "ir/Value.hpp"
 
 void GVtoA::add_useredge(GlobalVariable *g, Edge *e)
 {
@@ -112,6 +113,41 @@ void GVtoA::run(Function *f)
         {
             e->set_val(newa);
             erase_from_userlist(kv.first, e);
+        }
+    }
+    // realy work?
+    auto istrs = *f->get_entryBB()->get_instrs();
+    for (auto i : istrs)
+    {
+        if (i->isAlloca())
+        {
+            BasicBlock *lca = find_LCA(*i->get_user_list());
+            Value *fake = new Value;
+            i->replaceAllUses(fake);
+
+            Instrution *newa = new Assign(InstrutionEnum::Assign, i, lca, true);
+            Ptr *faketype = new Ptr(newa->get_type());
+            delete newa->get_type();
+            newa->set_type(faketype);
+
+            int pos = 0;
+            if (lca != f->get_entryBB())
+                pos = 0;
+            else
+                for (auto all : *lca->get_instrs())
+                {
+                    if (!is_a<Alloca>(all))
+                        break;
+                    pos++;
+                }
+            newa->insertInstr(lca, pos);
+
+            for (Edge *edge : *(fake->get_user_list()))
+            {
+                edge->set_val(newa);
+            }
+            fake->get_user_list()->clear();
+            delete fake;
         }
     }
     delete domtree;

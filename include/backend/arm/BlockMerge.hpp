@@ -6,4 +6,5 @@ class BlockMerge
 
 public:
     void run(ArmModule *m);
+    void single_br(ArmModule *m);
 };

@@ -103,12 +103,29 @@ ArmEdge::ArmEdge(ArmValue *val, ArmValue *u)
     val->get_user_list()->push_back(this);
     u->get_value_list()->push_back(this);
 }
+void ArmValue::value_list_erase(ArmEdge *e)
+{
+    auto it = std::find(value_list->begin(), value_list->end(), e);
+    assert(it != value_list->end());
+    value_list->erase(it);
+}
+void ArmValue::user_list_erase(ArmEdge *e)
+{
+    auto it = std::find(user_list->begin(), user_list->end(), e);
+    assert(it != user_list->end());
+    user_list->erase(it);
+}
+void ArmEdge::set_user(ArmValue *u)
+{
+    this->user->value_list_erase(this);
+
+    this->user = u;
+    u->value_list_push_back(this);
+};
 void ArmEdge::drop()
 {
-    auto it = std::find(value->get_user_list()->begin(), value->get_user_list()->end(), this);
-    value->get_user_list()->erase(it);
-    it = std::find(user->get_value_list()->begin(), user->get_value_list()->end(), this);
-    user->get_value_list()->erase(it);
+    value->user_list_erase(this);
+    user->value_list_erase(this);
     delete this;
 }
 void ArmBlock::drop()
@@ -128,6 +145,24 @@ void ArmBlock::drop()
     for (auto i : instrs)
         delete i;
     delete this;
+}
+void ArmBlock::instr_insert_before(ArmInstr *pos, ArmInstr *in)
+{
+    if (pos == nullptr)
+    {
+        instrs.push_back(in);
+        return;
+    }
+
+    auto it = std::find(instrs.begin(), instrs.end(), pos);
+    assert(it != instrs.end());
+    instrs.insert(it, in);
+}
+void ArmFunc::blocks_erase(ArmBlock *b)
+{
+    auto it = std::find(blocks.begin(), blocks.end(), b);
+    assert(it != blocks.end());
+    blocks.erase(it);
 }
 
 static void inline visit(ArmBlock *bb, std::set<ArmBlock *> &visited, std::vector<ArmBlock *> &order)
@@ -320,6 +355,7 @@ void ArmInstr::print()
     printf("\n");
     if (armenum == ARMENUM::arm_vcmp_f32)
         printf("   vmrs APSR_nzcv, FPSCR\n");
+    fflush(stdout);
 }
 void ArmAddr::print()
 {
