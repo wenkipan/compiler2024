@@ -1,10 +1,10 @@
-#include "backend/rv/RV.hpp"
-#include "backend/rv/RVBlockComb.hpp"
-#include "backend/rv/RVstand.hpp"
-#include "ir/Constant.hpp"
-#include "ir/Type.hpp"
-#include <backend/rv/RVGen.hpp>
-#include <backend/rv/RVImmeTrans.hpp>
+#include "../../../include/backend/rv/RV.hpp"
+#include "../../../include/backend/rv/RVBlockComb.hpp"
+#include "../../../include/backend/rv/RVstand.hpp"
+#include "../../../include/ir/Constant.hpp"
+#include "../../../include/ir/Type.hpp"
+#include "../../../include/backend/rv/RVGen.hpp"
+#include "../../../include/backend/rv/RVImmeTrans.hpp"
 
 static inline RVInstr *gen_instr_op2_before(RVENUM e, RVOperand *o1, RVOperand *o2, RVBlock *b, RVInstr *pos = nullptr)
 {

@@ -1,8 +1,8 @@
 #pragma once
-#include "ir_opt/SSARegisterAlloc.hpp"
-#include <backend/rv/RV.hpp>
+#include "../../../include/ir_opt/SSARegisterAlloc.hpp"
+#include "../../../include/backend/rv/RV.hpp"
 
-#include <ir/ir.hpp>
+#include "../../../include/ir/ir.hpp"
 
 class funcInfo
 {

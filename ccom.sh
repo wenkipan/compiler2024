@@ -73,6 +73,11 @@ src/program/program.cpp \
 src/backend/arm/ArmGen.cpp \
 src/backend/arm/BlockMerge.cpp \
 src/backend/arm/arm.cpp \
+src/backend/rv/RV.cpp \
+src/backend/rv/RVGen.cpp \
+src/backend/rv/RVImmeTrans.cpp \
+src/backend/rv/RVstand.cpp \
+src/backend/rv/RVBlockComb.cpp \
 -I include/program \
 -I include/ir \
 -I include/util \
@@ -82,5 +87,6 @@ src/backend/arm/arm.cpp \
 -I include/frontend \
 -I include/ir_opt \
 -I include/backend/arm \
+-I include/backend/rv \
 -I src/grammar/ \
 -o compiler
