@@ -7,6 +7,8 @@
 #include "../include/ir/ir.hpp"
 #include "../include/ir_opt/Manager.hpp"
 #include "../include/backend/arm/ArmGen.hpp"
+#include "../include/backend/rv/RVGen.hpp"
+#include "../include/backend/rv/RV.hpp"
 
 int main(int argc, char *argv[])
 {
