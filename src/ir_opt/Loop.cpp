@@ -280,6 +280,7 @@ void Loop_Analysis::FuncAnalysis(Function *p_func)
     std::cout << p_func->get_name() << std::endl;
     loop_addprevBB(lproot);
     loop_BBsAdd(lproot);
+    p_func->ResetID(false);
     _lpprint(lproot);
 }
 

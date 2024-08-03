@@ -23,6 +23,7 @@
 #include "../../include/ir_opt/loopFullunroll.hpp"
 #include "../../include/ir_opt/ALS.hpp"
 #include "../../include/ir_opt/MAD.hpp"
+#include "../../include/ir_opt/loop.hpp"
 
 #include "../../include/lir/ArmStand.hpp"
 #include "../../include/ir_opt/uselessBBDel.hpp"
