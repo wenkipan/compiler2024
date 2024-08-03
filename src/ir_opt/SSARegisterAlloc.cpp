@@ -157,6 +157,9 @@ void SSARegisterAlloc::run(Function *p_func)
         p_func->value_pushBack(Register[i]);
     }
 
+    for (auto bb : *(p_func->get_blocks()))
+        ReLoad(bb);
+
     ReSortForPara(p_func);
     std::vector<Call *> calls;
     for (auto bb : *(p_func->get_blocks()))
@@ -229,7 +232,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     Value *val_tmp = new Value(para->get_type());
                     p_func->value_pushBack(val_tmp);
                     valueMapRegister[val_tmp] = reg_now;
-                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], val_tmp, false, ebb);
+                    Store *store = new Store(allocMap[para], val_tmp, false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }
             }
@@ -239,7 +242,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 {
                     int reg = getReg(para);
                     Alloca *alloc = new Alloca(ebb, para->get_type(), 1);
-                    allocMap[LA.ValueIdMap.at(para)] = alloc;
+                    allocMap[para] = alloc;
                     paraMap[alloc] = para;
                     ebb->get_instrs()->pop_back();
                     Load *load = new Load(alloc, false, ebb);
@@ -281,7 +284,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                     Value *val_tmp = new Value(para->get_type());
                     p_func->value_pushBack(val_tmp);
                     valueMapRegister[val_tmp] = reg_now;
-                    Store *store = new Store(allocMap[LA.ValueIdMap.at(para)], val_tmp, false, ebb);
+                    Store *store = new Store(allocMap[para], val_tmp, false, ebb);
                     store->insertInstr(ebb, nowPos++);
                 }
             }
@@ -291,7 +294,7 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                 {
                     int reg = getReg(para);
                     Alloca *alloc = new Alloca(ebb, para->get_type(), 1);
-                    allocMap[LA.ValueIdMap.at(para)] = alloc;
+                    allocMap[para] = alloc;
                     paraMap[alloc] = para;
                     ebb->get_instrs()->pop_back();
                     Load *load = new Load(alloc, false, ebb);
@@ -799,6 +802,153 @@ void SSARegisterAlloc::spillUserPhi(int x)
     }
 }
 
+void SSARegisterAlloc::ReLoad(BasicBlock *bb)
+{
+    if (spilledVals.empty())
+        return;
+    std::unordered_map<int, Value *> regState;
+    std::unordered_map<Value *, Value *> InReg;
+    std::vector<int> allR, allS;
+    for (int i = 8; i <= 27; i++)
+    {
+        allR.push_back(i);
+        allS.push_back(i + 32);
+    }
+    for (int i = 0; i < vregNum; i++)
+        if (LA.InSet[bb].at(i))
+        {
+            regState[getReg(LA.Vals[i])] = LA.Vals[i];
+            InReg[LA.Vals[i]] = LA.Vals[i];
+        }
+    for (auto phi : *(bb->get_phinodes()))
+    {
+        regState[getReg(phi)] = phi;
+        InReg[phi] = phi;
+    }
+    std::vector<Instrution *> dropList;
+    for (auto ins : *(bb->get_instrs()))
+    {
+        int cnt_R = 0, cnt_S = 0;
+        std::vector<Value *> uses;
+        for (auto edge : *(ins->get_value_list()))
+        {
+            if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
+                continue;
+            Value *val = edge->get_val();
+            if (val->get_type()->get_type() != TypeEnum::F32)
+            {
+                cnt_R++;
+                if (cnt_R > Para_R)
+                    continue;
+                uses.push_back(val);
+            }
+            else
+            {
+                cnt_S++;
+                if (cnt_S > Para_S)
+                    continue;
+                uses.push_back(val);
+            }
+        }
+        for (auto val : uses)
+        {
+            if (spilledVals.find(val) != spilledVals.end())
+            {
+                bool check = false;
+                for (auto edge : *(allocMap[val]->get_user_list()))
+                {
+                    Value *use = edge->get_user();
+                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                    {
+                        check = true;
+                        break;
+                    }
+                }
+                if (!check)
+                {
+                    regState[getReg(val)] = nullptr;
+                    InReg.erase(val);
+                }
+            }
+            else if (is_a<Load>(val) && isSpill(dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())))
+            {
+                bool check = false;
+                for (auto edge : *(dynamic_cast<Load *>(val)->get_addr()->get_user_list()))
+                {
+                    Value *use = edge->get_user();
+                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                    {
+                        check = true;
+                        break;
+                    }
+                }
+                if (!check)
+                {
+                    regState[getReg(InReg[spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())]])] = nullptr;
+                    InReg.erase(spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())]);
+                }
+            }
+            else
+            {
+                bool check = false;
+                if (LA.OutSet[bb].at(LA.ValueIdMap[val]))
+                    check = true;
+                if (!check)
+                {
+                    for (auto edge : *(val->get_user_list()))
+                    {
+                        Value *use = edge->get_user();
+                        if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                        {
+                            check = true;
+                            break;
+                        }
+                    }
+                }
+                if (!check)
+                {
+                    regState[getReg(val)] = nullptr;
+                    InReg.erase(val);
+                }
+            }
+        }
+        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end())
+        {
+            if (is_a<Load>(ins) && isSpill(dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())))
+            {
+                if (InReg.find(spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())]) == InReg.end())
+                {
+                    if (regState[getReg(ins)] != nullptr)
+                    {
+                        InReg.erase(regState[getReg(ins)]);
+                    }
+                    InReg[spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())]] = ins;
+                    regState[getReg(ins)] = spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())];
+                }
+                else
+                {
+                    assert(ins->get_user_list()->size() == 1);
+                    Edge *edge = ins->get_user_list()->front();
+                    edge->set_val(InReg[spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())]]);
+                    ins->get_user_list()->clear();
+                    dropList.push_back(ins);
+                }
+            }
+            else
+            {
+                if (regState[getReg(ins)] != nullptr)
+                {
+                    InReg.erase(regState[getReg(ins)]);
+                }
+                InReg[ins] = ins;
+                regState[getReg(ins)] = ins;
+            }
+        }
+    }
+    for (auto ins : dropList)
+        ins->drop();
+}
+
 void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
 {
     std::set<std::pair<int, int>> I_B;
@@ -1111,9 +1261,10 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
     {
         Alloca *alloc = new Alloca(ebb, LA.Vals[v]->get_type(), 1);
         spillAllocs.insert(alloc);
+        spillAllocMap[alloc] = LA.Vals[v];
         assert(alloc->get_type()->get_type() == TypeEnum::Ptr);
         alloc->insertInstr(ebb, 0);
-        allocMap[v] = alloc;
+        allocMap[LA.Vals[v]] = alloc;
         if (dynamic_cast<Param *>(LA.Vals[v]) != nullptr)
         {
             bool flag = false;
@@ -1173,7 +1324,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         {
             for (auto it : *(phi->get_valueMap()))
             {
-                Store *store = new Store(allocMap[v], it.second->get_val(), false, it.first);
+                Store *store = new Store(allocMap[LA.Vals[v]], it.second->get_val(), false, it.first);
                 int insNum = store->get_parent()->get_instrutions()->size();
                 if (dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
                 {
@@ -1189,7 +1340,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         {
             if (is_a<Assign>(ins) && is_a<GlobalVariable>(ins->get_value_list()->front()->get_val()))
                 continue;
-            Store *store = new Store(allocMap[v], ins, false, ins->get_parent());
+            Store *store = new Store(allocMap[LA.Vals[v]], ins, false, ins->get_parent());
             auto insList = store->get_parent()->get_instrs();
             int pos = std::find(insList->begin(), insList->end(), ins) - insList->begin() + 1;
             store->insertInstr(store->get_parent(), pos);
@@ -1210,7 +1361,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         for (auto it : *(val->get_user_list()))
         {
             Instrution *use = dynamic_cast<Instrution *>(it->get_user());
-            if (dynamic_cast<Store *>(use) != nullptr && dynamic_cast<Store *>(use)->get_addr() == allocMap[v])
+            if (dynamic_cast<Store *>(use) != nullptr && dynamic_cast<Store *>(use)->get_addr() == allocMap[LA.Vals[v]])
             {
                 continue;
             }
@@ -1253,7 +1404,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                     Load *load;
                     if (load_map.find(use) == load_map.end())
                     {
-                        load = new Load(allocMap[v], false, use->get_parent());
+                        load = new Load(allocMap[LA.Vals[v]], false, use->get_parent());
                         int pos = std::find(insList->begin(), insList->end(), use) - insList->begin();
                         load->insertInstr(load->get_parent(), pos);
                         load_map[use] = load;
@@ -1264,7 +1415,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 }
                 else
                 {
-                    it->set_val(allocMap[v]);
+                    it->set_val(allocMap[LA.Vals[v]]);
                 }
             }
         }
