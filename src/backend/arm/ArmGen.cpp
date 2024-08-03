@@ -4,8 +4,7 @@
 
 #include "../../../include/backend/arm/ArmGen.hpp"
 #include "../../../include/backend/arm/BlockMerge.hpp"
-#include "backend/arm/arm.hpp"
-#include "ir/Instrution.hpp"
+#include "../../../include/backend/arm/arm.hpp"
 
 static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
 {
