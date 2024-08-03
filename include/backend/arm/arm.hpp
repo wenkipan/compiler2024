@@ -325,6 +325,7 @@ class ArmGlobalVariable : public ArmGlobal
 public:
     ArmGlobalVariable(std::string _name) : name(_name) {}
     void words_push_back(uint32_t i) { words.push_back(i); }
+    std::vector<uint32_t> get_words() { return words; }
     void set_space(int s) { space = s; }
     std::string get_name() { return name; }
     void print();

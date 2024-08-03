@@ -196,6 +196,13 @@ int ArmBlock::find_instr_pos(ArmInstr *i)
     }
     assert(0);
 }
+static inline bool gv_can_bss(std::vector<uint32_t> vs)
+{
+    for (auto u : vs)
+        if ((int)u != 0)
+            return false;
+    return true;
+}
 
 // print
 void ArmModule::print(int test)
@@ -209,8 +216,17 @@ void ArmModule::print(int test)
     printf("   .arm\n");
     printf("   .fpu neon-vfpv4\n\n");
 
-    printf("   .section .data \n");
+    printf("   .section .bss \n");
+    std::vector<ArmGlobalVariable *> gvs;
     for (auto g : globals)
+    {
+        if (gv_can_bss(g->get_words()))
+            g->print();
+        else
+            gvs.push_back(g);
+    }
+    printf("   .section .data \n");
+    for (auto g : gvs)
     {
         g->print();
     }
