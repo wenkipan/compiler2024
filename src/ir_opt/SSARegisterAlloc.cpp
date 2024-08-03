@@ -556,10 +556,10 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
 }
 void SSARegisterAlloc::AddEdge(int x, int y)
 {
-    if (x == y || LA.is_float[x] != LA.is_float[y] || AdjSet.find(std::make_pair(x, y)) != AdjSet.end())
+    if (x == y || LA.is_float[x] != LA.is_float[y])
         return;
-    AdjSet.insert(std::make_pair(x, y));
-    AdjSet.insert(std::make_pair(y, x));
+    G_set[LA.Vals[x]].insert(LA.Vals[y]);
+    G_set[LA.Vals[y]].insert(LA.Vals[x]);
     G[x].push_back(y);
     G[y].push_back(x);
 }
@@ -569,6 +569,8 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
     p_func->ResetID(false);
     LA.run(p_func);
     vregNum = LA.Vals.size();
+    G.clear();
+    G_set.clear();
     G.resize(vregNum);
     for (BasicBlock *bb : *(p_func->get_blocks()))
     {
@@ -640,6 +642,11 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
             }
         }
     }
+}
+
+void SSARegisterAlloc::graphBuilder(Function *p_func)
+{
+    MakeGraph(p_func);
 }
 
 void SSARegisterAlloc::AssignColor_R(Function *p_func)

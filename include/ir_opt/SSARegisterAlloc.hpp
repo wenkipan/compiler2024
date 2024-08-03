@@ -15,7 +15,6 @@ class SSARegisterAlloc
     std::unordered_set<int> spilledNodes;
     std::unordered_set<Value *> spilledVals;
     std::vector<std::vector<int>> G;
-    std::unordered_set<std::pair<int, int>, pair_hash> AdjSet;
     std::unordered_map<Alloca *, Param *> paraMap;
     std::unordered_map<Alloca *, GlobalVariable *> gvMap;
     std::unordered_map<Call *, std::vector<Value *>> callLiveVreg;
@@ -38,11 +37,13 @@ class SSARegisterAlloc
     void ReSortForPhi(BasicBlock *bb);
 
 public:
+    std::unordered_map<Value *, std::unordered_set<Value *>> G_set;
     void run(Function *p_func);
     int getReg(Value *val);
     Param *whichPara(Alloca *alloc);
     GlobalVariable *whichGV(Alloca *alloc);
     std::vector<int> regsStillAliveAfterCall(Call *call);
+    void graphBuilder(Function *p_func);
     Move *getFirstMoveofCall(Call *call)
     {
         if (firstMoveofCall.find(call) == firstMoveofCall.end())
