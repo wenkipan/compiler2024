@@ -1,5 +1,5 @@
 #include "../../../include/backend/arm/BlockMerge.hpp"
-#include "backend/arm/arm.hpp"
+#include "../../../include/backend/arm/arm.hpp"
 
 void BlockMerge::single_br(ArmModule *m)
 {
