@@ -14,7 +14,9 @@ bit_vector::bit_vector(int n)
 bool bit_vector::at(int id)
 {
     if (id < 0 || id >= num)
+    {
         assert(0);
+    }
     return bits[id >> 5] >> (id & 31) & 1;
 }
 

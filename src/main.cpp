@@ -12,8 +12,8 @@
 
 int main(int argc, char *argv[])
 {
-    // freopen("in.txt", "r", stdin);
-    //  freopen("out.txt", "w", stdout);
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -85,25 +85,15 @@ int main(int argc, char *argv[])
         manager->run<DeadParamElimate>();
         printf("-------------------\n");
 
-        if (i == n - 1 || i & 1)
-        {
-            manager->run<LoopDrop>();
-        }
-        if (0)
-        {
-            manager->FuncRun<SCCP>();
-            printf("-------------------\n");
-            manager->FuncRun<DCE>();
-            manager->FuncRun<SimplifyCFG>();
-            manager->run<ALS>();
-            manager->FuncRun<DCE>();
-            manager->FuncRun<SimplifyCFG>();
-        }
+        // if (i == n - 1 || i & 1)
+        // {
+        //     manager->run<LoopDrop>();
+        // }
 
-        manager->FuncRun<THBalancing>();
-        manager->FuncRun<DCE>();
-        manager->FuncRun<SimplifyCFG>();
-        manager->run<Inline>();
+        // manager->FuncRun<THBalancing>();
+        // manager->FuncRun<DCE>();
+        // manager->FuncRun<SimplifyCFG>();
+        // manager->run<Inline>();
     }
 
     manager->FuncRun<SCCP>();
