@@ -274,21 +274,24 @@ void ArmFunc::print()
     }
     printf("%s:\n", name.c_str());
     // use with print
-    // auto BBs = RPO(this);
-    // for (int i = 0; i < BBs.size() - 1; i++)
-    // {
-    //     auto l = BBs[i]->get_last_instr();
-    //     if (l->is_b() && ((ArmAddr *)l->get_op_at(0))->get_addr() == BBs[i + 1])
-    //     {
-    //         BBs[i]->get_instrs().erase(BBs[i]->get_instrs().end() - 1);
-    //         delete l;
-    //     }
-    // }
-
-    for (auto B : blocks)
+    auto BBs = RPO(this);
+    for (int i = 0; i < BBs.size(); i++)
     {
-        B->print();
+        ArmBlock *b = BBs[i];
+        printf("%s:\n", b->get_name().c_str());
+        for (auto instr : b->get_instrs())
+        {
+            if (i != BBs.size() - 1)
+                if (instr == b->get_last_instr() && instr->is_b() && ((ArmAddr *)instr->get_op_at(0))->get_addr() == BBs[i + 1])
+                    continue;
+            instr->print();
+        }
     }
+
+    // for (auto B : blocks)
+    // {
+    //     B->print();
+    // }
     for (auto l : constantlables)
         l->print();
 }
