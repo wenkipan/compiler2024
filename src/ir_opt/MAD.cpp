@@ -282,15 +282,25 @@ void MAD::ARD()
         nwDels.clear();
         Call *p_call = nullptr;
         auto _list = instr->get_user_list();
+        int cnt = 1;
         for (Edge *edge : *_list)
         {
             Instrution *user = (Instrution *)edge->get_user();
             if (user->isCall())
             {
-                assert(0);
+                if (p_call != nullptr)
+                {
+                    flag = false;
+                    break;
+                }
+                p_call = (Call *)user;
+                if (((Function *)p_call->get_func())->get_name() == "memset" && p_call->get_parent() == func->get_entryBB())
+                    cnt = 2;
+                else
+                    flag = false;
             }
             else if (user->isGEP())
-                flag = flag & _findST((GEP *)user, func, 1, p_call);
+                flag = flag & _findST((GEP *)user, func, cnt, p_call);
             else if (user->isLoad())
                 flag = false;
             if (!flag)
@@ -310,16 +320,16 @@ void MAD::ARD()
     woker.run(func);
 }
 
-static int _getMAs(GEP *gep, std::set<Store *> &STs, std::set<Load *> &LDs, std::set<GEP *> &GEPs, Call *&call, bool FIT)
+static int _getMAs(GEP *gep, std::set<Store *> &STs, std::set<Load *> &LDs, std::set<GEP *> &GEPs, std::set<GEP *> &ALLGEPs, Call *&call, bool FIT)
 {
     auto user = gep->get_user_list();
-    int flag = 0;
+    int flag = 2;
     for (Edge *edge : *user)
     {
-        int tmp = 0;
+        int tmp = 2;
         Instrution *user = (Instrution *)edge->get_user();
         if (user->isGEP())
-            tmp = _getMAs((GEP *)user, STs, LDs, GEPs, call, false);
+            tmp = _getMAs((GEP *)user, STs, LDs, GEPs, ALLGEPs, call, false);
         else if (user->isLoad())
             LDs.insert((Load *)user);
         else if (user->isStore())
@@ -328,7 +338,7 @@ static int _getMAs(GEP *gep, std::set<Store *> &STs, std::set<Load *> &LDs, std:
             if (!is_a<ConstantI32>(ST->get_src()))
                 return -1;
             STs.insert(ST);
-            tmp = 1;
+            tmp = tmp | 1;
         }
         else if (user->isCall())
         {
@@ -350,22 +360,47 @@ static int _getMAs(GEP *gep, std::set<Store *> &STs, std::set<Load *> &LDs, std:
             else
                 return -1;
         }
-        if (tmp == -1)
-            return -1;
-        else if (tmp == 1)
-            flag = 1;
-    }
-    if (flag)
-    {
-        if (is_a<ConstantI32>(gep->get_offset()))
+        if (!(tmp & 2) && (flag & 2))
         {
-            GEPs.insert(gep);
-            return 1;
+            flag = flag ^ 2;
         }
-        else
+
+        else if (tmp == -1)
+        {
             return -1;
+        }
+
+        else if (tmp & 1)
+        {
+            flag = flag | 1;
+        }
     }
-    return 0;
+    gep->print();
+    printf("flag = %d\n", flag);
+    if (is_a<ConstantI32>(gep->get_offset()))
+    {
+        if (flag & 1)
+            GEPs.insert(gep);
+        ALLGEPs.insert(gep);
+        return flag;
+    }
+    else if (flag & 1)
+        return -1;
+    else
+    {
+        puts("RRR");
+        return 0;
+    }
+}
+
+int _GetOffset(Instrution *addr, Instrution *alloca)
+{
+    if (addr == alloca)
+        return 0;
+    assert(addr->isGEP());
+    GEP *gep = (GEP *)addr;
+    int offset = ((ConstantI32 *)gep->get_offset())->get_32_at(0);
+    return _GetOffset((Instrution *)gep->get_addr(), alloca) + offset;
 }
 
 void MAD::SMO()
@@ -373,6 +408,7 @@ void MAD::SMO()
     std::set<Store *> STs;
     std::set<Load *> LDs;
     std::set<GEP *> GEPs;
+    std::set<GEP *> ALLGEPs;
     DomTree tree(func);
     tree.Run();
     std::set<Value *> Allocas;
@@ -387,18 +423,33 @@ void MAD::SMO()
             continue;
         STs.clear(), LDs.clear(), GEPs.clear();
         auto users = (*instr)->get_user_list();
-        int flag;
+        int flag = 2;
         Call *call = nullptr;
         for (Edge *edge : *users)
         {
             Instrution *user = (Instrution *)edge->get_user();
-            assert(user->isGEP());
-            flag = _getMAs((GEP *)user, STs, LDs, GEPs, call, true);
+            if (user->isCall())
+            {
+                call = (Call *)user;
+                if (((Function *)call->get_func())->get_name() != "memset")
+                    flag = -1;
+            }
+            else
+            {
+                assert(user->isGEP());
+                int bits = _getMAs((GEP *)user, STs, LDs, GEPs, ALLGEPs, call, true);
+                if (!(bits & 2) && flag & 2)
+                    flag ^= 2;
+                if (bits == -1)
+                    flag = -1;
+            }
+
             if (flag == -1)
                 break;
         }
         if (flag == -1)
             continue;
+        printf("\n flag = %d\n", flag);
         std::set<Value *> vis;
         BasicBlock *CallBB = nullptr;
         if (call != nullptr)
@@ -460,6 +511,52 @@ void MAD::SMO()
         if (flag == -1)
             continue;
         Allocas.insert(*instr);
+        if (flag & 2)
+        {
+            assert(((Ptr *)(*instr)->get_type())->get_btype()->isArray());
+            ArrayType *Tarray = (ArrayType *)((Ptr *)(*instr)->get_type())->get_btype();
+            assert(Tarray->get_dims()->size() == 1);
+            assert(Tarray->get_basic_type() == TypeEnum::I32);
+            std::vector<Value *> *array;
+            if (call != nullptr)
+            {
+                auto vals = call->get_value_list();
+                if (!is_a<ConstantI32>((*vals)[2]->get_val()) || !is_a<ConstantI32>((*vals)[3]->get_val()))
+                    continue;
+                int Fsize = ((ConstantI32 *)(*vals)[3]->get_val())->get_32_at(0);
+                if (Fsize != (*Tarray->get_dims()->begin()) * 4)
+                    continue;
+                array = new std::vector<Value *>(*Tarray->get_dims()->begin(), ((ConstantI32 *)(*vals)[2]->get_val()));
+            }
+            else
+                array = new std::vector<Value *>(*Tarray->get_dims()->begin(), nullptr);
+            for (Store *ST : STs)
+            {
+                if (!is_a<ConstantI32>(ST->get_src()))
+                {
+                    flag = -1;
+                    break;
+                }
+                (*array)[_GetOffset((Instrution *)ST->get_addr(), *instr)] = ST->get_src();
+            }
+            if (flag == -1)
+            {
+                delete array;
+                continue;
+            }
+            for (Load *LD : LDs)
+            {
+                int offset = _GetOffset((Instrution *)LD->get_addr(), *instr);
+                Value *val = (*array)[offset];
+                auto edges = LD->get_user_list();
+                for (auto edge : *edges)
+                    edge->set_val(val);
+                edges->clear();
+            }
+
+            delete array;
+            continue;
+        }
         BasicBlock *BB = func->get_entryBB();
         Branch *p_branch = (Branch *)BB->get_last_instrution();
         BB->Ins_popBack();

@@ -11,7 +11,7 @@
 int main(int argc, char *argv[])
 {
     // freopen("in.txt", "r", stdin);
-    //  freopen("out.txt", "w", stdout);
+    //      freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
     int n = 5;
     if (!is_opt)
-        n = 1;
+        n = 5;
     for (int i = 0; i < n; i++)
     {
         if (i == 0 || (i >= 3 && i & 1))
@@ -70,7 +70,37 @@ int main(int argc, char *argv[])
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         printf("---------SCCP--------\n");
-        manager->printModule();
+        if (i == n - 1)
+        {
+            manager->run<MAD>();
+            manager->FuncRun<SCCP>();
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+            manager->printModule();
+            puts("Fullunroll");
+            manager->run<loopFullunroll>();
+            manager->printModule();
+            manager->FuncRun<SCCP>();
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+            puts("SSSSSSSS");
+            manager->printModule();
+            manager->FuncRun<SCCP>();
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+            puts("YYYYYYYYY");
+            manager->printModule();
+            manager->run<MAD>();
+            manager->FuncRun<SCCP>();
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+            manager->printModule();
+            manager->run<MAD>();
+            manager->FuncRun<SCCP>();
+            manager->FuncRun<DCE>();
+            manager->FuncRun<SimplifyCFG>();
+            manager->printModule();
+        }
         manager->FuncRun<GVN>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
@@ -87,15 +117,13 @@ int main(int argc, char *argv[])
         {
             manager->run<LoopDrop>();
         }
-        if (0)
+        if (i == 0)
         {
             manager->FuncRun<SCCP>();
-            printf("-------------------\n");
             manager->FuncRun<DCE>();
             manager->FuncRun<SimplifyCFG>();
-            manager->run<ALS>();
-            manager->FuncRun<DCE>();
-            manager->FuncRun<SimplifyCFG>();
+            manager->run<loopYYY>();
+            manager->run<LoopDrop>();
         }
 
         manager->FuncRun<THBalancing>();
@@ -103,25 +131,6 @@ int main(int argc, char *argv[])
         manager->FuncRun<SimplifyCFG>();
         manager->run<Inline>();
     }
-
-    manager->FuncRun<SCCP>();
-    printf("-------------------\n");
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    printf("---------SCCP--------\n");
-    manager->printModule();
-    manager->FuncRun<GVN>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    printf("-------------------\n");
-    manager->FuncRun<GCM>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-
-    manager->run<DeadParamElimate>();
-    manager->FuncRun<THBalancing>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
 
     manager->FuncRun<SCCP>();
     printf("-------------------\n");
@@ -136,7 +145,6 @@ int main(int argc, char *argv[])
     manager->FuncRun<GEPToALU>();
     manager->FuncRun<modTosubmul>();
     // manager->FuncRun<Peekhole_s>();
-    manager->printModule();
     // lir_opt
     // manager->FuncRun<GVN_l>();
     // manager->FuncRun<DCE>();
@@ -145,7 +153,6 @@ int main(int argc, char *argv[])
     // manager->FuncRun<DCE>();
     // manager->FuncRun<SimplifyCFG>();
     manager->run<immeIntTomove>();
-    manager->printModule();
     fflush(stdout);
 
     ArmGen backend;
