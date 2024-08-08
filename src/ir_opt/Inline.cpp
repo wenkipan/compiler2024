@@ -7,6 +7,8 @@
 #include "../../include/ir/BasicBlock.hpp"
 #include "../../include/ir/Function.hpp"
 #include "../../include/ir/Value.hpp"
+#include "ir/Constant.hpp"
+#include "ir/Instrution.hpp"
 #include "../../include/ir_opt/Inline.hpp"
 
 //
@@ -21,7 +23,7 @@ CallGraphNode::CallGraphNode(Function *f)
 }
 bool CallGraph::can_inline(CallGraphNode *n)
 {
-    if (n->instr_num > 5000) // magic number dont ask me ask hujj-nb
+    if (n->instr_num > 500 && n->link_f->get_blocks()->size() > 1) // magic number dont ask me ask hujj-nb
         return false;
     if (n->recursive)
         return false;
@@ -30,6 +32,21 @@ bool CallGraph::can_inline(CallGraphNode *n)
     if (n->link_f->get_name() == "main")
         return false;
     return true;
+}
+bool CallGraph::can_inline_recursive(CallGraphNode *n)
+{
+    int numc = 0;
+    for (auto BB : *n->link_f->get_blocks())
+    {
+        numc += BB->get_instrs()->size();
+        // phi is not need because assembly dont gen phi
+        // do gen actually, to mov
+    }
+    if (numc > 80)
+        return false;
+    if (n->recursive)
+        return true;
+    return false;
 }
 
 CallGraph::CallGraph(Module *m)
@@ -57,7 +74,8 @@ CallGraph::CallGraph(Module *m)
                         continue;
                     if (callee == func)
                         supportmap[func]->recursive = 1;
-                    new Edge(supportmap[callee], supportmap[func]);
+                    auto e = new Edge(supportmap[callee], supportmap[func]);
+                    call_edges.emplace(e, instr);
                 }
     }
     assert(root);
@@ -150,6 +168,15 @@ std::vector<Value *> Inline::PO(Module *m)
     return order;
 }
 
+static inline bool is_const_call(Instrution *i)
+{
+    assert(i->isCall());
+    for (int pos = 1; pos < i->get_value_list()->size(); pos++)
+        if (!is_a<Constant>(i->get_operand_at(pos)))
+            return false;
+    return true;
+}
+
 void Inline::run(Module *m)
 {
     CG = new CallGraph(m);
@@ -192,6 +219,52 @@ void Inline::run(Module *m)
             }
             delelist.emplace(cgnode->link_f);
         }
+        else if (CG->can_inline_recursive(cgnode))
+        {
+            if (1)
+                std::cout << "inlining" << cgnode->link_f->get_name() << std::endl;
+            IRCopy ic;
+            Function *origin = ic.copy_func(cgnode->link_f);
+            int cnt = 0;
+            for (auto calleredge : *cgnode->get_value_list())
+            {
+                Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
+                if (cgnode->link_f == caller)
+                {
+                    cnt++;
+                }
+                // tmp
+            }
+            if (cnt > 5)
+                continue;
+
+            for (auto calleredge : *cgnode->get_value_list())
+            {
+                Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
+                if (cgnode->link_f == caller)
+                {
+                    std::cout << "beinlining" << caller->get_name() << std ::endl;
+                    do_inline(caller, cgnode->link_f, origin);
+                }
+                // tmp
+            }
+            delete origin;
+        }
+        else
+        {
+            for (auto calleredge : *cgnode->get_value_list())
+            {
+                Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
+                Instrution *call = CG->get_call(calleredge);
+                printf("---------constcall\n");
+                call->print();
+                printf("%s", caller->get_name().c_str());
+                printf("%s", cgnode->link_f->get_name().c_str());
+                if (is_const_call(call))
+                    do_inline(caller, cgnode->link_f, call);
+                // tmp
+            }
+        }
     }
     for (auto f : delelist)
     {
@@ -221,7 +294,124 @@ void Inline::run(Module *m)
     }
     delete CG;
 }
-void Inline::do_inline(Function *caller, Function *callee)
+
+void Inline::do_inline(Function *caller, Function *callee, Instrution *call_)
+{
+    for (auto BB : *caller->get_blocks())
+        for (auto instr : *BB->get_instrs())
+            if (instr == call_)
+            {
+                // all the instr below is actually a call
+
+                // spilt BB
+                BasicBlock *halfBB = new BasicBlock(caller);
+                caller->block_pushBack(halfBB);
+                if (BB == caller->get_retBB())
+                    caller->set_retBB(halfBB);
+
+                // move follow instrs
+                auto instrs = BB->get_instrs();
+                for (auto it = find(instrs->begin(), instrs->end(), instr); it != instrs->end();) // careful
+                {
+                    (*it)->insertInstr(halfBB, halfBB->get_instrs()->size());
+                }
+                // move succedges
+                for (auto succedge : *BB->get_user_list())
+                {
+                    succedge->set_val(halfBB);
+                    BasicBlock *succ = (BasicBlock *)succedge->get_user();
+                    for (auto phi : *succ->get_phinodes())
+                    {
+                        for (auto kv : *phi->get_valueMap())
+                        {
+                            if (kv.first == BB)
+                            {
+                                phi->get_valueMap()->emplace(halfBB, kv.second);
+                                phi->get_valueMap()->erase(BB);
+                                break;
+                            }
+                        }
+                    }
+                }
+                BB->get_user_list()->clear();
+                // gen func
+                IRCopy cp;
+                Function *inlining;
+                inlining = cp.copy_func(callee);
+
+                // create a jmp to gen func entry
+                new Jmp(inlining->get_entryBB(), BB);
+
+                // set param to call valuelist,change edge
+                auto itparam = inlining->get_params()->begin();
+                for (auto itVal = instr->get_value_list()->begin() + 1; itVal != instr->get_value_list()->end(); itVal++, itparam++)
+                {
+                    for (auto useredge : *(*itparam)->get_user_list())
+                        useredge->set_val((*itVal)->get_val());
+                    (*itparam)->get_user_list()->clear();
+                }
+                assert(itparam == inlining->get_params()->end());
+
+                //  change  call to ret val :find ret and change call s user to its val(0) ,drop ret
+                Instrution *reti = inlining->get_retBB()->get_last_instrution();
+                assert(is_a<Ret>(reti));
+                if (reti->get_value_list()->size() == 1)
+                {
+                    Value *retval = reti->get_value_list()->at(0)->get_val();
+                    reti->get_value_list()->at(0)->drop();
+                    instr->replaceAllUses(retval);
+                }
+                else
+                {
+                    assert(reti->get_value_list()->size() == 0);
+                    assert(reti->get_type()->get_type() == TypeEnum::Void);
+                }
+                instr->drop();
+                reti->get_value_list()->clear();
+                reti->drop();
+
+                // create a jmp to halfBB
+                new Jmp(halfBB, inlining->get_retBB());
+
+                // promote alloc to func b0
+                //(for local variables, promote is safe, think about diff between define and declare)
+                std::vector<Instrution *> allocs;
+                for (auto newBBs : *inlining->get_blocks())
+                    for (auto instr : *newBBs->get_instrs())
+                        if (instr->isAlloca())
+                        {
+                            allocs.push_back(instr);
+                        }
+                for (auto a : allocs)
+                    a->insertInstr(caller->get_entryBB(), 0);
+
+                // change newBBs to caller,clear inling_func bbs
+                for (auto newBBs : *inlining->get_blocks())
+                {
+                    newBBs->Set_parent(caller);
+                    caller->block_pushBack(newBBs);
+                }
+                inlining->get_blocks()->clear();
+
+                // change value in inlining ,clear inlining vals
+                for (auto val : *inlining->get_Values())
+                {
+                    if (!is_a<Param>(val))
+                        caller->value_pushBack(val);
+                }
+                inlining->get_Values()->clear();
+                // delete param
+                for (auto it = inlining->get_params()->begin(); it != inlining->get_params()->end(); it++)
+                {
+                    delete (*it);
+                }
+                delete inlining;
+
+                return;
+            }
+}
+
+void Inline::do_inline(Function *caller, Function *callee, Function *rec)
 {
     // find callee and replace
     for (auto BB : *caller->get_blocks())
@@ -263,7 +453,11 @@ void Inline::do_inline(Function *caller, Function *callee)
                 BB->get_user_list()->clear();
                 // gen func
                 IRCopy cp;
-                Function *inlining = cp.copy_func(callee);
+                Function *inlining;
+                if (rec)
+                    inlining = cp.copy_func(rec);
+                else
+                    inlining = cp.copy_func(callee);
 
                 // create a jmp to gen func entry
                 new Jmp(inlining->get_entryBB(), BB);

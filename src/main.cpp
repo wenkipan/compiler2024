@@ -10,8 +10,8 @@
 
 int main(int argc, char *argv[])
 {
-    // freopen("in.txt", "r", stdin);
-    //  freopen("out.txt", "w", stdout);
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
             manager->FuncRun<SimplifyCFG>();
         }
 
-        manager->FuncRun<THBalancing>();
+        // manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         manager->run<Inline>();
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
     manager->FuncRun<GEPToALU>();
     manager->FuncRun<modTosubmul>();
-    // manager->FuncRun<Peekhole_s>();
+    manager->FuncRun<Peekhole_s>();
     manager->printModule();
     // lir_opt
     // manager->FuncRun<GVN_l>();
