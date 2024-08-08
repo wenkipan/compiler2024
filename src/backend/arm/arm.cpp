@@ -220,7 +220,7 @@ void ArmModule::print(int test)
     std::vector<ArmGlobalVariable *> gvs;
     for (auto g : globals)
     {
-        if (gv_can_bss(g->get_words()))
+        if (gv_can_bss(g->get_words()) && g->get_space() >= 800000000)
             g->print();
         else
             gvs.push_back(g);

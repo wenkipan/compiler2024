@@ -327,6 +327,7 @@ public:
     void words_push_back(uint32_t i) { words.push_back(i); }
     std::vector<uint32_t> get_words() { return words; }
     void set_space(int s) { space = s; }
+    int get_space() { return space; }
     std::string get_name() { return name; }
     void print();
 };
