@@ -261,6 +261,28 @@ void Param::print()
     printf(" %%%d\n", this->get_ID());
 }
 
+void Function::DeleteGVals()
+{
+    for (Value *_var : (*values))
+    {
+        auto vals = _var->get_value_list();
+        for (Edge *edge : *vals)
+        {
+            Value *val = edge->get_val();
+            if (!is_a<GlobalVariable>(val))
+                continue;
+            auto users = val->get_user_list();
+            for (auto it = users->begin(); it != users->end(); ++it)
+                if ((*it) == edge)
+                {
+                    delete *it;
+                    users->erase(it);
+                    break;
+                }
+        }
+    }
+}
+
 Function::~Function()
 {
     for (Value *_var : (*values))

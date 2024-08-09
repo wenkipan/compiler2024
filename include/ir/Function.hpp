@@ -38,6 +38,8 @@ public:
     Function(std::string _name);
     Function(Type *ty, std::string _name);
     Function();
+
+    void DeleteGVals();
     ~Function() override;
 
     void ResetID(bool _flag);

@@ -248,6 +248,7 @@ void Inline::run(Module *m)
                 }
                 // tmp
             }
+            origin->DeleteGVals();
             delete origin;
         }
         else
