@@ -170,8 +170,8 @@ void RVGen::run(Module *m)
     RVImmeTrans after;
     after.run(rvm);
 
-    RVBlockComb bc;
-    bc.run(rvm);
+    // RVBlockComb bc;
+    // bc.run(rvm);
     rvm->print(1);
 }
 void RVGen::gen_fnc(Function *f)

@@ -110,7 +110,7 @@ void LivenessAnalysis::DefAndUseAnalysis()
             for (auto it : *(phi->get_valueMap()))
             {
                 Value *tmp = it.second->get_val();
-                if (ValueIdMap.find(tmp) != ValueIdMap.end() && !DefSet[bb].at(ValueIdMap[tmp]))
+                if (ValueIdMap.find(tmp) != ValueIdMap.end())
                     OutSet[it.first].set(ValueIdMap[tmp], true);
             }
             if (ValueIdMap.find(val) != ValueIdMap.end())

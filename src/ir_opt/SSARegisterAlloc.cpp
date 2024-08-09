@@ -1,4 +1,5 @@
 #include "../../include/ir_opt/SSARegisterAlloc.hpp"
+#include "ir/Instrution.hpp"
 
 std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
 {
@@ -157,8 +158,8 @@ void SSARegisterAlloc::run(Function *p_func)
         p_func->value_pushBack(Register[i]);
     }
 
-    for (auto bb : *(p_func->get_blocks()))
-        ReLoad(bb);
+    // for (auto bb : *(p_func->get_blocks()))
+    //     ReLoad(bb);
 
     ReSortForPara(p_func);
     std::vector<Call *> calls;
