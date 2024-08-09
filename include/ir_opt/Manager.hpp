@@ -23,6 +23,7 @@
 #include "../../include/ir_opt/loopFullunroll.hpp"
 #include "../../include/ir_opt/ALS.hpp"
 #include "../../include/ir_opt/MAD.hpp"
+#include "../../include/ir_opt/GAD.hpp"
 #include "../../include/ir_opt/loop.hpp"
 
 #include "../../include/lir/ArmStand.hpp"
@@ -43,6 +44,9 @@ public:
     Module *get_module() { return p_module; }
     void printModule() { p_module->print(); }
     void printModule(std::string _sub) { p_module->print(_sub); }
+
+    void NECC();
+    void PassManager(bool is_opt);
 
     template <typename Pass>
     void run()

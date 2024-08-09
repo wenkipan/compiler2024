@@ -87,17 +87,13 @@ int main(int argc, char *argv[])
         {
             manager->run<LoopDrop>();
         }
-        if (0)
+        if (i == 1)
         {
-            manager->FuncRun<SCCP>();
-            printf("-------------------\n");
             manager->FuncRun<DCE>();
             manager->FuncRun<SimplifyCFG>();
-            manager->run<ALS>();
-            manager->FuncRun<DCE>();
+            manager->run<GAD>();
             manager->FuncRun<SimplifyCFG>();
         }
-
         // manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
