@@ -196,6 +196,12 @@ int ArmBlock::find_instr_pos(ArmInstr *i)
     }
     assert(0);
 }
+void ArmBlock::erase_instr(ArmInstr *i)
+{
+    auto it = std::find(instrs.begin(), instrs.end(), i);
+    assert(it != instrs.end());
+    instrs.erase(it);
+}
 static inline bool gv_can_bss(std::vector<uint32_t> vs)
 {
     for (auto u : vs)
@@ -376,6 +382,21 @@ void ArmInstr::print()
         printf("   vmrs APSR_nzcv, FPSCR\n");
     fflush(stdout);
 }
+void ArmInstr_writeback::print()
+{
+    assert(get_enum() == ARMENUM::arm_str || get_enum() == ARMENUM::arm_ldr);
+
+    printf("   %s", printENUM(get_enum()).c_str());
+    printf(" ");
+    for (auto op : get_ops())
+    {
+        op->print();
+        if (op != get_ops().back())
+            printf(", ");
+    }
+    printf("!");
+    printf("\n");
+}
 void ArmAddr::print()
 {
     if (is_a<ArmGlobalVariable>(addr))
@@ -420,6 +441,10 @@ void ArmReg::print()
             assert(offset == 0 && offreg == nullptr);
         printf("]");
     }
+}
+bool is_same_reg(ArmReg *a, ArmReg *b)
+{
+    return a->get_no() == b->get_no();
 }
 void ArmImme::print()
 {

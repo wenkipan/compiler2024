@@ -203,6 +203,8 @@ public:
     bool is_s_reg() { return regno > 15 && regno <= 15 + 32; }
     bool is_r_reg() { return 0 <= regno && regno <= 15; }
     int get_offset() { return offset; }
+    int get_no() { return regno; }
+    friend bool is_same_reg(ArmReg *a, ArmReg *b);
     void print_reg();
     void print();
     ~ArmReg();
@@ -216,6 +218,7 @@ public:
     ArmImme(uint32_t _imme) : imme_int(_imme) {}
     ArmImme(int i) : imme_int((uint32_t)i) {}
     // ArmImme(float _imme) : imme_float(_imme) {}
+    uint32_t get_imme() { return imme_int; }
     void print();
     ~ArmImme() {}
 };
@@ -248,6 +251,12 @@ public:
 
 public:
 };
+class ArmInstr_writeback : public ArmInstr
+{
+public:
+    ArmInstr_writeback(ARMENUM ae) : ArmInstr(ae) {}
+    void print();
+};
 class ArmFunc;
 class ArmBlock : public ArmValue
 {
@@ -275,6 +284,7 @@ public:
     std::vector<ArmInstr *> get_instrs() { return instrs; }
     ArmInstr *get_last_instr() { return instrs.back(); }
     int find_instr_pos(ArmInstr *i);
+    void erase_instr(ArmInstr *i);
     void print();
     void drop();
     ~ArmBlock();

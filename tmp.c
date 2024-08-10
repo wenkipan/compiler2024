@@ -1,60 +1,84 @@
-int x[600][600][600];
-int y[600][600][600];
- 
+//#include "sylib.h"
+int n = 1400;
+int seq[1400];
+int table[1400][1400];
+
+void kernel_nussinov(int n, int seq[], int table[][1400])
+{
+    int i, j, k;
+    i = n - 1;
+    while (i >= 0)
+    {
+        j = i + 1;
+        while (j < n)
+        {
+            if (j - 1 >= 0)
+            {
+                if (table[i][j] < table[i][j - 1])
+                {
+                    table[i][j] = table[i][j - 1];
+                }
+            }
+            if (i + 1 < n)
+            {
+                if (table[i][j] < table[i + 1][j])
+                {
+                    table[i][j] = table[i + 1][j];
+                }
+            }
+            if (j - 1 >= 0 && i + 1 < n)
+            {
+                if (i < j - 1)
+                {
+                    int temp = 0;
+                    if (((seq[i]) + (seq[j])) == 3)
+                    {
+                        temp = 1;
+                    }
+                    if (table[i][j] < table[i + 1][j - 1] + temp)
+                    {
+                        table[i][j] = table[i + 1][j - 1] + temp;
+                    }
+                }
+                else
+                {
+                    if (table[i][j] < table[i + 1][j - 1])
+                    {
+                        table[i][j] = table[i + 1][j - 1];
+                    }
+                }
+            }
+            k = i + 1;
+            while (k < j)
+            {
+                if (table[i][j] < table[i][k] + table[k + 1][j])
+                {
+                    table[i][j] = table[i][k] + table[k + 1][j];
+                }
+                k = k + 1;
+            }
+            j = j + 1;
+        }
+        i = i - 1;
+    }
+    i=0;
+    while(i < n) {
+        j = 0;
+        while (j < n) {
+            table[i][j] = table[i][j] % 10;
+            j = j +1;
+        }
+        i = i +1;
+    }
+}
+
 int main()
 {
-    int i,j,k;
-    int f;
-    int N;
-
-    N = getint ();
-    f = getint ();
-
+    getarray(seq);
+    getarray(table);
     starttime();
-
-    i = 0;
-    j = 0;
-    k = 0;
-
-    while (i<N) {
-      j = 0;
-      k = 0;
-      while (j<N) {
-        k = 0;
-	    while (k<N) {
-	      x[i][j][k] = 1;
-	      y[i][j][k] = 0;
-          k = k + 1;
-	    }
-        j = j + 1;
-      }
-      i = i + 1;
-    }
-
-    i = 1;
-    j = 1;
-    k = 1;
-
-    while (i<N - 1) {
-      j = 1;
-      k = 1;
-      while (j<N - 1) {
-        k = 1;
-	    while (k<N - 1) {
-	       x[i][j][k] =  ( x[i-1][j][k] + x[i+1][j][k] + x[i][j-1][k] +
-			    x[i][j+1][k] + x[i][j][k-1] + x[i][j][k+1]	) / f;
-          k = k + 1;
-	    }
-        j = j + 1;
-      }
-      i = i + 1;
-    }
-
+    kernel_nussinov(n, seq, table);
     stoptime();
-	
-    putarray (N, x[0][0]);
-    putarray (N, x[N/2][N/2]);
-    putarray (N, x[i-1][j-1]);
-
+    putarray(n * n, table);
     return 0;
 }

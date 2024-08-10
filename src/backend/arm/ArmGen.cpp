@@ -3,9 +3,9 @@
 #include <iostream>
 
 #include "../../../include/backend/arm/ArmGen.hpp"
+#include "../../../include/backend/arm/DeadALU.hpp"
 #include "../../../include/backend/arm/BlockMerge.hpp"
 #include "../../../include/backend/arm/arm.hpp"
-#include "../../../include/ir/Instrution.hpp"
 
 static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
 {
@@ -36,6 +36,23 @@ static inline void gen_instr_op3_before(ARMENUM ae, ArmOperand *o1, ArmOperand *
     newi->ops_push_back(o2);
     newi->ops_push_back(o3);
     b->instrs_insert_before(pos, newi);
+}
+void ArmGen::run(Module *m)
+{
+    init(m);
+    for (auto f : *m->get_funcs())
+    {
+        if (f->get_isExternal())
+            continue;
+        gen_func(f);
+    }
+    printf("--total arm\n");
+    arm_module->print(1);
+
+    BlockMerge bm;
+    bm.run(arm_module);
+    DeadALU da;
+    da.run(arm_module);
 }
 void ArmGen::init(Module *m)
 {
@@ -152,22 +169,7 @@ ArmFunc *ArmGen::init_func(Function *f)
 
     return newf;
 }
-void ArmGen::run(Module *m)
-{
-    init(m);
-    for (auto f : *m->get_funcs())
-    {
-        if (f->get_isExternal())
-            continue;
-        gen_func(f);
-    }
-    printf("--total arm\n");
-    arm_module->print(1);
 
-    BlockMerge bm;
-    bm.run(arm_module);
-    arm_module->print(1);
-}
 void ArmGen::gen_func(Function *f)
 {
 
