@@ -18,10 +18,11 @@ class SSARegisterAlloc
     std::unordered_map<Alloca *, Param *> paraMap;
     std::unordered_map<Alloca *, GlobalVariable *> gvMap;
     std::unordered_map<Call *, std::vector<Value *>> callLiveVreg;
-    std::unordered_map<int, Alloca *> allocMap;
+    std::unordered_map<Value *, Alloca *> allocMap;
     std::unordered_map<Value *, int> valueMapRegister;
     std::unordered_map<Call *, Move *> firstMoveofCall;
     std::unordered_set<Alloca *> spillAllocs;
+    std::unordered_map<Alloca *, Value *> spillAllocMap;
     void Spill(Function *p_func);
     void SpillBB_R(BasicBlock *bb);
     void SpillBB_S(BasicBlock *bb);
@@ -35,6 +36,8 @@ class SSARegisterAlloc
     void ReSortForPara(Function *p_func);
     void ReSortForCall(Call *call);
     void ReSortForPhi(BasicBlock *bb);
+    void ReLoad(BasicBlock *bb);
+    void ReplaceNullToTmp(Function *p_func);
 
 public:
     std::unordered_map<Value *, std::unordered_set<Value *>> G_set;
