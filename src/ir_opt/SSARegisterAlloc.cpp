@@ -134,6 +134,26 @@ GlobalVariable *SSARegisterAlloc::whichGV(Alloca *alloc)
         return gvMap[alloc];
 }
 
+void SSARegisterAlloc::ReplaceNullToTmp(Function *p_func)
+{
+    for (auto bb : *(p_func->get_blocks()))
+        for (auto ins : *(bb->get_instrs()))
+        {
+            if (is_a<Move>(ins))
+            {
+                for (auto it : *(ins->get_value_list()))
+                    if (it->get_val() == nullptr)
+                        it->set_val(Register[12]);
+            }
+            if (is_a<Store>(ins))
+            {
+                for (auto it : *(ins->get_value_list()))
+                    if (it->get_val() == nullptr)
+                        it->set_val(Register[12]);
+            }
+        }
+}
+
 void SSARegisterAlloc::run(Function *p_func)
 {
     // GVtoA gvtoa;
@@ -160,6 +180,7 @@ void SSARegisterAlloc::run(Function *p_func)
 
     // for (auto bb : *(p_func->get_blocks()))
     //     ReLoad(bb);
+    ReplaceNullToTmp(p_func);
 
     ReSortForPara(p_func);
     std::vector<Call *> calls;
@@ -1315,6 +1336,93 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         }
     }
 
+    for (auto bb : *(p_func->get_blocks()))
+    {
+        std::vector<PHINode *> spilledPhis;
+        for (auto phi : *(bb->get_phinodes()))
+            if (spilledVals.find(phi) != spilledVals.end())
+                spilledPhis.push_back(phi);
+        if (spilledPhis.empty())
+            continue;
+        int n = spilledPhis.size();
+        for (auto it : *((spilledPhis.front()->get_valueMap())))
+        {
+            BasicBlock *fromBB = it.first;
+            std::unordered_map<Value *, int> d;
+            std::vector<Value *> In(n, nullptr);
+            for (int i = 0; i < n; i++)
+            {
+                In[i] = spilledPhis[i]->get_valueMap()->at(fromBB)->get_val();
+                if (is_a<PHINode>(In[i]) && dynamic_cast<PHINode *>(In[i])->get_parent() == bb)
+                    d[In[i]]++;
+            }
+            while (1)
+            {
+                bool flag = false;
+                for (int i = 0; i < n; i++)
+                    if (d[spilledPhis[i]] >= 0)
+                    {
+                        flag = true;
+                        break;
+                    }
+                if (!flag)
+                    break;
+                flag = false;
+                for (int i = 0; i < n; i++)
+                    if (d[spilledPhis[i]] == 0)
+                    {
+                        Store *store = new Store(allocMap[spilledPhis[i]], In[i], false, fromBB);
+                        int insNum = store->get_parent()->get_instrutions()->size();
+                        if (insNum >= 2 && dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
+                        {
+                            store->insertInstr(store->get_parent(), insNum - 2);
+                        }
+                        else
+                        {
+                            store->insertInstr(store->get_parent(), insNum - 1);
+                        }
+                        if (is_a<PHINode>(In[i]) && dynamic_cast<PHINode *>(In[i])->get_parent() == bb)
+                            d[In[i]]--;
+                        d[spilledPhis[i]] = -1;
+                        flag = true;
+                        break;
+                    }
+                if (!flag)
+                    for (int i = 0; i < n; i++)
+                        if (d[spilledPhis[i]] > 0)
+                        {
+                            Move *move = new Move(InstrutionEnum::Move, nullptr, In[i], fromBB);
+                            int insNum = move->get_parent()->get_instrutions()->size();
+                            if (insNum >= 2 && dynamic_cast<Branch *>(move->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
+                            {
+                                move->insertInstr(move->get_parent(), insNum - 2);
+                            }
+                            else
+                            {
+                                move->insertInstr(move->get_parent(), insNum - 1);
+                            }
+                            Store *store = new Store(allocMap[spilledPhis[i]], In[i], false, fromBB);
+                            insNum = store->get_parent()->get_instrutions()->size();
+                            if (insNum >= 2 && dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
+                            {
+                                store->insertInstr(store->get_parent(), insNum - 2);
+                            }
+                            else
+                            {
+                                store->insertInstr(store->get_parent(), insNum - 1);
+                            }
+                            for (int j = 0; j < n; j++)
+                                if (In[j] == spilledPhis[i])
+                                    In[j] = nullptr;
+                            d[spilledPhis[i]] = -1;
+                            flag = true;
+                            break;
+                        }
+                assert(flag);
+            }
+        }
+    }
+
     for (auto v : spilledNodes)
     {
         Value *val = LA.Vals[v];
@@ -1323,19 +1431,19 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         // Param *para = dynamic_cast<Param *>(val);
         if (phi != nullptr)
         {
-            for (auto it : *(phi->get_valueMap()))
-            {
-                Store *store = new Store(allocMap[LA.Vals[v]], it.second->get_val(), false, it.first);
-                int insNum = store->get_parent()->get_instrutions()->size();
-                if (dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
-                {
-                    store->insertInstr(store->get_parent(), insNum - 2);
-                }
-                else
-                {
-                    store->insertInstr(store->get_parent(), insNum - 1);
-                }
-            }
+            // for (auto it : *(phi->get_valueMap()))
+            // {
+            //     Store *store = new Store(allocMap[LA.Vals[v]], it.second->get_val(), false, it.first);
+            //     int insNum = store->get_parent()->get_instrutions()->size();
+            //     if (dynamic_cast<Branch *>(store->get_parent()->get_instrutions()->at(insNum - 2)) != nullptr)
+            //     {
+            //         store->insertInstr(store->get_parent(), insNum - 2);
+            //     }
+            //     else
+            //     {
+            //         store->insertInstr(store->get_parent(), insNum - 1);
+            //     }
+            // }
         }
         else if (ins != nullptr)
         {
