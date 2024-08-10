@@ -46,6 +46,10 @@ public:
     void printModule(std::string _sub) { p_module->print(_sub); }
 
     void NECC();
+
+    void Finish();
+    void Yi(int cnt);
+
     void PassManager(bool is_opt);
 
     template <typename Pass>

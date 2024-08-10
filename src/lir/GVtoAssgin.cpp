@@ -2,7 +2,7 @@
 
 #include "../../include/lir/GVtoAssgin.hpp"
 #include "../../include/util/RPO.hpp"
-#include "ir/Value.hpp"
+#include "../../include/ir/Value.hpp"
 
 void GVtoA::add_useredge(GlobalVariable *g, Edge *e)
 {
