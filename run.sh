@@ -9,7 +9,7 @@ INCLUDE=sylib.h
 cp "$1" ./tmp.c || exit 1
 #-march=rv32imfd -mabi=ilp32d
 if [ $# -eq 1 ]; then
-    ./build/SysYParser-debug ./tmp.c -o ./tmp.s || exit 1
+    ./build/SysYParser-debug ./tmp.c -O1 -o ./tmp.s || exit 1
 elif [[ $# -eq 2 && $2 = "arm1" ]]; then
     riscv64-unknown-elf-gcc  -march=rv64gc -S -O1 ./tmp.c -static -include $LIB_DIR/sylib.h -o ./tmp.s || exit 1
 elif [[ $# -eq 2 && $2 = "arm2" ]]; then

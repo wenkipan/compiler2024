@@ -1,5 +1,4 @@
 #include "../../include/ir_opt/SSARegisterAlloc.hpp"
-#include "ir/Instrution.hpp"
 
 std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
 {
@@ -143,13 +142,13 @@ void SSARegisterAlloc::ReplaceNullToTmp(Function *p_func)
             {
                 for (auto it : *(ins->get_value_list()))
                     if (it->get_val() == nullptr)
-                        it->set_val(Register[12]);
+                        it->set_val(Register[5]);
             }
             if (is_a<Store>(ins))
             {
                 for (auto it : *(ins->get_value_list()))
                     if (it->get_val() == nullptr)
-                        it->set_val(Register[12]);
+                        it->set_val(Register[5]);
             }
         }
 }

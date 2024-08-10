@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         //     manager->FuncRun<SimplifyCFG>();
         // }
 
-        // manager->FuncRun<THBalancing>();
+        manager->FuncRun<THBalancing>();
         manager->FuncRun<DCE>();
         manager->FuncRun<SimplifyCFG>();
         manager->run<Inline>();

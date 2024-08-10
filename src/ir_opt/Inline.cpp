@@ -7,8 +7,6 @@
 #include "../../include/ir/BasicBlock.hpp"
 #include "../../include/ir/Function.hpp"
 #include "../../include/ir/Value.hpp"
-#include "ir/Constant.hpp"
-#include "ir/Instrution.hpp"
 #include "../../include/ir_opt/Inline.hpp"
 
 //
@@ -23,7 +21,7 @@ CallGraphNode::CallGraphNode(Function *f)
 }
 bool CallGraph::can_inline(CallGraphNode *n)
 {
-    if (n->instr_num > 500 && n->link_f->get_blocks()->size() > 1) // magic number dont ask me ask hujj-nb
+    if (n->instr_num > 2000 && n->link_f->get_blocks()->size() > 1) // magic number dont ask me ask hujj-nb
         return false;
     if (n->recursive)
         return false;
@@ -42,7 +40,7 @@ bool CallGraph::can_inline_recursive(CallGraphNode *n)
         // phi is not need because assembly dont gen phi
         // do gen actually, to mov
     }
-    if (numc > 80)
+    if (numc > 40)
         return false;
     if (n->recursive)
         return true;

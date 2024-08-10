@@ -5,7 +5,7 @@
 #include "../../include/ir_opt/BitVector.hpp"
 #include "../../include/ir_opt/DCE.hpp"
 
-const int K_R = 18, K_S = 20, Para_R = 8, Para_S = 8, Para_Sum = 16;
+const int K_R = 20, K_S = 20, Para_R = 8, Para_S = 8, Para_Sum = 16;
 class LivenessAnalysis
 {
     const int INF = 1000000000;
