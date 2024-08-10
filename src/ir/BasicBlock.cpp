@@ -141,6 +141,9 @@ void BasicBlock::instr_insert_before(Instrution *pos, Instrution *in)
     // befores
     auto itbefore = std::find(in->get_BB()->get_instrutions()->begin(), in->get_BB()->get_instrutions()->end(), in);
     assert(itbefore != in->get_BB()->get_instrutions()->end());
+    if (itbefore + 1 != in->get_BB()->get_instrutions()->end() &&
+        *(itbefore + 1) == pos)
+        return;
     in->get_BB()->get_instrutions()->erase(itbefore);
 
     // change to

@@ -256,15 +256,34 @@ void GCM::schedule_to_block(Instrution *instr, BasicBlock *b)
         return;
     instr->insertInstr(b, b->get_instrs()->size() - 1);
 }
+static inline Instrution *first_use(Instrution *def)
+{
+    for (auto i : *def->get_BB()->get_instrutions())
+    {
+        for (auto vale : *i->get_value_list())
+            if (vale->get_val() == def)
+                return i;
+    }
+    BasicBlock *parent = def->get_BB();
+    if (parent->get_last_instrution()->isBranch())
+    {
+        return parent->get_instrs()->at(parent->get_instrs()->size() - 2);
+    }
+    else
+        return parent->get_last_instrution();
+}
 void GCM::move_instr_to_best()
 {
     std::unordered_map<BasicBlock *, int> insertpos;
 
     std::queue<Instrution *> work;
+    std::queue<Instrution *> work_same_block;
     for (auto BB : RPO(f))
         for (auto instr : *BB->get_instrs())
             if (get_scheduleBB(instr) != BB)
                 work.emplace(instr);
+            else if (!ispinned(instr))
+                work_same_block.emplace(instr);
 
     while (!work.empty())
     {
@@ -285,6 +304,17 @@ void GCM::move_instr_to_best()
             else
                 i->insertInstr(best, best->get_instrs()->size() - 1);
         }
+    }
+    while (!work_same_block.empty())
+    {
+        Instrution *i = work_same_block.front();
+        work_same_block.pop();
+        BasicBlock *best = i->get_parent();
+        printf("--gcm~~\n");
+        first_use(i)->print();
+        i->print();
+        fflush(stdout);
+        best->instr_insert_before(first_use(i), i);
     }
 }
 void GCM::maintain_branch_cond()
