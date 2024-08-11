@@ -1,6 +1,7 @@
 #include "../../include/ir/BasicBlock.hpp"
 #include "../../include/ir_opt/GCM.hpp"
 #include "../../include/util/RPO.hpp"
+#include "../../include/ir_opt/SideEffect.hpp"
 
 static inline int getnestdepth(BasicBlock *b, Loop_Analysis *tree)
 {
@@ -55,6 +56,15 @@ void GCM::init(Function *func)
         for (auto phi : *BB->get_phinodes())
             scheduleBB.emplace(phi, BB);
     }
+
+    for (auto BB : *f->get_blocks())
+        for (auto i : *BB->get_instrs())
+            if (i->isCall())
+            {
+                SideEffect se;
+                Function *called = (Function *)i->get_operand_at(0);
+                sideeffect_func.emplace(called, se.run(called));
+            }
 }
 void GCM::run(Function *func)
 {
@@ -109,6 +119,15 @@ void GCM::run(Function *func)
     move_instr_to_best();
     maintain_branch_cond();
 }
+static inline bool mem_use(Function *f)
+{
+    for (auto pa : *f->get_params())
+    {
+        if (pa->get_type()->get_type() == TypeEnum::Ptr)
+            return true;
+    }
+    return false;
+}
 bool GCM::ispinned(Instrution *instr)
 {
     if (instr->isPHINode() || instr->isReturn() || instr->isBranch() || instr->isJmp() || instr->isAlloca())
@@ -116,7 +135,13 @@ bool GCM::ispinned(Instrution *instr)
     if (instr->isLoad() || instr->isStore()) // TODO need memery info
         return true;
     if (instr->isCall()) // need call graph???
-        return true;
+    {
+        Function *called = (Function *)instr->get_operand_at(0);
+        if (mem_use(called))
+            return true;
+        assert(sideeffect_func.find(called) != sideeffect_func.end());
+        return sideeffect_func.find(called)->second;
+    }
     if (instr->isCmp())
         if (((Cmp *)instr)->isCond())
             return true;
@@ -192,6 +217,9 @@ void GCM::schedule_late(Instrution *instr)
             use = ((PHINode *)y)->get_edge_income_block(edge);
         lca = find_LCA(lca, use);
     }
+    printf("assert\n");
+    instr->print();
+    fflush(stdout);
     assert(lca);
     if (debug)
     {
@@ -310,10 +338,10 @@ void GCM::move_instr_to_best()
         Instrution *i = work_same_block.front();
         work_same_block.pop();
         BasicBlock *best = i->get_parent();
-        printf("--gcm~~\n");
-        first_use(i)->print();
-        i->print();
-        fflush(stdout);
+        // printf("--gcm~~\n");
+        // first_use(i)->print();
+        // i->print();
+        // fflush(stdout);
         best->instr_insert_before(first_use(i), i);
     }
 }

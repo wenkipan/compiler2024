@@ -13,6 +13,7 @@ class GCM
     DomTree *domtree;
     Loop_Analysis *nesttree;
     std::unordered_map<Instrution *, BasicBlock *> scheduleBB;
+    std::unordered_map<Function *, bool> sideeffect_func;
 
 public:
     ~GCM();

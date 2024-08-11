@@ -40,6 +40,7 @@ void Manager::PassManager(bool is_opt)
         printModule();
         FuncRun<GVN>();
         FuncRun<DCE>();
+        FuncRun<DFE>();
         FuncRun<SimplifyCFG>();
         FuncRun<GCM>();
         FuncRun<DCE>();
@@ -65,6 +66,7 @@ void Manager::Finish()
     FuncRun<SimplifyCFG>();
     printModule();
     FuncRun<GVN>();
+    FuncRun<DFE>();
     FuncRun<DCE>();
     FuncRun<SimplifyCFG>();
     FuncRun<GCM>();
@@ -103,10 +105,12 @@ void Manager::NECC()
         printModule();
         FuncRun<GVN>();
         FuncRun<DCE>();
+        FuncRun<DFE>();
         FuncRun<SimplifyCFG>();
         FuncRun<GCM>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
+        printf("----GVN\n");
         printModule();
         run<DeadParamElimate>();
 
@@ -122,6 +126,7 @@ void Manager::NECC()
     printModule();
     FuncRun<GVN>();
     FuncRun<DCE>();
+    FuncRun<DFE>();
     FuncRun<SimplifyCFG>();
     FuncRun<GCM>();
     FuncRun<DCE>();

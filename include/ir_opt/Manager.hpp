@@ -31,6 +31,7 @@
 #include "../../include/ir_opt/LivenessAnalysis.hpp"
 #include "../../include/ir_opt/SSARegisterAlloc.hpp"
 #include "../../include/ir_opt/DPE.hpp"
+#include "../../include/ir_opt/DFE.hpp"
 
 class Module;
 

@@ -5,6 +5,7 @@
 #include "../../include/ir_opt/GVN.hpp"
 #include "../../include/util/RPO.hpp"
 #include "../../include/ir_opt/ConstFold.hpp"
+#include "../../include/ir_opt/SideEffect.hpp"
 
 // TODO :miss
 std::unordered_map<InstrutionEnum, std::string> enum_map = {
@@ -47,6 +48,23 @@ void GVN::run(Function *func)
     f = func;
     if (is_debug)
         printf("GVN\n");
+    for (auto BB : *f->get_blocks())
+        for (auto i : *BB->get_instrs())
+            if (i->isCall())
+            {
+                SideEffect se;
+                Function *called = (Function *)i->get_operand_at(0);
+                sideeffect_func.emplace(called, se.run(called));
+            }
+    printf("---check sideeffce\n");
+    std::cout << f->get_name();
+    SideEffect se;
+    std::cout << se.run(f) << std::endl;
+    for (auto kv : sideeffect_func)
+    {
+        std::cout << kv.first->get_name();
+        std::cout << "  " << kv.second << std::endl;
+    }
     for (auto BB : RPO(f))
     {
         if (is_debug)
@@ -66,13 +84,25 @@ void GVN::run(Function *func)
     }
 }
 
+static inline bool mem_use(Function *f)
+{
+    for (auto pa : *f->get_params())
+    {
+        if (pa->get_type()->get_type() == TypeEnum::Ptr)
+            return true;
+    }
+    return false;
+}
 void GVN::visit_instr(Instrution *instr)
 {
     Value *deal = nullptr;
 
     if (instr->isCall())
-    { // need call graph???
-        return;
+    {
+        Function *called = (Function *)instr->get_operand_at(0);
+        assert(sideeffect_func.find(called) != sideeffect_func.end());
+        if (sideeffect_func.find(called)->second || mem_use(called))
+            return;
     }
     else if (instr->isLoad())
     { // TODO need memery info
@@ -163,6 +193,12 @@ std::string GVN::makehashtag(Instrution *i)
             ss << ((ConstantF32 *)val)->get_f32()[0];
         else
             ss << static_cast<void *>(val);
+    }
+    if (enum_map.find(i->get_Instrtype()) == enum_map.end())
+    {
+        assert(is_a<Call>(i));
+        Function *called = (Function *)i->get_operand_at(0);
+        return called->get_name() + ss.str();
     }
     assert(enum_map.find(i->get_Instrtype()) != enum_map.end());
     if (i->isGEP())
