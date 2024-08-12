@@ -90,6 +90,7 @@ public:
     void gen_load(Instrution *i, ArmBlock *b);
     void gen_load_GV_addr(int no, Value *addr, ArmBlock *b);
     void gen_store(Instrution *i, ArmBlock *b);
+    void gen_lir(Instrution *i, ArmBlock *b);
     void gen_cmp(Instrution *i, ArmBlock *b);
     ~ArmGen()
     {

@@ -65,6 +65,12 @@ void GCM::init(Function *func)
                 Function *called = (Function *)i->get_operand_at(0);
                 sideeffect_func.emplace(called, se.run(called));
             }
+    // for (auto kv : sideeffect_func)
+    // {
+    //     printf("sideeffect\n");
+    //     std::cout << kv.first->get_name();
+    //     std::cout << kv.second << std::endl;
+    // }
 }
 void GCM::run(Function *func)
 {

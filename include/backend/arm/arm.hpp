@@ -25,6 +25,9 @@ enum class ARMENUM
     arm_vand,
     arm_binary_end,
 
+    arm_mla,
+    arm_addlsl,
+
     arm_cmp_begin,
     arm_cmp,
     arm_cmn,

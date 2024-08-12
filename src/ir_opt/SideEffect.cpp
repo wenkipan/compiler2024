@@ -1,4 +1,6 @@
 #include "../../include/ir_opt/SideEffect.hpp"
+#include "ir/GlobalVariable.hpp"
+#include "ir/Instrution.hpp"
 
 static inline Value *trace_back_to(Instrution *i)
 {
@@ -32,6 +34,11 @@ bool SideEffect::check_mem(Function *f)
                     if (check.run(called))
                         return true;
                 }
+            }
+            else if (i->get_Instype() == InstrutionEnum::Assign)
+            {
+                if (is_a<GlobalVariable>(i->get_operand_at(0)))
+                    return true;
             }
     return false;
 }

@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "../../include/ir/User.hpp"
+#include "ir/Value.hpp"
 
 class BasicBlock;
 
@@ -59,6 +60,10 @@ enum class InstrutionEnum
     AddSP,
     UnaryEnd,
     Move,
+    lirBegin,
+    MLA,
+    ADDlsl,
+    lirEnd,
 };
 
 class Instrution : public User
@@ -100,7 +105,7 @@ public:
     bool isUnary() { return instr_type >= InstrutionEnum::UnaryBegin && instr_type < InstrutionEnum::UnaryEnd; }
     bool isIBinary() { return instr_type >= InstrutionEnum::IADD && instr_type <= InstrutionEnum::IMOD; }
     bool isMove() { return instr_type == InstrutionEnum::Move; }
-
+    bool islir() { return instr_type >= InstrutionEnum::lirBegin && instr_type <= InstrutionEnum::lirEnd; }
     BasicBlock *get_parent() { return parent; }
     void setParent_F(BasicBlock *_BB) { parent = _BB; }
 
@@ -280,5 +285,12 @@ public:
     Value *get_src1() { return (*this->get_value_list())[0]->get_val(); }
     Value *get_src2() { return (*this->get_value_list())[1]->get_val(); }
 
+    void print();
+};
+
+class Triple : public Instrution
+{
+public:
+    Triple(InstrutionEnum type, Value *src1, Value *src2, Value *src3, BasicBlock *parent);
     void print();
 };

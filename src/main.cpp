@@ -62,12 +62,15 @@ int main(int argc, char *argv[])
     manager->FuncRun<Peekhole_s>();
     manager->printModule();
     // lir_opt
-    // manager->FuncRun<GVN_l>();
-    // manager->FuncRun<DCE>();
-    // manager->FuncRun<SimplifyCFG>();
-    // manager->FuncRun<GCM>();
-    // manager->FuncRun<DCE>();
-    // manager->FuncRun<SimplifyCFG>();
+    manager->FuncRun<GVN_l>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    printf("----gcmbefore\n");
+    manager->printModule();
+    manager->FuncRun<GCM>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
+    manager->FuncRun<ARMMLA>();
     manager->run<immeIntTomove>();
     manager->printModule();
     fflush(stdout);

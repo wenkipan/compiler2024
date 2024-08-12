@@ -83,6 +83,7 @@ std::string printENUM(ARMENUM ARMENUM)
         ENUM_TO_STRING_CASE(ARMENUM, arm_bx)
         ENUM_TO_STRING_CASE(ARMENUM, arm_bl)
         ENUM_TO_STRING_CASE(ARMENUM, arm_blx)
+        ENUM_TO_STRING_CASE(ARMENUM, arm_mla)
     default:
         return "Unknown";
     }
@@ -343,6 +344,22 @@ static inline void print_movt_gv(ArmInstr *i)
     i->get_ops()[1]->print();
     printf("\n");
 }
+static inline void print_addlsl(ArmInstr *i)
+{
+    printf(" ");
+    i->get_op_at(0)->print();
+    printf(", ");
+
+    i->get_op_at(1)->print();
+    printf(", ");
+
+    i->get_op_at(2)->print();
+    printf(", ");
+    printf("lsl ");
+    assert(is_a<ArmImme>(i->get_op_at(3)));
+    i->get_op_at(3)->print();
+    printf("\n");
+}
 void ArmInstr::print()
 {
     printf("   %s", printENUM(armenum).c_str());
@@ -367,6 +384,11 @@ void ArmInstr::print()
     else if (is_arm_push_pop())
     {
         print_pop_push(this);
+        return;
+    }
+    else if (armenum == ARMENUM::arm_add && ops.size() == 4)
+    {
+        print_addlsl(this);
         return;
     }
 

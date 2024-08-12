@@ -4,6 +4,7 @@
 #include "../../include/ir/Instrution.hpp"
 #include "../../include/ir/BasicBlock.hpp"
 #include "../../include/ir/Constant.hpp"
+#include "ir/Edge.hpp"
 
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{
@@ -820,4 +821,28 @@ void Move::print()
     putchar(' ');
     p_src2->print_ID();
     putchar('\n');
+}
+
+Triple::Triple(InstrutionEnum type, Value *src1, Value *src2, Value *src3, BasicBlock *parent)
+    : Instrution(parent, type, src1->get_type(), (int)0)
+{
+    new Edge(this, src1);
+    new Edge(this, src2);
+    new Edge(this, src3);
+}
+
+void Triple::print()
+{
+    printf("    %%%d = ", this->get_ID());
+    get_operand_at(0)->print_ID();
+    printf(" + ");
+    get_operand_at(1)->print_ID();
+    if (get_Instrtype() == InstrutionEnum::MLA)
+        printf(" * ");
+    else if (get_Instrtype() == InstrutionEnum::ADDlsl)
+        printf(" << ");
+    else
+        assert(0);
+    get_operand_at(2)->print_ID();
+    printf("\n");
 }

@@ -8,3 +8,4 @@
 #include "../../include/lir/GVtoAssgin.hpp"
 #include "../../include/lir/Peekhole_s.hpp"
 #include "../../include/lir/GVN_l.hpp"
+#include "../../include/lir/ARMMLA.hpp"

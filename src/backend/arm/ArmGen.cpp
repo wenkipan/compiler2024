@@ -6,6 +6,8 @@
 #include "../../../include/backend/arm/DeadALU.hpp"
 #include "../../../include/backend/arm/BlockMerge.hpp"
 #include "../../../include/backend/arm/arm.hpp"
+#include "ir/Constant.hpp"
+#include "ir/Instrution.hpp"
 
 static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
 {
@@ -36,6 +38,15 @@ static inline void gen_instr_op3_before(ARMENUM ae, ArmOperand *o1, ArmOperand *
     newi->ops_push_back(o2);
     newi->ops_push_back(o3);
     b->instrs_insert_before(pos, newi);
+}
+static inline void gen_instr_op4(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmOperand *o3, ArmOperand *o4, ArmBlock *b)
+{
+    auto newi = new ArmInstr(ae);
+    newi->ops_push_back(o1);
+    newi->ops_push_back(o2);
+    newi->ops_push_back(o3);
+    newi->ops_push_back(o4);
+    b->instrs_push_back(newi);
 }
 void ArmGen::run(Module *m)
 {
@@ -982,6 +993,31 @@ void ArmGen::gen_instr(Instrution *i, ArmBlock *b)
     {
         auto mv = gen_mov(i->get_operand_at(0), i->get_operand_at(1), b);
         val2val_map.emplace(i, mv);
+    }
+    else if (i->islir())
+    {
+        gen_lir(i, b);
+    }
+    else
+        assert(0);
+}
+void ArmGen::gen_lir(Instrution *i, ArmBlock *b)
+{
+    if (i->get_Instrtype() == InstrutionEnum::MLA)
+    {
+        gen_instr_op4(ARMENUM::arm_mla, new ArmReg(ssara->getReg(i)),
+                      new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(2))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(0))), b);
+    }
+    else if (i->get_Instrtype() == InstrutionEnum::ADDlsl)
+    {
+        assert(is_a<ConstantI32>(i->get_operand_at(2)));
+        int lsl = ((ConstantI32 *)i->get_operand_at(2))->get_32_at(0);
+        gen_instr_op4(ARMENUM::arm_add, new ArmReg(ssara->getReg(i)),
+                      new ArmReg(ssara->getReg(i->get_operand_at(0))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                      new ArmImme(lsl), b);
     }
     else
         assert(0);
