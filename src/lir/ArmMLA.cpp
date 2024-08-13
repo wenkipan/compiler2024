@@ -1,4 +1,5 @@
 #include "../../include/lir/ARMMLA.hpp"
+#include "ir/Instrution.hpp"
 
 void ARMMLA::run(Function *f)
 {
@@ -13,16 +14,27 @@ void ARMMLA::run(Function *f)
                     if (use->get_Instrtype() == InstrutionEnum::IADD)
                     {
                         if (i == use->get_operand_at(0) && !is_a<ConstantI32>(use->get_operand_at(1)))
+                        {
+                            // printf("????   \n");
+                            // i->print();
+                            // use->print();
                             work.push_back(i);
+                        }
                         else if (i == use->get_operand_at(1) && !is_a<ConstantI32>(use->get_operand_at(0)))
+                        {
+                            // printf("????   \n");
+                            // i->print();
+                            // use->print();
                             work.push_back(i);
+                        }
                     }
                 }
 
     for (auto i : work)
     {
         Instrution *use = (Instrution *)i->get_user_list()->at(0)->get_user();
-
+        if (use->get_Instrtype() != InstrutionEnum::IADD)
+            continue;
         Value *a;
         Value *b = i->get_operand_at(0);
         Value *c = i->get_operand_at(1);
@@ -34,6 +46,12 @@ void ARMMLA::run(Function *f)
             assert(0);
         BasicBlock *BB = use->get_parent();
 
+        // i->print();
+        // use->print();
+
+        // a->print();
+        // b->print();
+        // c->print();
         Instrution *newi = nullptr;
         if (i->get_Instrtype() == InstrutionEnum::IMUL)
             newi = new Triple(InstrutionEnum::MLA, a, b, c, BB);
@@ -45,9 +63,12 @@ void ARMMLA::run(Function *f)
         // Ptr *fake = new Ptr(newi->get_type());
         // delete newi->get_type();
         // newi->set_type(fake);
-
+        printf("test   ");
+        newi->print();
+        printf("\n");
         BB->instr_insert_before(use, newi);
         use->replaceAllUses(newi);
+
         use->drop();
         i->drop();
     }

@@ -10,6 +10,8 @@
 
 void DCE::init()
 {
+    block_DCE bd(function);
+    bd.run();
     pdt = new PostDomTree(function);
     for (auto bb : *function->get_blocks())
     {

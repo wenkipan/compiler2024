@@ -223,9 +223,9 @@ void GCM::schedule_late(Instrution *instr)
             use = ((PHINode *)y)->get_edge_income_block(edge);
         lca = find_LCA(lca, use);
     }
-    printf("assert\n");
-    instr->print();
-    fflush(stdout);
+    // printf("assert\n");
+    // instr->print();
+    // fflush(stdout);
     assert(lca);
     if (debug)
     {
@@ -313,11 +313,14 @@ void GCM::move_instr_to_best()
     std::queue<Instrution *> work;
     std::queue<Instrution *> work_same_block;
     for (auto BB : RPO(f))
+    {
         for (auto instr : *BB->get_instrs())
             if (get_scheduleBB(instr) != BB)
                 work.emplace(instr);
-            else if (!ispinned(instr))
-                work_same_block.emplace(instr);
+        for (auto instr = BB->get_instrs()->rbegin(); instr != BB->get_instrs()->rend(); instr++)
+            if (get_scheduleBB(*instr) == BB && !ispinned(*instr))
+                work_same_block.emplace(*instr);
+    }
 
     while (!work.empty())
     {
@@ -344,10 +347,6 @@ void GCM::move_instr_to_best()
         Instrution *i = work_same_block.front();
         work_same_block.pop();
         BasicBlock *best = i->get_parent();
-        // printf("--gcm~~\n");
-        // first_use(i)->print();
-        // i->print();
-        // fflush(stdout);
         best->instr_insert_before(first_use(i), i);
     }
 }
