@@ -13,6 +13,7 @@ enum class TypeEnum
     F32,
     Ptr,
     Array,
+    VecI32,
 };
 
 class Type

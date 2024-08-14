@@ -220,6 +220,9 @@ void Type::print()
     case TypeEnum::Ptr:
         printf("ptr");
         break;
+    case TypeEnum::VecI32:
+        printf("VecI32");
+        break;
     default:
         assert(0);
         break;

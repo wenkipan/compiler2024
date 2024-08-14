@@ -466,6 +466,7 @@ static inline void print_align(TypeEnum type)
         printf(", align 8\n");
         break;
     case TypeEnum::Array:
+    case TypeEnum::VecI32:
         printf(", align 16\n");
         break;
     default:
@@ -583,7 +584,10 @@ void Store::print()
     printf("    store ");
     Value *p_addr = get_addr();
     Value *p_src = get_src();
-    p_src->get_type()->print();
+    if (get_type()->get_type() == TypeEnum::VecI32)
+        get_type()->print();
+    else
+        p_src->get_type()->print();
     putchar(' ');
     p_src->print_ID();
     printf(", ptr ");

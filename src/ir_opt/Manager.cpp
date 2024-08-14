@@ -8,8 +8,60 @@ void Manager::Yi(int YYY)
 
     if (YYY == 1)
     {
+        run<loopYYY>();
+        FuncRun<DCE>();
+        FuncRun<SimplifyCFG>();
+        run<LoopDrop>();
+    }
+
+    if (YYY == 2)
+    {
+
+        printModule();
+
+        run<loopFFF>();
+        printModule();
+        FuncRun<SCCP>();
+        FuncRun<DCE>();
+        FuncRun<SimplifyCFG>();
+        printModule();
+    }
+
+    if (YYY == 7)
+    {
         run<GAD>();
         FuncRun<SimplifyCFG>();
+    }
+}
+
+void Manager::LoopOpt(int YYY)
+{
+    if (YYY < 2)
+        return;
+    return;
+    if (YYY % 2 == 0)
+    {
+        run<loopunswitch>();
+        FuncRun<SCCP>();
+        FuncRun<DCE>();
+        FuncRun<SimplifyCFG>();
+    }
+
+    if (YYY >= 5 && YYY & 1)
+    {
+        run<loopFullunroll>();
+        FuncRun<SCCP>();
+        FuncRun<DCE>();
+        FuncRun<SimplifyCFG>();
+    }
+
+    if (YYY % 3 == 0)
+    {
+        return;
+        // run<loopUnroll>();
+        // FuncRun<SCCP>();
+        // FuncRun<DCE>();
+        // FuncRun<SimplifyCFG>();
     }
 }
 
@@ -20,8 +72,7 @@ void Manager::PassManager(bool is_opt)
         NECC();
         return;
     }
-
-    int n = 5;
+    int n = 8;
     for (int i = 0; i < n; i++)
     {
         if (i == 0 || (i >= 3 && i & 1))
@@ -37,7 +88,9 @@ void Manager::PassManager(bool is_opt)
         FuncRun<SCCP>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
-        printModule();
+
+        LoopOpt(i);
+
         FuncRun<GVN>();
         FuncRun<DCE>();
         FuncRun<DFE>();
@@ -45,14 +98,15 @@ void Manager::PassManager(bool is_opt)
         FuncRun<GCM>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
-        printModule();
         run<DeadParamElimate>();
-
-        //  FuncRun<THBalancing>();
+        if (i == 0)
+            FuncRun<THBalancing>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
+
         Yi(i);
-        if (i & 0)
+
+        if (i > 3 && i % 2 == 0)
             run<Inline>();
     }
 
@@ -85,9 +139,7 @@ void Manager::Finish()
 
 void Manager::NECC()
 {
-
-    int n = 1;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < 1; i++)
     {
         if (i == 0 || (i >= 3 && i & 1))
         {

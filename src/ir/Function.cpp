@@ -269,7 +269,7 @@ void Function::DeleteGVals()
         for (Edge *edge : *vals)
         {
             Value *val = edge->get_val();
-            if (!is_a<GlobalVariable>(val))
+            if (!is_a<GlobalVariable>(val) && !is_a<Function>(val))
                 continue;
             auto users = val->get_user_list();
             for (auto it = users->begin(); it != users->end(); ++it)
