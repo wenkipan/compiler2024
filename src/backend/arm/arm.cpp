@@ -85,6 +85,7 @@ std::string printENUM(ARMENUM ARMENUM)
         ENUM_TO_STRING_CASE(ARMENUM, arm_blx)
         ENUM_TO_STRING_CASE(ARMENUM, arm_mla)
         ENUM_TO_STRING_CASE(ARMENUM, arm_mls)
+        ENUM_TO_STRING_CASE(ARMENUM, arm_dup_32)
     default:
         return "Unknown";
     }
@@ -377,12 +378,14 @@ static inline void print_q(ArmInstr *i)
         break;
     default:
         printf("%s", printENUM(i->get_enum()).c_str());
+        printf(".i32 ");
     }
 
-    if (is_a<ArmReg_neno_i32>(i->get_op_at(0)))
-        printf(".i32");
-    else
-        assert(0);
+    // if (is_a<ArmReg_neno_i32>(i->get_op_at(0)))
+    // {
+    // }
+    // else
+    //     assert(0);
 
     // first
     switch (i->get_enum())
@@ -396,6 +399,7 @@ static inline void print_q(ArmInstr *i)
     default:
         i->get_op_at(0)->print();
     }
+    printf(", ");
     for (auto op : i->get_ops())
     {
         if (op == i->get_ops().front())
@@ -405,6 +409,7 @@ static inline void print_q(ArmInstr *i)
         if (op != i->get_ops().back())
             printf(", ");
     }
+    printf("\n");
 }
 void ArmInstr::print()
 {

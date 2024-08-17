@@ -250,6 +250,9 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
         }
         else if (k <= 15 + 32)
             topushstack.push_back(k);
+        else if (56 <= k && k <= 63)
+        {
+        }
         else
             assert(0);
     }
@@ -434,6 +437,10 @@ ArmInstr *ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
     // else if (is_q_reg(ssara->getReg(dst)))
     // {
     // }
+    else if (is_q_reg(ssara->getReg(dst)))
+    {
+        gen_instr_op2(ARMENUM::arm_dup_32, new ArmReg_neno_i32(ssara->getReg(dst)), get_op(src, bb, 0), bb);
+    }
     else if (!is_s_reg(ssara->getReg(dst)) && !is_s_reg(ssara->getReg(src)))
     {
         gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(dst)), get_op(src, bb, 0), bb);
@@ -510,6 +517,8 @@ int ArmGen::find_all_alloc_size(Function *f)
                 Ptr *ptr = (Ptr *)((Alloca *)instr)->get_type();
                 if (ptr->get_btype()->isArray())
                     allocsize += 4 * ((ArrayType *)ptr->get_btype())->get_size();
+                else if (ptr->get_btype()->get_type() == TypeEnum::VecI32)
+                    allocsize += 4 * 4;
                 else
                     allocsize += 4;
             }

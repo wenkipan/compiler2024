@@ -171,6 +171,22 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
         }
     }
 
+    for (Loop *_son : (*nwloop->get_lpsons()))
+        nwloop->orhasCall(_son->hasCall());
+    for (BasicBlock *BB : *nwloop->get_nwBBs())
+    {
+        if (nwloop->hasCall())
+            break;
+        auto instrs = BB->get_instrs();
+        for (auto instr : *instrs)
+        {
+            if (instr->isCall())
+            {
+                nwloop->orhasCall(true);
+                break;
+            }
+        }
+    }
     // return;
     printf("HEAD b%d:", nwloop->get_header()->get_ID());
     printf("\nenters: ");

@@ -71,6 +71,12 @@ void GCM::init(Function *func)
     //     std::cout << kv.first->get_name();
     //     std::cout << kv.second << std::endl;
     // }
+    for (auto BB : *f->get_blocks())
+    {
+        for (auto instr : *BB->get_instrs())
+            if (instr->isCall())
+                if_call_bb.emplace(BB, 1);
+    }
 }
 void GCM::run(Function *func)
 {
@@ -136,6 +142,8 @@ static inline bool mem_use(Function *f)
 }
 bool GCM::ispinned(Instrution *instr)
 {
+    // if (instr->isVecI32type())
+    //     return true;
     if (instr->isPHINode() || instr->isReturn() || instr->isBranch() || instr->isJmp() || instr->isAlloca())
         return true;
     if (instr->isLoad() || instr->isStore()) // TODO need memery info
@@ -240,25 +248,52 @@ void GCM::schedule_late(Instrution *instr)
         get_scheduleBB(instr)->print_ID();
         printf("\n");
     }
-    while (lca != get_scheduleBB(instr))
+    assert(instr->get_type()->get_type() != TypeEnum::VecI32);
+    if (instr->get_type()->get_type() == TypeEnum::VecI32)
     {
-        if (getnestdepth(lca, nesttree) < getnestdepth(best, nesttree))
-            best = lca;
+        // assert(0);
+        while (lca != get_scheduleBB(instr))
+        {
+            if (getnestdepth(lca, nesttree) < getnestdepth(best, nesttree))
+            {
+                bool flag = true;
+                if (getnestdepth(lca, nesttree) != 0)
+                {
+                    LoopNode *node = nesttree->get_BBmap()->find(lca)->second;
+                    Loop *loop = node->get_loop();
+                    if (loop->hasCall())
+                        flag = false;
+                }
+                else
+                    flag = false;
+                if (flag)
+                    best = lca;
+            }
+            lca = domtree->get_idom(lca);
+        }
+    }
+    else
+    {
+        while (lca != get_scheduleBB(instr))
+        {
+            if (getnestdepth(lca, nesttree) < getnestdepth(best, nesttree))
+                best = lca;
+            if (debug)
+            {
+                printf("lca:BB");
+                lca->print_ID();
+                printf("\n");
+            }
+            lca = domtree->get_idom(lca);
+        }
         if (debug)
         {
-            printf("lca:BB");
-            lca->print_ID();
+            printf("Best:BB");
+            best->print_ID();
             printf("\n");
+            printf("latemove:");
+            instr->print();
         }
-        lca = domtree->get_idom(lca);
-    }
-    if (debug)
-    {
-        printf("Best:BB");
-        best->print_ID();
-        printf("\n");
-        printf("latemove:");
-        instr->print();
     }
     set_scheduleBB(instr, best);
 }

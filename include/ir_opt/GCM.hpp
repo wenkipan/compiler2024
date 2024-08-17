@@ -14,6 +14,7 @@ class GCM
     Loop_Analysis *nesttree;
     std::unordered_map<Instrution *, BasicBlock *> scheduleBB;
     std::unordered_map<Function *, bool> sideeffect_func;
+    std::unordered_map<BasicBlock *, bool> if_call_bb;
 
 public:
     ~GCM();

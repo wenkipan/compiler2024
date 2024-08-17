@@ -25,6 +25,7 @@ class SSARegisterAlloc
     std::unordered_map<Alloca *, Value *> spillAllocMap;
     void Spill(Function *p_func);
     void SpillBB_R(BasicBlock *bb);
+    void SpillBB_Q(BasicBlock *bb);
     void SpillBB_S(BasicBlock *bb);
     void spillUserPhi(int x);
     void RewriteProgram(Function *p_func);
@@ -32,6 +33,7 @@ class SSARegisterAlloc
     void AddEdge(int x, int y);
     void AssignColor_R(Function *p_func);
     void AssignColor_S(Function *p_func);
+    void AssignColor_Q(Function *p_func);
     void AddBB(Function *p_func);
     void ReSortForPara(Function *p_func);
     void ReSortForCall(Call *call);

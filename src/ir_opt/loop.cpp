@@ -212,12 +212,17 @@ static inline void _AddLoopIf(Loop *loop, const int times, SCEV *_SCEV, BasicBlo
 
 void loopFFF::Unroll(Loop *loop)
 {
+
+    puts("BB:  ");
+    loop->get_header()->print();
     assert(loop->get_BBs()->size() == 1);
     Function *p_func = loop->get_header()->get_func();
+    p_func->print();
     IRCopy copyer;
     Function *cFunc;
     cFunc = copyer.copy_func(p_func);
-
+    puts("AAAAA");
+    puts("   ");
     {
         std::vector<Value *> addvals;
         std::vector<BasicBlock *> addBBs;
@@ -259,31 +264,134 @@ void loopFFF::Unroll(Loop *loop)
                 }
         }
     }
+    BasicBlock *header = loop->get_header();
+    puts("SSSSSS");
+    puts("");
+    BasicBlock *cheader = copyer.get_mapbb(header);
+    BasicBlock *newBB = new BasicBlock(p_func);
+    p_func->block_pushBack(newBB);
 
     {
-        BasicBlock *header = loop->get_header();
-        ;
+
         if ((*header->get_user_list()->begin())->get_user() == header)
             (*copyer.get_mapbb(header)->get_user_list())[1]->set_user(*loop->get_exits()->begin());
         else
             (*copyer.get_mapbb(header)->get_user_list())[0]->set_user(*loop->get_exits()->begin());
-        BasicBlock *cheader = copyer.get_mapbb(header);
+
         bool afterST = false;
-        for (Instrution *instr : *cheader->get_instrs())
+        std::unordered_map<Instrution *, Instrution *> instrMap_;
+        std::unordered_map<Instrution *, Instrution *> loadMap_;
+        for (Instrution *originInstr : *header->get_instrs())
         {
+            Instrution *instr = (Instrution *)copyer.get_mapval(originInstr);
             if (instr->isLoad())
-                instr->get_type()->reset(TypeEnum::VecI32);
+            {
+                Value *val = ((Load *)originInstr)->get_addr();
+                bool ptrFlag = false;
+                GEP *gep = dynamic_cast<GEP *>(val);
+                if (gep != nullptr)
+                {
+                    if (loop->is_BBinLoop(gep->get_BB()))
+                        ptrFlag = true;
+                }
+                else
+                    ptrFlag = false;
+                if (ptrFlag)
+                    instr->get_type()->reset(TypeEnum::VecI32);
+                else
+                {
+                    Assign *p_assign = new Assign(InstrutionEnum::Assign, instr, newBB, false);
+                    p_assign->get_type()->reset(TypeEnum::VecI32);
+                    auto list_ = instr->get_user_list();
+                    bool invflag = true;
+                    while (invflag)
+                    {
+                        invflag = false;
+                        for (auto it = list_->begin(); it != list_->end(); ++it)
+                        {
+                            if ((*it)->get_user() != p_assign)
+                            {
+                                (*it)->set_val(p_assign);
+                                list_->erase(it);
+                                invflag = true;
+                                break;
+                            }
+                        }
+                    }
+                    loadMap_.insert({p_assign, instr});
+                }
+            }
+
             else if (instr->isStore())
             {
                 afterST = true;
-                instr->get_type()->reset(TypeEnum::VecI32);
+                Value *val = ((Store *)instr)->get_src();
+                if (val->get_type()->get_type() != TypeEnum::VecI32)
+                {
+                    Assign *p_assign = new Assign(InstrutionEnum::Assign, val, cheader, true);
+                    p_assign->get_type()->reset(TypeEnum::VecI32);
+
+                    auto list_ = val->get_user_list();
+                    for (auto it = list_->begin(); it != list_->end(); ++it)
+                    {
+                        if ((*it)->get_user() == instr)
+                        {
+                            (*it)->set_val(p_assign);
+                            list_->erase(it);
+                        }
+                    }
+                    instrMap_.insert({instr, p_assign});
+                }
             }
             else if (instr->isBinary())
             {
                 Binary *p_b = (Binary *)instr;
                 if (p_b->get_src1()->get_type()->get_type() == TypeEnum::VecI32)
                 {
-                    assert(p_b->get_src2()->get_type()->get_type() == TypeEnum::VecI32);
+                    if (p_b->get_src2()->get_type()->get_type() != TypeEnum::VecI32)
+                    {
+                        Value *val = p_b->get_src2();
+                        if (val->get_type()->get_type() != TypeEnum::VecI32)
+                        {
+                            Assign *p_assign = new Assign(InstrutionEnum::Assign, val, cheader, true);
+                            p_assign->get_type()->reset(TypeEnum::VecI32);
+
+                            auto list_ = val->get_user_list();
+                            for (auto it = list_->begin(); it != list_->end(); ++it)
+                            {
+                                if ((*it)->get_user() == instr)
+                                {
+                                    (*it)->set_val(p_assign);
+                                    list_->erase(it);
+                                }
+                            }
+                            instrMap_.insert({instr, p_assign});
+                        }
+                    }
+                    p_b->get_type()->reset(TypeEnum::VecI32);
+                }
+                else if (p_b->get_src2()->get_type()->get_type() == TypeEnum::VecI32)
+                {
+                    if (p_b->get_src1()->get_type()->get_type() != TypeEnum::VecI32)
+                    {
+                        Value *val = p_b->get_src2();
+                        if (val->get_type()->get_type() != TypeEnum::VecI32)
+                        {
+                            Assign *p_assign = new Assign(InstrutionEnum::Assign, val, cheader, true);
+                            p_assign->get_type()->reset(TypeEnum::VecI32);
+
+                            auto list_ = val->get_user_list();
+                            for (auto it = list_->begin(); it != list_->end(); ++it)
+                            {
+                                if ((*it)->get_user() == instr)
+                                {
+                                    (*it)->set_val(p_assign);
+                                    list_->erase(it);
+                                }
+                            }
+                            instrMap_.insert({instr, p_assign});
+                        }
+                    }
                     p_b->get_type()->reset(TypeEnum::VecI32);
                 }
                 else
@@ -315,6 +423,25 @@ void loopFFF::Unroll(Loop *loop)
                 ;
             else
                 assert(0);
+        }
+
+        for (auto it : instrMap_)
+        {
+            auto instrs = cheader->get_instrs();
+            for (auto instr = instrs->begin(); MustDo(instr, instrs); ++instr)
+            {
+                if ((*instr) == it.first)
+                {
+                    instrs->insert(instr, it.second);
+                    break;
+                }
+            }
+        }
+
+        for (auto it : loadMap_)
+        {
+
+            newBB->instr_insert_before(it.first, it.second);
         }
     }
 
@@ -394,6 +521,27 @@ void loopFFF::Unroll(Loop *loop)
                     (*it)->set_user(_Judge);
                     list_->erase(it);
                 }
+        }
+
+        newBB->Set_jmp(cheader);
+        auto list_ = _Judge->get_user_list();
+        for (Edge *edge : *list_)
+            if (edge->get_user() == cheader)
+            {
+                auto vals = cheader->get_value_list();
+                for (auto it = vals->begin(); MustDo(it, vals); ++it)
+                    if ((*it) == edge)
+                    {
+                        vals->erase(it);
+                        break;
+                    }
+                edge->set_user(newBB);
+            }
+        for (PHINode *phi : *cheader->get_phinodes())
+        {
+            Value *val = phi->get_valueMap()->find(_Judge)->second->get_val();
+            phi->eraseIncoming(_Judge);
+            phi->addIncoming(val, newBB);
         }
     }
 

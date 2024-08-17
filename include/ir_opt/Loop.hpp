@@ -34,6 +34,8 @@ class Loop
     std::set<BasicBlock *> *exitings;
     std::set<BasicBlock *> *exits;
 
+    bool hasCall_ = false;
+
     // step
     bool _is_stepSet = false;
     int _cmpType;
@@ -64,6 +66,9 @@ public:
     std::set<Loop *> *get_lpsons() { return lpsons; }
     bool is_simple();
     bool is_BBinLoop(BasicBlock *_BB);
+
+    void orhasCall(bool flag) { hasCall_ = hasCall_ | flag; }
+    bool hasCall() { return hasCall_; }
 
     void set_header(BasicBlock *_header) { header = _header; }
 

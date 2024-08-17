@@ -219,38 +219,42 @@ void Inline::run(Module *m)
             }
             delelist.emplace(cgnode->link_f);
         }
-        else if (CG->can_inline_recursive(cgnode))
-        {
-            if (1)
-                std::cout << "inlining" << cgnode->link_f->get_name() << std::endl;
-            IRCopy ic;
-            Function *origin = ic.copy_func(cgnode->link_f);
-            int cnt = 0;
-            for (auto calleredge : *cgnode->get_value_list())
-            {
-                Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
-                if (cgnode->link_f == caller)
-                {
-                    cnt++;
-                }
-                // tmp
-            }
-            if (cnt > 5)
-                continue;
+        // else if (CG->can_inline_recursive(cgnode))
+        // {
+        //     if (1)
+        //         std::cout << "inlining" << cgnode->link_f->get_name() << std::endl;
+        //     IRCopy ic;
+        //     Function *origin = ic.copy_func(cgnode->link_f);
+        //     int cnt = 0;
+        //     for (auto calleredge : *cgnode->get_value_list())
+        //     {
+        //         Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
+        //         if (cgnode->link_f == caller)
+        //         {
+        //             cnt++;
+        //         }
+        //         // tmp
+        //     }
+        //     if (cnt > 5)
+        //     {
+        //         origin->DeleteGVals();
+        //         delete origin;
+        //         continue;
+        //     }
 
-            for (auto calleredge : *cgnode->get_value_list())
-            {
-                Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
-                if (cgnode->link_f == caller)
-                {
-                    std::cout << "beinlining" << caller->get_name() << std ::endl;
-                    do_inline(caller, cgnode->link_f, origin);
-                }
-                // tmp
-            }
-            origin->DeleteGVals();
-            delete origin;
-        }
+        //     for (auto calleredge : *cgnode->get_value_list())
+        //     {
+        //         Function *caller = (Function *)((CallGraphNode *)calleredge->get_val())->link_f;
+        //         if (cgnode->link_f == caller)
+        //         {
+        //             std::cout << "beinlining" << caller->get_name() << std ::endl;
+        //             do_inline(caller, cgnode->link_f, origin);
+        //         }
+        //         // tmp
+        //     }
+        //     origin->DeleteGVals();
+        //     delete origin;
+        // }
         else
         {
             for (auto calleredge : *cgnode->get_value_list())

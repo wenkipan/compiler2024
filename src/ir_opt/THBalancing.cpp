@@ -149,6 +149,8 @@ Instrution *THBalancing::rebuild(Instrution *root, std::priority_queue<Value *, 
         }
 
         Instrution *NT = new Binary(root->get_Instrtype(), NL, NR, curbb);
+        if (NL->get_type()->get_type() == TypeEnum::VecI32)
+            NT->get_type()->reset(TypeEnum::VecI32);
         NT->insertInstr(root->get_parent(), root->get_pos_of_bb());
         if (q.empty())
         {

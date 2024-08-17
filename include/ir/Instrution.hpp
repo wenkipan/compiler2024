@@ -58,6 +58,7 @@ enum class InstrutionEnum
     F2I,
     I2F,
     AddSP,
+    Dump,
     UnaryEnd,
     Move,
     lirBegin,
@@ -111,6 +112,7 @@ public:
     bool isIBinary() { return instr_type >= InstrutionEnum::IADD && instr_type <= InstrutionEnum::IMOD; }
     bool isMove() { return instr_type == InstrutionEnum::Move; }
     bool islir() { return instr_type >= InstrutionEnum::lirBegin && instr_type <= InstrutionEnum::lirEnd; }
+    bool isVecI32type() { return this->get_type()->get_type() == TypeEnum::VecI32; }
     BasicBlock *get_parent() { return parent; }
     void setParent_F(BasicBlock *_BB) { parent = _BB; }
 
@@ -278,6 +280,14 @@ public:
     Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent)
         : Unary(type, _src1, _parent) {}
     Assign(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
+        : Unary(type, _src1, _parent, notPush) {}
+    void print();
+};
+
+class Dump : public Unary
+{
+public:
+    Dump(InstrutionEnum type, Value *_src1, BasicBlock *_parent, bool notPush)
         : Unary(type, _src1, _parent, notPush) {}
     void print();
 };

@@ -53,8 +53,11 @@ Value *const_fold_unary(Unary *instr)
     {
         a = new ConstantI32(((ConstantF32 *)src)->get_f32()[0]);
     }
-    else if (is_a<Assign>(instr))
+    else if (is_a<Assign>(instr) &&
+             instr->get_type()->get_type() == instr->get_operand_at(0)->get_type()->get_type())
     {
+        printf("constfold\n");
+        instr->print();
         a = src;
     }
     else

@@ -14,6 +14,10 @@ std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
             if (c <= 15 && c >= 0)
                 ret.push_back(c + 16);
         }
+        else if (LA.is_vector[LA.ValueIdMap[it]])
+        {
+            ret.push_back(56 + c);
+        }
         else
         {
             if (c <= 3)
@@ -45,6 +49,12 @@ int SSARegisterAlloc::getReg(Value *val)
         if (c < 0 || c > 31)
             assert(0);
         return 16 + c;
+    }
+    else if (LA.is_vector[x])
+    {
+        if (c < 0 || c > 7)
+            assert(0);
+        return 56 + c;
     }
     else
     {
@@ -163,18 +173,26 @@ void SSARegisterAlloc::run(Function *p_func)
     RewriteProgram(p_func);
     MakeGraph(p_func);
     AssignColor_R(p_func);
+    AssignColor_Q(p_func);
     AssignColor_S(p_func);
 
-    Register.resize(48);
-    for (int i = 0; i < 48; i++)
+    Register.resize(64);
+    for (int i = 0; i < 64; i++)
     {
-        Register[i] = new Value(i < 16 ? TypeEnum::I32 : TypeEnum::F32);
-        p_func->value_pushBack(Register[i]);
+        if (i < 48)
+            Register[i] = new Value(i < 16 ? TypeEnum::I32 : TypeEnum::F32);
+        else if (i < 56)
+            Register[i] = nullptr;
+        else
+            Register[i] = new Value(TypeEnum::VecI32);
+        if (Register[i] != nullptr)
+            p_func->value_pushBack(Register[i]);
     }
 
-    // for (auto bb : *(p_func->get_blocks()))
-    //     ReLoad(bb);
     ReplaceNullToTmp(p_func);
+
+    // for (auto bb : *(p_func->get_blocks()))
+    // ReLoad(bb);
 
     ReSortForPara(p_func);
     std::vector<Call *> calls;
@@ -268,6 +286,10 @@ void SSARegisterAlloc::ReSortForPara(Function *p_func)
                         In[RegsID[reg]] = load;
                 }
             }
+        }
+        else if (para->get_type()->get_type() == TypeEnum::VecI32)
+        {
+            assert(0);
         }
         else
         {
@@ -421,6 +443,10 @@ void SSARegisterAlloc::ReSortForCall(Call *call)
                 else
                     In[RegsID[Reg]] = op;
             }
+        }
+        else if (op->get_type()->get_type() == TypeEnum::VecI32)
+        {
+            assert(0);
         }
         else
         {
@@ -586,7 +612,7 @@ void SSARegisterAlloc::ReSortForPhi(BasicBlock *bb)
 }
 void SSARegisterAlloc::AddEdge(int x, int y)
 {
-    if (x == y || LA.is_float[x] != LA.is_float[y])
+    if (x == y || LA.is_float[x] != LA.is_float[y] || LA.is_vector[x] != LA.is_vector[y])
         return;
     G_set[LA.Vals[x]].insert(LA.Vals[y]);
     G_set[LA.Vals[y]].insert(LA.Vals[x]);
@@ -623,7 +649,7 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
             }
             // if (dynamic_cast<Call *>(*it) != nullptr)
             //     continue;
-            int cnt_R = 0, cnt_S = 0;
+            int cnt_R = 0, cnt_S = 0, cnt_Q = 0;
             for (auto edge : *((*it)->get_value_list()))
             {
                 Value *use = edge->get_val();
@@ -634,6 +660,10 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
                     cnt_S++;
                     if (cnt_S > Para_S)
                         continue;
+                }
+                else if (use->get_type()->get_type() == TypeEnum::VecI32)
+                {
+                    cnt_Q++;
                 }
                 else
                 {
@@ -686,7 +716,7 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
     std::unordered_map<int, int> id_R_map;
     id_R.push_back(-1);
     for (int i = 0; i < vregNum; i++)
-        if (LA.is_float[i] == 0)
+        if (LA.is_int[i] == 1)
         {
             id_R.push_back(i);
             n++;
@@ -734,6 +764,66 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
         for (auto tmp : G[id_R[x]])
         {
             int y = id_R_map[tmp];
+            if (!dy[y])
+            {
+                pre[next[y]] = pre[y];
+                next[pre[y]] = next[y];
+                ++w[y];
+                pre[next[y] = next[N + w[y]]] = y;
+                next[pre[y] = N + w[y]] = y;
+            }
+        }
+    }
+}
+
+void SSARegisterAlloc::AssignColor_Q(Function *p_func)
+{
+    int n = 0;
+    std::vector<int> id_Q;
+    std::unordered_map<int, int> id_Q_map;
+    id_Q.push_back(-1);
+    for (int i = 0; i < vregNum; i++)
+        if (LA.is_vector[i] == 1)
+        {
+            id_Q.push_back(i);
+            n++;
+            id_Q_map[i] = n;
+        }
+    int N = n + 1;
+    std::vector<int> next(n + N + 1), pre(n + N + 1), w(n + 1), q(n + 1), dy(n + 1);
+    for (int i = 1; i <= n; i++)
+    {
+        color[id_Q[i]] = -1;
+        pre[next[i] = next[N + w[i]]] = i;
+        next[pre[i] = N + w[i]] = i;
+    }
+    int now = 0;
+    for (int k = n; k; --k, ++now)
+    {
+        while (!next[N + now])
+            --now;
+        int x = next[N + now];
+        std::unordered_set<int> color_set;
+        for (auto tmp : G[id_Q[x]])
+            if (color[tmp] != -1)
+                color_set.insert(color[tmp]);
+        for (int i = 0; i < 8; i++)
+            if (color_set.find(i) == color_set.end())
+            {
+                color[id_Q[x]] = i;
+                break;
+            }
+        if (color[id_Q[x]] == -1)
+        {
+            assert(0);
+        }
+        pre[next[x]] = pre[x];
+        next[pre[x]] = next[x];
+        q[k] = x;
+        dy[x] = k;
+        for (auto tmp : G[id_Q[x]])
+        {
+            int y = id_Q_map[tmp];
             if (!dy[y])
             {
                 pre[next[y]] = pre[y];
@@ -837,7 +927,8 @@ void SSARegisterAlloc::ReLoad(BasicBlock *bb)
     if (spilledVals.empty())
         return;
     std::unordered_map<int, Value *> regState;
-    std::unordered_map<Value *, Value *> InReg;
+    std::unordered_set<Value *> InReg;
+    std::unordered_map<Alloca *, std::queue<Value *>> Q;
     std::vector<int> allR, allS;
     for (int i = 8; i <= 27; i++)
     {
@@ -848,12 +939,12 @@ void SSARegisterAlloc::ReLoad(BasicBlock *bb)
         if (LA.InSet[bb].at(i))
         {
             regState[getReg(LA.Vals[i])] = LA.Vals[i];
-            InReg[LA.Vals[i]] = LA.Vals[i];
+            InReg.insert(LA.Vals[i]);
         }
     for (auto phi : *(bb->get_phinodes()))
     {
         regState[getReg(phi)] = phi;
-        InReg[phi] = phi;
+        InReg.insert(phi);
     }
     std::vector<Instrution *> dropList;
     for (auto ins : *(bb->get_instrs()))
@@ -872,7 +963,7 @@ void SSARegisterAlloc::ReLoad(BasicBlock *bb)
                     continue;
                 uses.push_back(val);
             }
-            else
+            else if (val->get_type()->get_type() == TypeEnum::F32)
             {
                 cnt_S++;
                 if (cnt_S > Para_S)
@@ -882,97 +973,58 @@ void SSARegisterAlloc::ReLoad(BasicBlock *bb)
         }
         for (auto val : uses)
         {
-            if (spilledVals.find(val) != spilledVals.end())
+            if (is_a<Load>(val) && isSpill(dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())))
             {
-                bool check = false;
-                for (auto edge : *(allocMap[val]->get_user_list()))
+                if (InReg.find(val) == InReg.end())
+                    continue;
+                Alloca *alloc = dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr());
+                while (1)
                 {
-                    Value *use = edge->get_user();
-                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
-                    {
-                        check = true;
+                    assert(!Q[alloc].empty());
+                    if (InReg.find(Q[alloc].front()) == InReg.end())
+                        Q[alloc].pop();
+                    else
                         break;
-                    }
                 }
-                if (!check)
-                {
-                    regState[getReg(val)] = nullptr;
-                    InReg.erase(val);
-                }
-            }
-            else if (is_a<Load>(val) && isSpill(dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())))
-            {
-                bool check = false;
-                for (auto edge : *(dynamic_cast<Load *>(val)->get_addr()->get_user_list()))
-                {
-                    Value *use = edge->get_user();
-                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
-                    {
-                        check = true;
-                        break;
-                    }
-                }
-                if (!check)
-                {
-                    regState[getReg(InReg[spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())]])] = nullptr;
-                    InReg.erase(spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(val)->get_addr())]);
-                }
-            }
-            else
-            {
-                bool check = false;
-                if (LA.OutSet[bb].at(LA.ValueIdMap[val]))
-                    check = true;
-                if (!check)
-                {
-                    for (auto edge : *(val->get_user_list()))
-                    {
-                        Value *use = edge->get_user();
-                        if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
-                        {
-                            check = true;
-                            break;
-                        }
-                    }
-                }
-                if (!check)
-                {
-                    regState[getReg(val)] = nullptr;
-                    InReg.erase(val);
-                }
+                if (val == Q[alloc].front())
+                    continue;
+                InReg.erase(regState[getReg(val)]);
+                regState[getReg(val)] = nullptr;
+                for (auto edge : *(val->get_user_list()))
+                    edge->set_val(Q[alloc].front());
+                val->get_user_list()->clear();
+                dropList.push_back(dynamic_cast<Instrution *>(val));
             }
         }
         if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end())
         {
+            if (regState[getReg(ins)] != nullptr)
+            {
+                InReg.erase(regState[getReg(ins)]);
+            }
+            InReg.insert(ins);
+            regState[getReg(ins)] = ins;
             if (is_a<Load>(ins) && isSpill(dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())))
+                Q[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())].push(dynamic_cast<Load *>(ins));
+            else if (spilledVals.find(ins) != spilledVals.end())
             {
-                if (InReg.find(spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())]) == InReg.end())
-                {
-                    if (regState[getReg(ins)] != nullptr)
-                    {
-                        InReg.erase(regState[getReg(ins)]);
-                    }
-                    InReg[spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())]] = ins;
-                    regState[getReg(ins)] = spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())];
-                }
-                else
-                {
-                    assert(ins->get_user_list()->size() == 1);
-                    Edge *edge = ins->get_user_list()->front();
-                    edge->set_val(InReg[spillAllocMap[dynamic_cast<Alloca *>(dynamic_cast<Load *>(ins)->get_addr())]]);
-                    ins->get_user_list()->clear();
-                    dropList.push_back(ins);
-                }
+                Q[allocMap[ins]].push(ins);
             }
-            else
-            {
-                if (regState[getReg(ins)] != nullptr)
+        }
+        if (is_a<Call>(ins))
+        {
+            for (int i = 0; i < 4; i++)
+                if (regState[i] != nullptr)
                 {
-                    InReg.erase(regState[getReg(ins)]);
+                    InReg.erase(regState[i]);
+                    regState[i] = nullptr;
                 }
-                InReg[ins] = ins;
-                regState[getReg(ins)] = ins;
-            }
+            for (int i = 16; i < 32; i++)
+                if (regState[i] != nullptr)
+                {
+                    InReg.erase(regState[i]);
+                    regState[i] = nullptr;
+                }
         }
     }
     for (auto ins : dropList)
@@ -983,10 +1035,10 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
 {
     std::set<std::pair<int, int>> I_B;
     for (int i = 0; i < vregNum; i++)
-        if (LA.InSet[bb].at(i) && LA.is_float[i] == 0)
+        if (LA.InSet[bb].at(i) && LA.is_int[i] == 1)
             I_B.insert(std::make_pair(LA.InDis[bb][i], i));
     for (auto phi : *(bb->get_phinodes()))
-        if (LA.is_float[LA.ValueIdMap[phi]] == 0)
+        if (LA.is_int[LA.ValueIdMap[phi]] == 1)
             I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
@@ -1011,18 +1063,18 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
         {
             if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
                 continue;
-            if (edge->get_val()->get_type()->get_type() != TypeEnum::F32)
+            if (edge->get_val()->get_type()->get_type() != TypeEnum::F32 && edge->get_val()->get_type()->get_type() != TypeEnum::VecI32)
                 cnt_R++;
             else
                 continue;
             if (cnt_R <= Para_R)
             {
-                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
+                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_int[LA.ValueIdMap.at(edge->get_val())] == 1)
                     ops.insert(LA.ValueIdMap.at(edge->get_val()));
             }
             else
             {
-                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(edge->get_val())] == 0)
+                if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_int[LA.ValueIdMap.at(edge->get_val())] == 1)
                 {
                     spilledNodes.insert(LA.ValueIdMap.at(edge->get_val()));
                     spillUserPhi(LA.ValueIdMap.at(edge->get_val()));
@@ -1104,10 +1156,145 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                 callLiveVreg[dynamic_cast<Call *>(ins)].push_back(LA.Vals[reg.second]);
             }
         }
-        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_float[LA.ValueIdMap.at(ins)] == 0)
+        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_int[LA.ValueIdMap.at(ins)] == 1)
         {
             int result = LA.ValueIdMap.at(ins);
             if (Regs.size() == K_R)
+            {
+                spilledNodes.insert(Regs.begin()->second);
+                spillUserPhi(Regs.begin()->second);
+                inReg.erase(Regs.begin()->second);
+                Regs.erase(Regs.begin());
+            }
+            int tmp = LA.OutDis[bb][result] + bb->get_instrs()->size();
+            for (auto edge : *(LA.Vals[result]->get_user_list()))
+            {
+                Value *use = edge->get_user();
+                if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                {
+                    tmp = std::min(tmp, use->get_ID() - bb->get_instrs()->front()->get_ID());
+                    break;
+                }
+            }
+            Regs.insert(std::make_pair(-tmp, result));
+            inReg.insert(result);
+        }
+    }
+}
+
+void SSARegisterAlloc::SpillBB_Q(BasicBlock *bb)
+{
+    std::set<std::pair<int, int>> I_B;
+    for (int i = 0; i < vregNum; i++)
+        if (LA.InSet[bb].at(i) && LA.is_vector[i] == 1)
+            I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+    for (auto phi : *(bb->get_phinodes()))
+        if (LA.is_vector[LA.ValueIdMap[phi]] == 1)
+            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
+    std::set<std::pair<int, int>> Regs;
+    std::unordered_set<int> inReg;
+    for (auto it : I_B)
+    {
+        if (Regs.size() < K_Q)
+        {
+            Regs.insert(std::make_pair(-it.first, it.second));
+            inReg.insert(it.second);
+        }
+        else
+        {
+            spilledNodes.insert(it.second);
+            spillUserPhi(it.second);
+        }
+    }
+    for (auto ins : *(bb->get_instrs()))
+    {
+        std::unordered_set<int> ops;
+        int cnt_Q = 0;
+        for (auto edge : *(ins->get_value_list()))
+        {
+            if (dynamic_cast<Function *>(edge->get_val()) != nullptr)
+                continue;
+            if (edge->get_val()->get_type()->get_type() == TypeEnum::VecI32)
+                cnt_Q++;
+            else
+                continue;
+            assert(!is_a<Call>(ins));
+            if (LA.ValueIdMap.find(edge->get_val()) != LA.ValueIdMap.end() && LA.is_vector[LA.ValueIdMap.at(edge->get_val())] == 1)
+                ops.insert(LA.ValueIdMap.at(edge->get_val()));
+        }
+        for (auto op : ops)
+        {
+            if (inReg.find(op) == inReg.end())
+            {
+                if (Regs.size() == K_Q)
+                    for (auto it : Regs)
+                    {
+                        if (ops.find(it.second) == ops.end())
+                        {
+                            spilledNodes.insert(it.second);
+                            spillUserPhi(it.second);
+                            inReg.erase(it.second);
+                            Regs.erase(it);
+                            break;
+                        }
+                    }
+                if (Regs.size() == K_Q)
+                {
+                    assert(0);
+                }
+                int tmp = LA.OutDis[bb][op] + bb->get_instrs()->size();
+                for (auto edge : *(LA.Vals[op]->get_user_list()))
+                {
+                    Value *use = edge->get_user();
+                    if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                    {
+                        tmp = std::min(tmp, use->get_ID() - bb->get_instrs()->front()->get_ID());
+                        break;
+                    }
+                }
+                Regs.insert(std::make_pair(-tmp, op));
+                inReg.insert(op);
+            }
+        }
+        std::set<std::pair<int, int>> del_reg;
+        for (auto reg : Regs)
+        {
+            if (spilledNodes.find(reg.second) != spilledNodes.end())
+            {
+                inReg.erase(reg.second);
+                // Regs.erase(reg);
+                del_reg.insert(reg);
+            }
+            if (LA.OutSet[bb].at(reg.second))
+                continue;
+            bool live = false;
+            for (auto edge : *(LA.Vals[reg.second]->get_user_list()))
+            {
+                Value *use = edge->get_user();
+                if (use->get_ID() > ins->get_ID() && use->get_ID() <= bb->get_instrs()->back()->get_ID())
+                {
+                    live = true;
+                    break;
+                }
+            }
+            if (!live)
+            {
+                inReg.erase(reg.second);
+                // Regs.erase(reg);
+                del_reg.insert(reg);
+            }
+        }
+        for (auto reg : del_reg)
+            Regs.erase(reg);
+        if (dynamic_cast<Call *>(ins) != nullptr)
+        {
+            for (auto reg : Regs)
+                callLiveVreg[dynamic_cast<Call *>(ins)].push_back(LA.Vals[reg.second]);
+        }
+        if (LA.ValueIdMap.find(ins) != LA.ValueIdMap.end() && LA.is_vector[LA.ValueIdMap.at(ins)] == 1)
+        {
+            int result = LA.ValueIdMap.at(ins);
+            if (Regs.size() == K_Q)
             {
                 spilledNodes.insert(Regs.begin()->second);
                 spillUserPhi(Regs.begin()->second);
@@ -1280,6 +1467,7 @@ void SSARegisterAlloc::Spill(Function *p_func)
     for (auto bb : *(p_func->get_blocks()))
     {
         SpillBB_R(bb);
+        SpillBB_Q(bb);
         SpillBB_S(bb);
     }
 }
@@ -1311,11 +1499,15 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                 if (rk <= Para_S)
                     flag = true;
             }
+            else if (LA.Vals[v]->get_type()->get_type() == TypeEnum::VecI32)
+            {
+                assert(0);
+            }
             else
             {
                 int rk = 0;
                 for (auto it : *(p_func->get_params()))
-                    if (it->get_type()->get_type() != TypeEnum::F32)
+                    if (it->get_type()->get_type() != TypeEnum::F32 && it->get_type()->get_type() != TypeEnum::VecI32)
                     {
                         rk++;
                         if (it == LA.Vals[v])
@@ -1499,11 +1691,18 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
                     if (rk <= Para_S)
                         flag = true;
                 }
+                else if (val->get_type()->get_type() == TypeEnum::VecI32)
+                {
+                    assert(0);
+                }
                 else
                 {
                     int rk = 0;
                     for (auto it : *(use->get_value_list()))
-                        if (!is_a<Function>(it->get_val()) && it->get_val()->get_type()->get_type() != TypeEnum::F32 && (!is_a<Alloca>(it->get_val()) || !isSpill(dynamic_cast<Alloca *>(it->get_val()))))
+                        if (!is_a<Function>(it->get_val()) &&
+                            it->get_val()->get_type()->get_type() != TypeEnum::F32 &&
+                            it->get_val()->get_type()->get_type() != TypeEnum::VecI32 &&
+                            (!is_a<Alloca>(it->get_val()) || !isSpill(dynamic_cast<Alloca *>(it->get_val()))))
                         {
                             rk++;
                             if (it->get_val() == val)

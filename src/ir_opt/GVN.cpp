@@ -41,6 +41,7 @@ std::unordered_map<InstrutionEnum, std::string> enum_map = {
     {InstrutionEnum::FLE, "fcmp ole"},
     {InstrutionEnum::FGT, "fcmp ogt"},
     {InstrutionEnum::FGE, "fcmp oge"},
+    {InstrutionEnum::Assign, "assgin"},
     {InstrutionEnum::AddSP, "SP +"}};
 
 void GVN::run(Function *func)
@@ -120,6 +121,10 @@ void GVN::visit_instr(Instrution *instr)
     {
         return;
     }
+    // else if (instr->isVecI32type())
+    // {
+    //     return;
+    // }
     else
         deal = const_fold(instr);
 

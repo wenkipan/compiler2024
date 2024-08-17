@@ -153,6 +153,8 @@ void SCCP::do_sccp()
                 assert(0);
                 break;
             case Lattice::Lat::CONST:
+                if (instr->get_type()->get_type() == TypeEnum::VecI32)
+                    continue;
                 edges = *instr->get_user_list();
                 if (l.is_i)
                 {
@@ -176,7 +178,8 @@ void SCCP::do_sccp()
                 instr->get_user_list()->clear();
                 break;
             case Lattice::Lat::NAC:
-                if (is_a<Assign>(instr))
+                if (is_a<Assign>(instr) &&
+                    instr->get_type()->get_type() == instr->get_operand_at(0)->get_type()->get_type())
                 {
                     edges = *instr->get_user_list();
                     for (auto edge : edges)

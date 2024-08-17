@@ -10,8 +10,8 @@
 
 int main(int argc, char *argv[])
 {
-    // freopen("in.txt", "r", stdin);
-    // freopen("out.txt", "w", stdout);
+    freopen("in.txt", "r", stdin);
+    freopen("out.txt", "w", stdout);
     char *in_file = NULL, *out_file = NULL;
     std::string Infile, Outfile;
     bool is_opt = false;
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     delete p_program;
     // IR
     // manager->printModule("O0");
-    is_opt = true;
+    // is_opt = true;
     manager->PassManager(is_opt);
     printf("lir\n");
     manager->run<immeFloatToLoad>();
@@ -58,19 +58,19 @@ int main(int argc, char *argv[])
 
     manager->FuncRun<GEPToALU>();
     manager->FuncRun<modTosubmul>();
-    manager->FuncRun<Peekhole_s>();
+    // manager->FuncRun<Peekhole_s>();
 
     // lir_opt
-    manager->FuncRun<GVN_l>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<GCM>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
-    manager->FuncRun<ARMMLA>();
-    manager->FuncRun<GCM>();
-    manager->FuncRun<DCE>();
-    manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<GVN_l>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<GCM>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
+    // manager->FuncRun<ARMMLA>();
+    // manager->FuncRun<GCM>();
+    // manager->FuncRun<DCE>();
+    // manager->FuncRun<SimplifyCFG>();
     manager->run<immeIntTomove>();
     fflush(stdout);
 

@@ -6,12 +6,16 @@ void LivenessAnalysis::init()
     Vals.clear();
     ValueIdMap.clear();
     is_float.clear();
+    is_vector.clear();
+    is_int.clear();
     for (auto arg : *(parent->get_params()))
     {
         Value *val = dynamic_cast<Value *>(arg);
         ValueIdMap[val] = allocaCounter++;
         Vals.push_back(val);
         is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
+        is_vector.push_back(val->get_type()->get_type() == TypeEnum::VecI32);
+        is_int.push_back(val->get_type()->get_type() != TypeEnum::F32 && val->get_type()->get_type() != TypeEnum::VecI32);
     }
     DCE dce;
     dce.run(parent);
@@ -22,6 +26,8 @@ void LivenessAnalysis::init()
             ValueIdMap[phi] = allocaCounter++;
             Vals.push_back(phi);
             is_float.push_back(phi->get_type()->get_type() == TypeEnum::F32);
+            is_vector.push_back(phi->get_type()->get_type() == TypeEnum::VecI32);
+            is_int.push_back(phi->get_type()->get_type() != TypeEnum::F32 && phi->get_type()->get_type() != TypeEnum::VecI32);
         }
         for (auto ins : *(bb->get_instrutions()))
         {
@@ -35,6 +41,8 @@ void LivenessAnalysis::init()
                 ValueIdMap[val] = allocaCounter++;
                 Vals.push_back(val);
                 is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
+                is_vector.push_back(val->get_type()->get_type() == TypeEnum::VecI32);
+                is_int.push_back(val->get_type()->get_type() != TypeEnum::F32 && val->get_type()->get_type() != TypeEnum::VecI32);
             }
         }
     }
@@ -83,7 +91,7 @@ bool LivenessAnalysis::work_BB(BasicBlock *bb)
                 if (cnt_S > Para_S)
                     continue;
             }
-            else
+            else if (val->get_type()->get_type() != TypeEnum::VecI32)
             {
                 cnt_R++;
                 if (cnt_R > Para_R)
@@ -131,7 +139,7 @@ void LivenessAnalysis::DefAndUseAnalysis()
                     if (cnt_S > Para_S)
                         continue;
                 }
-                else
+                else if (tmp->get_type()->get_type() != TypeEnum::VecI32)
                 {
                     cnt_R++;
                     if (cnt_R > Para_R)

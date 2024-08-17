@@ -570,7 +570,10 @@ void Load::print()
 {
     printf("    %%%d = load ", this->get_ID());
     Value *p_addr = get_addr();
-    ((Ptr *)p_addr->get_type())->print_btype();
+    if (this->get_type()->get_type() == TypeEnum::VecI32)
+        printf("VecI32");
+    else
+        ((Ptr *)p_addr->get_type())->print_btype();
     printf(", ptr ");
     if (is_a<GlobalValue>(p_addr))
         std::cout << '@' << ((GlobalValue *)p_addr)->get_name();
@@ -774,12 +777,21 @@ void PHINode::drop()
     Value::drop();
 }
 
+void Dump::print()
+{
+    printf("    %%%d = ", this->get_ID());
+    Value *p_src = get_src();
+    assert(this->get_type()->get_type() == TypeEnum::VecI32);
+    printf("i32toVeci32 ");
+    p_src->print_ID();
+    printf("\n");
+}
+
 void Assign::print()
 {
     printf("    %%%d = ", this->get_ID());
     Value *p_src = get_src();
     Type *p_type = get_type();
-    assert(p_type->get_type() == TypeEnum::I32 || p_type->get_type() == TypeEnum ::F32 || p_type->get_type() == TypeEnum::Ptr);
     if (p_type->get_type() == TypeEnum::I32)
     {
         printf("add nsw i32 ");
@@ -801,11 +813,20 @@ void Assign::print()
             p_src->print_ID();
         printf("\n");
     }
+    else if (p_type->get_type() == TypeEnum::VecI32)
+    {
+        printf("dump ");
+        p_src->print_ID();
+        printf("\n");
+    }
+    else
+        assert(0);
 }
 
 Move::Move(InstrutionEnum type, Value *_src1, Value *_src2, BasicBlock *_parent)
     : Instrution(_parent, type, TypeEnum::Void)
 {
+    assert(_src1 != nullptr && _src2 != nullptr);
     new Edge(this, _src1);
     new Edge(this, _src2);
 }
