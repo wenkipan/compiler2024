@@ -6,8 +6,6 @@
 #include "../../../include/backend/arm/DeadALU.hpp"
 #include "../../../include/backend/arm/BlockMerge.hpp"
 #include "../../../include/backend/arm/arm.hpp"
-#include "ir/Constant.hpp"
-#include "ir/Instrution.hpp"
 
 static inline void gen_instr_op2(ARMENUM ae, ArmOperand *o1, ArmOperand *o2, ArmBlock *b)
 {
@@ -57,13 +55,13 @@ void ArmGen::run(Module *m)
             continue;
         gen_func(f);
     }
-    printf("--total arm\n");
-    arm_module->print(1);
 
     BlockMerge bm;
     bm.run(arm_module);
     DeadALU da;
     da.run(arm_module);
+    printf("--total arm\n");
+    arm_module->print(1);
 }
 void ArmGen::init(Module *m)
 {
@@ -142,11 +140,11 @@ ArmFunc *ArmGen::init_func(Function *f)
         else
             assert(0);
     }
-    printf("---test-paramstostack\n");
-    for (auto pa : paramstostack)
-    {
-        pa->print();
-    }
+    // printf("---test-paramstostack\n");
+    // for (auto pa : paramstostack)
+    // {
+    //     pa->print();
+    // }
     paraminfomap.emplace(f, paramsinfo(paramstostack));
     if (f->get_isExternal())
     {
@@ -284,9 +282,9 @@ void ArmGen::gen_sp_sub_and_offset_for_alloc_and_param(Function *f, ArmBlock *b)
     int papos = 0;
     for (auto pa : paraminfomap.find(f)->second.paramstostack)
     {
-        printf("setpaoff:%d  ", pushedsize + sp_sub_offset + 4 * papos);
-        pa->print();
-        printf("\n");
+        // printf("setpaoff:%d  ", pushedsize + sp_sub_offset + 4 * papos);
+        // pa->print();
+        // printf("\n");
         set_offset(pa, pushedsize + sp_sub_offset + 4 * (papos++));
     }
 
@@ -403,6 +401,10 @@ void ArmGen::gen_mov_imme(int dst, int imme, ArmBlock *b)
         }
     }
 }
+static inline bool is_q_reg(int no)
+{
+    return no > 15 + 32 && no <= 15 + 32 + 16;
+}
 ArmInstr *ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
 {
     // int2reg
@@ -429,6 +431,9 @@ ArmInstr *ArmGen::gen_mov(Value *dst, Value *src, ArmBlock *bb)
         // assert(0);
         gen_instr_op3(ARMENUM::arm_add, new ArmReg(ssara->getReg(dst)), new ArmReg(SP), gen_legal_imme(get_offset(src), bb), bb);
     }
+    // else if (is_q_reg(ssara->getReg(dst)))
+    // {
+    // }
     else if (!is_s_reg(ssara->getReg(dst)) && !is_s_reg(ssara->getReg(src)))
     {
         gen_instr_op2(ARMENUM::arm_mov, new ArmReg(ssara->getReg(dst)), get_op(src, bb, 0), bb);
@@ -718,6 +723,26 @@ void ArmGen::gen_ret(Instrution *i, ArmBlock *b)
     newi->ops_push_back(new ArmReg(14));
     b->instrs_push_back(newi);
 }
+static inline ARMENUM get_opposite(ARMENUM a)
+{
+    switch (a)
+    {
+    case ARMENUM::arm_beq:
+        return ARMENUM::arm_bne;
+    case ARMENUM::arm_bne:
+        return ARMENUM::arm_beq;
+    case ARMENUM::arm_bgt:
+        return ARMENUM::arm_ble;
+    case ARMENUM::arm_ble:
+        return ARMENUM::arm_bgt;
+    case ARMENUM::arm_bge:
+        return ARMENUM::arm_blt;
+    case ARMENUM::arm_blt:
+        return ARMENUM::arm_bge;
+    default:
+        assert(0);
+    }
+}
 void ArmGen::gen_branch(Instrution *i, ArmBlock *b)
 {
     BasicBlock *parent = i->get_parent();
@@ -742,37 +767,37 @@ void ArmGen::gen_branch(Instrution *i, ArmBlock *b)
     {
     case InstrutionEnum::IEQ:
     case InstrutionEnum::FEQ:
-        newi = new ArmInstr(ARMENUM::arm_beq);
+        newi = new ArmInstr(get_opposite(ARMENUM::arm_beq));
         break;
     case InstrutionEnum::INEQ:
     case InstrutionEnum::FNEQ:
-        newi = new ArmInstr(ARMENUM::arm_bne);
+        newi = new ArmInstr(get_opposite(ARMENUM::arm_bne));
         break;
     case InstrutionEnum::IGT:
     case InstrutionEnum::FGT:
-        newi = new ArmInstr(ARMENUM::arm_bgt);
+        newi = new ArmInstr(get_opposite(ARMENUM::arm_bgt));
         break;
     case InstrutionEnum::IGE:
     case InstrutionEnum::FGE:
-        newi = new ArmInstr(ARMENUM::arm_bge);
+        newi = new ArmInstr(get_opposite(ARMENUM::arm_bge));
         break;
     case InstrutionEnum::ILT:
     case InstrutionEnum::FLT:
-        newi = new ArmInstr(ARMENUM::arm_blt);
+        newi = new ArmInstr(get_opposite(ARMENUM::arm_blt));
         break;
     case InstrutionEnum::ILE:
     case InstrutionEnum::FLE:
-        newi = new ArmInstr(ARMENUM::arm_ble);
+        newi = new ArmInstr(get_opposite(ARMENUM::arm_ble));
         break;
     default:
         assert(0);
         break;
     }
-    newi->ops_push_back(new ArmAddr(get_ab(truebb)));
+    newi->ops_push_back(new ArmAddr(get_ab(falsebb)));
     b->instrs_push_back(newi);
     // gen b2
     newi = new ArmInstr(ARMENUM::arm_b);
-    newi->ops_push_back(new ArmAddr(get_ab(falsebb)));
+    newi->ops_push_back(new ArmAddr(get_ab(truebb)));
     b->instrs_push_back(newi);
 }
 void ArmGen::gen_jmp(Instrution *i, ArmBlock *b)
@@ -842,6 +867,10 @@ void ArmGen::gen_load(Instrution *i, ArmBlock *b)
     {
         gen_instr_op2(ARMENUM::arm_vldr_32, new ArmReg(ssara->getReg(i)), get_op_addr_float(addr, b), b);
     }
+    else if (is_q_reg(ssara->getReg(i)))
+    {
+        gen_instr_op2(ARMENUM::arm_ldr, new ArmReg_neno_i32(ssara->getReg(i)), get_op_addr(addr, b), b);
+    }
     else
         assert(0);
 }
@@ -858,10 +887,10 @@ void ArmGen::gen_store(Instrution *i, ArmBlock *b)
     }
     else if (is_a<ConstantF32>(stored))
         assert(0);
+    else if (is_q_reg(ssara->getReg(stored)))
+        op1 = new ArmReg_neno_i32(ssara->getReg(stored));
     else
-    {
         op1 = new ArmReg(ssara->getReg(stored));
-    }
 
     if (((ArmReg *)op1)->is_r_reg())
     {
@@ -870,6 +899,10 @@ void ArmGen::gen_store(Instrution *i, ArmBlock *b)
     else if (((ArmReg *)op1)->is_s_reg())
     {
         gen_instr_op2(ARMENUM::arm_vstr_32, op1, get_op_addr_float(addr, b), b);
+    }
+    else if (((ArmReg *)op1)->is_q_reg())
+    {
+        gen_instr_op2(ARMENUM::arm_str, op1, get_op_addr(addr, b), b);
     }
     else
         assert(0);
@@ -1010,11 +1043,41 @@ void ArmGen::gen_lir(Instrution *i, ArmBlock *b)
                       new ArmReg(ssara->getReg(i->get_operand_at(2))),
                       new ArmReg(ssara->getReg(i->get_operand_at(0))), b);
     }
+    else if (i->get_Instrtype() == InstrutionEnum::MLS)
+    {
+        gen_instr_op4(ARMENUM::arm_mls, new ArmReg(ssara->getReg(i)),
+                      new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(2))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(0))), b);
+    }
+    else if (i->get_Instrtype() == InstrutionEnum::FMLA)
+    {
+        assert(ssara->getReg(i) == ssara->getReg(i->get_operand_at(0)));
+        gen_instr_op3(ARMENUM::arm_mla, new ArmReg(ssara->getReg(i)),
+                      new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(2))), b);
+    }
+    else if (i->get_Instrtype() == InstrutionEnum::VMLA)
+    {
+        assert(ssara->getReg(i) == ssara->getReg(i->get_operand_at(0)));
+        gen_instr_op3(ARMENUM::arm_mla, new ArmReg_neno_i32(ssara->getReg(i)),
+                      new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(1))),
+                      new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(2))), b);
+    }
     else if (i->get_Instrtype() == InstrutionEnum::ADDlsl)
     {
         assert(is_a<ConstantI32>(i->get_operand_at(2)));
         int lsl = ((ConstantI32 *)i->get_operand_at(2))->get_32_at(0);
         gen_instr_op4(ARMENUM::arm_add, new ArmReg(ssara->getReg(i)),
+                      new ArmReg(ssara->getReg(i->get_operand_at(0))),
+                      new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                      new ArmImme(lsl), b);
+    }
+    else if (i->get_Instrtype() == InstrutionEnum::SUBlsl)
+    {
+        assert(is_a<ConstantI32>(i->get_operand_at(2)));
+        int lsl = ((ConstantI32 *)i->get_operand_at(2))->get_32_at(0);
+        gen_instr_op4(ARMENUM::arm_sub, new ArmReg(ssara->getReg(i)),
                       new ArmReg(ssara->getReg(i->get_operand_at(0))),
                       new ArmReg(ssara->getReg(i->get_operand_at(1))),
                       new ArmImme(lsl), b);
@@ -1099,7 +1162,10 @@ ArmOperand *ArmGen::get_op_addr(Value *addr, ArmBlock *b)
         return gen_sp_and_offset_op(get_offset(addr), b);
     }
     else // gep results
+    {
+        assert(addr->get_type()->get_type() != TypeEnum::VecI32);
         return new ArmReg(ssara->getReg(addr), 0);
+    }
 }
 ArmOperand *ArmGen::get_op_addr_float(Value *addr, ArmBlock *b)
 {
@@ -1148,6 +1214,8 @@ ArmOperand *ArmGen::get_op(Value *i, ArmBlock *b, int must_reg)
     {
         if (i->get_type()->get_type() == TypeEnum::F32)
             assert(is_s_reg(ssara->getReg(i)));
+        if (i->get_type()->get_type() == TypeEnum::VecI32)
+            return new ArmReg_neno_i32(ssara->getReg(i));
         return new ArmReg(ssara->getReg(i));
     }
 }

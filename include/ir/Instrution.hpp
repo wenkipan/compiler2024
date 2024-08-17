@@ -62,7 +62,12 @@ enum class InstrutionEnum
     Move,
     lirBegin,
     MLA,
+    FMLA,
+    MLS,
+    FMLS,
+    VMLA,
     ADDlsl,
+    SUBlsl,
     lirEnd,
 };
 

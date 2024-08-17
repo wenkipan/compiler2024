@@ -19,7 +19,6 @@
 #include "../../include/ir_opt/THBalancing.hpp"
 #include "../../include/ir_opt/Inline.hpp"
 #include "../../include/ir_opt/loopunswitch.hpp"
-#include "../../include/ir_opt/loopUnroll.hpp"
 #include "../../include/ir_opt/loopArgDrop.hpp"
 #include "../../include/ir_opt/loopFullunroll.hpp"
 #include "../../include/ir_opt/ALS.hpp"

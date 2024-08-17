@@ -79,7 +79,7 @@ void immeIntTomove::run(Module *m)
             for (auto i : workvec)
             {
                 if ((i->get_Instrtype() == InstrutionEnum::IMUL || i->get_Instrtype() == InstrutionEnum::IDIV) ||
-                    (i->get_Instrtype() == InstrutionEnum::MLA))
+                    (i->get_Instrtype() == InstrutionEnum::MLA || i->get_Instrtype() == InstrutionEnum::MLS))
                 {
                     for (auto valedge : *i->get_value_list())
                     {

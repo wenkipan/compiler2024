@@ -25,8 +25,12 @@ enum class ARMENUM
     arm_vand,
     arm_binary_end,
 
+    arm_mul_comb_begin,
     arm_mla,
+    arm_mls,
+    arm_mul_comb_end,
     arm_addlsl,
+    arm_sublsl,
 
     arm_cmp_begin,
     arm_cmp,
@@ -61,6 +65,7 @@ enum class ARMENUM
     arm_vmov,
     arm_vmov_f32,
     arm_vneg_f32,
+    arm_dup_32,
     arm_mov_end,
 
     arm_push_pop_begin,
@@ -203,7 +208,8 @@ public:
     ArmReg(int _regno) : regno(_regno) { assert(_regno >= 0); }
     ArmReg(int _re, int off) : regno(_re), offset(off), is_addr(1) {}
     ArmReg(int _re, ArmReg *off) : regno(_re), offreg(off), is_addr(1) {}
-    bool is_s_reg() { return regno > 15 && regno <= 15 + 32; }
+    bool is_q_reg() { return regno >= 16 + 32 && regno <= 15 + 32 + 16; }
+    bool is_s_reg() { return regno >= 0 + 16 && regno <= 15 + 32; }
     bool is_r_reg() { return 0 <= regno && regno <= 15; }
     int get_offset() { return offset; }
     int get_no() { return regno; }
@@ -211,6 +217,13 @@ public:
     void print_reg();
     void print();
     ~ArmReg();
+};
+class ArmReg_neno_i32 : public ArmReg
+{
+
+public:
+    ArmReg_neno_i32(int _regno) : ArmReg(_regno) {}
+    // void print();
 };
 class ArmImme : public ArmOperand
 {
@@ -249,6 +262,7 @@ public:
     void print();
     bool is_arm_push_pop() { return ARMENUM::arm_push_pop_begin < armenum && armenum < ARMENUM::arm_push_pop_end; }
     bool is_b() { return ARMENUM::arm_jump_begin < armenum && armenum < ARMENUM::arm_jump_end; }
+    bool is_mul_comb() { return ARMENUM::arm_mul_comb_begin < armenum && armenum < ARMENUM::arm_mul_comb_end; }
     std::vector<ArmOperand *> get_ops() { return ops; }
     ~ArmInstr();
 

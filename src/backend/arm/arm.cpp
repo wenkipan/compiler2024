@@ -84,6 +84,7 @@ std::string printENUM(ARMENUM ARMENUM)
         ENUM_TO_STRING_CASE(ARMENUM, arm_bl)
         ENUM_TO_STRING_CASE(ARMENUM, arm_blx)
         ENUM_TO_STRING_CASE(ARMENUM, arm_mla)
+        ENUM_TO_STRING_CASE(ARMENUM, arm_mls)
     default:
         return "Unknown";
     }
@@ -172,10 +173,13 @@ static void inline visit(ArmBlock *bb, std::set<ArmBlock *> &visited, std::vecto
         return;
 
     visited.emplace(bb);
-    for (auto succ : *bb->get_user_list())
-    {
-        visit((ArmBlock *)succ->user, visited, order);
-    }
+    for (auto it = bb->get_user_list()->rbegin(); it != bb->get_user_list()->rend(); it++)
+        visit((ArmBlock *)(*it)->user, visited, order);
+
+    // for (auto succ : *bb->get_user_list())
+    // {
+    //     visit((ArmBlock *)succ->user, visited, order);
+    // }
     order.push_back(bb);
 }
 std::vector<ArmBlock *> RPO(ArmFunc *f)
@@ -360,9 +364,73 @@ static inline void print_addlsl(ArmInstr *i)
     i->get_op_at(3)->print();
     printf("\n");
 }
+static inline void print_q(ArmInstr *i)
+{
+    printf("   v");
+    switch (i->get_enum())
+    {
+    case ARMENUM::arm_ldr:
+        printf("ld1.32");
+        break;
+    case ARMENUM::arm_str:
+        printf("st1.32");
+        break;
+    default:
+        printf("%s", printENUM(i->get_enum()).c_str());
+    }
+
+    if (is_a<ArmReg_neno_i32>(i->get_op_at(0)))
+        printf(".i32");
+    else
+        assert(0);
+
+    // first
+    switch (i->get_enum())
+    {
+    case ARMENUM::arm_ldr:
+    case ARMENUM::arm_str:
+        printf("{");
+        i->get_op_at(0)->print();
+        printf("}");
+        break;
+    default:
+        i->get_op_at(0)->print();
+    }
+    for (auto op : i->get_ops())
+    {
+        if (op == i->get_ops().front())
+            continue;
+
+        op->print();
+        if (op != i->get_ops().back())
+            printf(", ");
+    }
+}
 void ArmInstr::print()
 {
-    printf("   %s", printENUM(armenum).c_str());
+    if (((ArmReg *)get_op_at(0))->is_q_reg())
+    {
+        print_q(this);
+        return;
+    }
+
+    printf("   ");
+    if (is_mul_comb())
+    {
+        if (!((ArmReg *)this->get_op_at(0))->is_r_reg())
+            printf("v");
+    }
+
+    printf("%s", printENUM(armenum).c_str());
+
+    if (is_mul_comb())
+    {
+        if (!((ArmReg *)this->get_op_at(0))->is_r_reg())
+        {
+            if (((ArmReg *)this->get_op_at(0))->is_s_reg())
+                printf(".f32");
+        }
+    }
 
     if (armenum == ARMENUM::arm_movw && is_a<ArmAddr>(ops[1]))
     {
@@ -386,7 +454,7 @@ void ArmInstr::print()
         print_pop_push(this);
         return;
     }
-    else if (armenum == ARMENUM::arm_add && ops.size() == 4)
+    else if ((armenum == ARMENUM::arm_add || armenum == ARMENUM::arm_sub) && ops.size() == 4)
     {
         print_addlsl(this);
         return;
@@ -442,6 +510,8 @@ void ArmReg::print_reg()
         printf("r%d", regno);
     else if (regno <= 15 + 32)
         printf("s%d", regno - 16);
+    else if (regno <= 15 + 32 + 16)
+        printf("q%d", regno - 16 - 32);
     else
         assert(0);
 }

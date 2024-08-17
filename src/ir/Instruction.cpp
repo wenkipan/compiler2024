@@ -838,12 +838,20 @@ Triple::Triple(InstrutionEnum type, Value *src1, Value *src2, Value *src3, Basic
 void Triple::print()
 {
     printf("    %%%d = ", this->get_ID());
+    this->get_type()->print();
+    printf(" ");
     get_operand_at(0)->print_ID();
-    printf(" + ");
+    if (get_Instrtype() == InstrutionEnum::MLA || get_Instrtype() == InstrutionEnum::FMLA || get_Instrtype() == InstrutionEnum::ADDlsl)
+        printf(" + ");
+    else if (get_Instrtype() == InstrutionEnum::MLS || get_Instrtype() == InstrutionEnum::FMLS || get_Instrtype() == InstrutionEnum::SUBlsl)
+        printf(" - ");
+    else
+        assert(0);
+
     get_operand_at(1)->print_ID();
-    if (get_Instrtype() == InstrutionEnum::MLA)
+    if (get_Instrtype() == InstrutionEnum::MLA || get_Instrtype() == InstrutionEnum::FMLA || get_Instrtype() == InstrutionEnum::MLS)
         printf(" * ");
-    else if (get_Instrtype() == InstrutionEnum::ADDlsl)
+    else if (get_Instrtype() == InstrutionEnum::ADDlsl || get_Instrtype() == InstrutionEnum::SUBlsl)
         printf(" << ");
     else
         assert(0);
