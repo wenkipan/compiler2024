@@ -40,6 +40,8 @@ class SSARegisterAlloc
     void ReSortForPhi(BasicBlock *bb);
     void ReLoad(BasicBlock *bb);
     void ReplaceNullToTmp(Function *p_func);
+    void AnalysisTriple(Function *p_func);
+    void DoTripleX(Function *p_func);
 
 public:
     std::unordered_map<Value *, std::unordered_set<Value *>> G_set;

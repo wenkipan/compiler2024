@@ -63,10 +63,12 @@ enum class InstrutionEnum
     Move,
     lirBegin,
     MLA,
-    FMLA,
     MLS,
+    FMLA,
     FMLS,
     VMLA,
+    VMLS,
+    TripleX,
     ADDlsl,
     SUBlsl,
     lirEnd,
@@ -308,4 +310,10 @@ class Triple : public Instrution
 public:
     Triple(InstrutionEnum type, Value *src1, Value *src2, Value *src3, BasicBlock *parent);
     void print();
+};
+
+class TripleX : public Instrution
+{
+public:
+    TripleX(InstrutionEnum type, Value *src1, Value *src2, Value *src3, BasicBlock *parent);
 };

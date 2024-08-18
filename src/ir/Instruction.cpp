@@ -5,6 +5,7 @@
 #include "../../include/ir/BasicBlock.hpp"
 #include "../../include/ir/Constant.hpp"
 #include "ir/Edge.hpp"
+#include "ir/Type.hpp"
 
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{
@@ -878,4 +879,12 @@ void Triple::print()
         assert(0);
     get_operand_at(2)->print_ID();
     printf("\n");
+}
+
+TripleX::TripleX(InstrutionEnum type, Value *src1, Value *src2, Value *src3, BasicBlock *parent)
+    : Instrution(parent, type, TypeEnum::Void, (int)0)
+{
+    new Edge(this, src1);
+    new Edge(this, src2);
+    new Edge(this, src3);
 }

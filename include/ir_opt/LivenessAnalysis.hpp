@@ -19,6 +19,8 @@ class LivenessAnalysis
     std::unordered_map<BasicBlock *, std::vector<int>> OutDis;
     std::vector<BasicBlock *> BBs;
     std::vector<Value *> Vals;
+    std::vector<std::unordered_set<int>> valSet;
+    std::vector<int> Father;
     std::vector<int> is_float, is_vector, is_int;
     std::unordered_set<BasicBlock *> vis;
     void init();
@@ -30,4 +32,6 @@ class LivenessAnalysis
 
 public:
     void run(Function *func);
+    int get_father(int x);
+    void combine(int x, int y);
 };

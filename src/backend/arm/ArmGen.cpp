@@ -1061,17 +1061,43 @@ void ArmGen::gen_lir(Instrution *i, ArmBlock *b)
     }
     else if (i->get_Instrtype() == InstrutionEnum::FMLA)
     {
-        assert(ssara->getReg(i) == ssara->getReg(i->get_operand_at(0)));
-        gen_instr_op3(ARMENUM::arm_mla, new ArmReg(ssara->getReg(i)),
-                      new ArmReg(ssara->getReg(i->get_operand_at(1))),
-                      new ArmReg(ssara->getReg(i->get_operand_at(2))), b);
+        i->print();
+        fflush(stdout);
+        printf("%d ", ssara->getReg(i));
+        printf("%d ", ssara->getReg(i->get_operand_at(0)));
+        printf("%d ", ssara->getReg(i->get_operand_at(1)));
+        printf("%d ", ssara->getReg(i->get_operand_at(2)));
+        fflush(stdout);
+
+        if (ssara->getReg(i) == ssara->getReg(i->get_operand_at(0)))
+            gen_instr_op3(ARMENUM::arm_mla, new ArmReg(ssara->getReg(i)),
+                          new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                          new ArmReg(ssara->getReg(i->get_operand_at(2))), b);
+        else
+        {
+            gen_instr_op3(ARMENUM::arm_vmul_f32, new ArmReg(ssara->getReg(i)),
+                          new ArmReg(ssara->getReg(i->get_operand_at(1))),
+                          new ArmReg(ssara->getReg(i->get_operand_at(2))), b);
+            gen_instr_op3(ARMENUM::arm_vadd_f32, new ArmReg(ssara->getReg(i)),
+                          new ArmReg(ssara->getReg(i)),
+                          new ArmReg(ssara->getReg(i->get_operand_at(0))), b);
+        }
     }
     else if (i->get_Instrtype() == InstrutionEnum::VMLA)
     {
-        assert(ssara->getReg(i) == ssara->getReg(i->get_operand_at(0)));
-        gen_instr_op3(ARMENUM::arm_mla, new ArmReg_neno_i32(ssara->getReg(i)),
-                      new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(1))),
-                      new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(2))), b);
+        if (ssara->getReg(i) == ssara->getReg(i->get_operand_at(0)))
+            gen_instr_op3(ARMENUM::arm_mla, new ArmReg_neno_i32(ssara->getReg(i)),
+                          new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(1))),
+                          new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(2))), b);
+        else
+        {
+            gen_instr_op3(ARMENUM::arm_mul, new ArmReg_neno_i32(ssara->getReg(i)),
+                          new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(1))),
+                          new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(2))), b);
+            gen_instr_op3(ARMENUM::arm_add, new ArmReg_neno_i32(ssara->getReg(i)),
+                          new ArmReg_neno_i32(ssara->getReg(i)),
+                          new ArmReg_neno_i32(ssara->getReg(i->get_operand_at(0))), b);
+        }
     }
     else if (i->get_Instrtype() == InstrutionEnum::ADDlsl)
     {

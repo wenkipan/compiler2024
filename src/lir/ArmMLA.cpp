@@ -100,7 +100,7 @@ void ARMMLA::int_mla(Function *f)
 void ARMMLA::run(Function *f)
 {
     int_mla(f);
-    // float_mla(f);
+    float_mla(f);
     // vec_mla(f);
 }
 

@@ -11,6 +11,7 @@ void LivenessAnalysis::init()
     for (auto arg : *(parent->get_params()))
     {
         Value *val = dynamic_cast<Value *>(arg);
+        Father.push_back(allocaCounter);
         ValueIdMap[val] = allocaCounter++;
         Vals.push_back(val);
         is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
@@ -23,6 +24,7 @@ void LivenessAnalysis::init()
     {
         for (auto phi : *(bb->get_phinodes()))
         {
+            Father.push_back(allocaCounter);
             ValueIdMap[phi] = allocaCounter++;
             Vals.push_back(phi);
             is_float.push_back(phi->get_type()->get_type() == TypeEnum::F32);
@@ -38,6 +40,7 @@ void LivenessAnalysis::init()
             }
             if (val->get_type()->get_type() != TypeEnum::Void && !dynamic_cast<Alloca *>(ins) && !dynamic_cast<Ret *>(ins) && (!dynamic_cast<Cmp *>(ins) || !dynamic_cast<Cmp *>(ins)->isCond()))
             {
+                Father.push_back(allocaCounter);
                 ValueIdMap[val] = allocaCounter++;
                 Vals.push_back(val);
                 is_float.push_back(val->get_type()->get_type() == TypeEnum::F32);
@@ -46,6 +49,7 @@ void LivenessAnalysis::init()
             }
         }
     }
+    valSet.resize(allocaCounter);
     InSet.clear();
     OutSet.clear();
     DefSet.clear();
@@ -196,4 +200,31 @@ void LivenessAnalysis::run(Function *func)
             val->print();
         }
     }*/
+}
+
+int LivenessAnalysis::get_father(int x)
+{
+    if (x == Father[x])
+        return x;
+    return Father[x] = get_father(Father[x]);
+}
+
+void LivenessAnalysis::combine(int x, int y)
+{
+    int fx = get_father(x);
+    int fy = get_father(y);
+    if (valSet[x].size() < valSet[y].size())
+    {
+        Father[fx] = fy;
+        for (auto val : valSet[x])
+            valSet[y].insert(val);
+        valSet[x].clear();
+    }
+    else
+    {
+        Father[fy] = fx;
+        for (auto val : valSet[y])
+            valSet[x].insert(val);
+        valSet[y].clear();
+    }
 }

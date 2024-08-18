@@ -1,4 +1,7 @@
 #include "../../include/ir_opt/SSARegisterAlloc.hpp"
+#include "ir/Instrution.hpp"
+#include <any>
+#include <vector>
 
 std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
 {
@@ -162,9 +165,14 @@ void SSARegisterAlloc::run(Function *p_func)
 {
     // GVtoA gvtoa;
     // gvtoa.run(p_func);
+    p_func->ResetID(false);
+    LA.run(p_func);
+    AnalysisTriple(p_func);
+
     AddBB(p_func);
     p_func->ResetID(false);
     LA.run(p_func);
+
     vregNum = LA.Vals.size();
     Spill(p_func);
     for (auto it : spilledNodes)
@@ -190,6 +198,7 @@ void SSARegisterAlloc::run(Function *p_func)
     }
 
     ReplaceNullToTmp(p_func);
+    DoTripleX(p_func);
 
     // for (auto bb : *(p_func->get_blocks()))
     // ReLoad(bb);
@@ -1751,4 +1760,56 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
         if (phi != nullptr)
             phi->drop();
     }
+}
+
+void SSARegisterAlloc::AnalysisTriple(Function *p_func)
+{
+    std::vector<Triple *> Triples_todo;
+    for (auto bb : *(p_func->get_blocks()))
+        for (auto ins : *(bb->get_instrs()))
+        {
+            if (ins->get_Instype() == InstrutionEnum::FMLA ||
+                ins->get_Instype() == InstrutionEnum::FMLS ||
+                ins->get_Instype() == InstrutionEnum::VMLA ||
+                ins->get_Instype() == InstrutionEnum::VMLS)
+            {
+                assert(LA.ValueIdMap.find(ins->get_operand_at(0)) != LA.ValueIdMap.end());
+                assert(LA.ValueIdMap.find(ins) != LA.ValueIdMap.end());
+                LA.combine(LA.ValueIdMap.at(ins), LA.ValueIdMap.at(ins->get_operand_at(0)));
+                Triples_todo.push_back(dynamic_cast<Triple *>(ins));
+            }
+        }
+    for (auto ins : Triples_todo)
+    {
+        assert(ins->get_value_list()->size() == 3);
+        Value *val_a = ins->get_operand_at(0);
+        Value *val_b = ins->get_operand_at(1);
+        Value *val_c = ins->get_operand_at(2);
+        TripleX *triplex = new TripleX(InstrutionEnum::TripleX, ins, val_b == val_a ? ins : val_b, val_c == val_a ? ins : val_c, ins->get_parent());
+        triplex->insertInstr(ins->get_parent(), std::find(ins->get_parent()->get_instrutions()->begin(), ins->get_parent()->get_instrutions()->end(), ins) - ins->get_parent()->get_instrutions()->begin() + 1);
+    }
+}
+
+void SSARegisterAlloc::DoTripleX(Function *p_func)
+{
+    for (auto bb : *(p_func->get_blocks()))
+        for (auto ins : *(bb->get_instrs()))
+        {
+            if (ins->get_Instype() == InstrutionEnum::FMLA ||
+                ins->get_Instype() == InstrutionEnum::FMLS ||
+                ins->get_Instype() == InstrutionEnum::VMLA ||
+                ins->get_Instype() == InstrutionEnum::VMLS)
+                color[LA.ValueIdMap[ins->get_operand_at(0)]] = color[LA.ValueIdMap[ins]];
+        }
+    std::vector<TripleX *> removeList;
+    for (auto bb : *(p_func->get_blocks()))
+    {
+        for (auto ins : *(bb->get_instrs()))
+        {
+            if (is_a<TripleX>(ins))
+                removeList.push_back(dynamic_cast<TripleX *>(ins));
+        }
+    }
+    for (auto ins : removeList)
+        ins->drop();
 }

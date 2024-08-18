@@ -2,6 +2,7 @@
 #include "../../include/ir/Value.hpp"
 #include "../../include/ir_opt/IRCopy.hpp"
 #include "../../include/util/RPO.hpp"
+#include "ir/Type.hpp"
 
 Value *IRCopy::get_mapval(Value *a)
 {
@@ -127,8 +128,13 @@ Function *IRCopy::copy_func(Function *f)
                                       get_mapbb(((Branch *)instr)->get_trueBB()),
                                       get_mapbb(((Branch *)instr)->get_falseBB()), newBB);
             else if (instr->isLoad())
+            {
+
                 newinstr = new Load(get_mapval(((Load *)instr)->get_addr()),
                                     ((Load *)instr)->get_is_stack_prt(), newBB);
+                if (instr->isVecI32type())
+                    newinstr->get_type()->reset(TypeEnum::VecI32);
+            }
             else if (instr->isStore())
                 newinstr = new Store(get_mapval(((Store *)instr)->get_addr()),
                                      get_mapval(((Store *)instr)->get_src()),
@@ -138,11 +144,20 @@ Function *IRCopy::copy_func(Function *f)
                                    get_mapval(((Cmp *)instr)->get_src1()),
                                    get_mapval(((Cmp *)instr)->get_src2()), newBB);
             else if (instr->isBinary())
+            {
+
                 newinstr = new Binary(((Binary *)instr)->get_Instrtype(),
                                       get_mapval(((Binary *)instr)->get_src1()),
                                       get_mapval(((Binary *)instr)->get_src2()), newBB);
+                if (instr->isVecI32type())
+                    newinstr->get_type()->reset(TypeEnum::VecI32);
+            }
             else if (instr->get_Instrtype() == InstrutionEnum::Assign)
+            {
                 newinstr = new Assign(InstrutionEnum::Assign, get_mapval(((Unary *)instr)->get_src()), newBB, false);
+                if (instr->isVecI32type())
+                    newinstr->get_type()->reset(TypeEnum::VecI32);
+            }
             else if (instr->isUnary())
                 newinstr = new Unary(((Unary *)instr)->get_Instrtype(),
                                      get_mapval(((Unary *)instr)->get_src()), newBB);

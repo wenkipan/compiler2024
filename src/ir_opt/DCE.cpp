@@ -23,6 +23,7 @@ void DCE::init()
             case InstrutionEnum::Store:
             case InstrutionEnum::Ret:
             case InstrutionEnum::Call:
+            case InstrutionEnum::TripleX:
                 worklist.push(instr);
                 break;
             default:
