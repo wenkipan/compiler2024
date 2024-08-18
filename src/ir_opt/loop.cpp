@@ -210,19 +210,30 @@ static inline void _AddLoopIf(Loop *loop, const int times, SCEV *_SCEV, BasicBlo
     prev->Set_branch(_cond, _Judge, loop->get_header());
 }
 
+BasicBlock *loopFFF::earlyBB(Loop *loop)
+{
+    if (loop->get_header() == nullptr)
+        return nullptr;
+    BasicBlock *re = nullptr;
+    while (loop->get_header() != nullptr)
+    {
+        if (loop->hasCall())
+            return re;
+        re = loop->get_prev();
+        loop = loop->get_parent();
+    }
+    return re;
+}
+
 void loopFFF::Unroll(Loop *loop)
 {
 
-    puts("BB:  ");
-    loop->get_header()->print();
     assert(loop->get_BBs()->size() == 1);
     Function *p_func = loop->get_header()->get_func();
-    p_func->print();
     IRCopy copyer;
     Function *cFunc;
     cFunc = copyer.copy_func(p_func);
-    puts("AAAAA");
-    puts("   ");
+
     {
         std::vector<Value *> addvals;
         std::vector<BasicBlock *> addBBs;
@@ -265,8 +276,6 @@ void loopFFF::Unroll(Loop *loop)
         }
     }
     BasicBlock *header = loop->get_header();
-    puts("SSSSSS");
-    puts("");
     BasicBlock *cheader = copyer.get_mapbb(header);
     BasicBlock *newBB = new BasicBlock(p_func);
     p_func->block_pushBack(newBB);
@@ -328,7 +337,32 @@ void loopFFF::Unroll(Loop *loop)
                 Value *val = ((Store *)instr)->get_src();
                 if (val->get_type()->get_type() != TypeEnum::VecI32)
                 {
-                    Assign *p_assign = new Assign(InstrutionEnum::Assign, val, cheader, true);
+                    BasicBlock *TBB = earlyBB(loop->get_parent());
+
+                    Assign *p_assign = nullptr;
+
+                    if (TBB == nullptr)
+                        p_assign = new Assign(InstrutionEnum::Assign, val, newBB, false);
+                    else if (TBB->get_last_instrution()->isBranch())
+                    {
+                        Instrution *p_branch = TBB->get_last_instrution();
+                        TBB->Ins_popBack();
+                        Instrution *p_cmp = TBB->get_last_instrution();
+                        TBB->Ins_popBack();
+                        p_assign = new Assign(InstrutionEnum::Assign, val, TBB, false);
+                        TBB->Ins_pushBack(p_cmp);
+                        TBB->Ins_pushBack(p_branch);
+                    }
+                    else if (TBB->get_last_instrution()->isJmp())
+                    {
+                        Instrution *p_branch = TBB->get_last_instrution();
+                        TBB->Ins_popBack();
+                        p_assign = new Assign(InstrutionEnum::Assign, val, TBB, false);
+                        TBB->Ins_pushBack(p_branch);
+                    }
+                    else
+                        assert(0);
+
                     p_assign->get_type()->reset(TypeEnum::VecI32);
 
                     auto list_ = val->get_user_list();
@@ -340,7 +374,7 @@ void loopFFF::Unroll(Loop *loop)
                             list_->erase(it);
                         }
                     }
-                    instrMap_.insert({instr, p_assign});
+                    // instrMap_.insert({instr, p_assign});
                 }
             }
             else if (instr->isBinary())
@@ -353,7 +387,32 @@ void loopFFF::Unroll(Loop *loop)
                         Value *val = p_b->get_src2();
                         if (val->get_type()->get_type() != TypeEnum::VecI32)
                         {
-                            Assign *p_assign = new Assign(InstrutionEnum::Assign, val, cheader, true);
+                            BasicBlock *TBB = earlyBB(loop->get_parent());
+
+                            Assign *p_assign = nullptr;
+
+                            if (TBB == nullptr)
+                                p_assign = new Assign(InstrutionEnum::Assign, val, newBB, false);
+                            else if (TBB->get_last_instrution()->isBranch())
+                            {
+                                Instrution *p_branch = TBB->get_last_instrution();
+                                TBB->Ins_popBack();
+                                Instrution *p_cmp = TBB->get_last_instrution();
+                                TBB->Ins_popBack();
+                                p_assign = new Assign(InstrutionEnum::Assign, val, TBB, false);
+                                TBB->Ins_pushBack(p_cmp);
+                                TBB->Ins_pushBack(p_branch);
+                            }
+                            else if (TBB->get_last_instrution()->isJmp())
+                            {
+                                Instrution *p_branch = TBB->get_last_instrution();
+                                TBB->Ins_popBack();
+                                p_assign = new Assign(InstrutionEnum::Assign, val, TBB, false);
+                                TBB->Ins_pushBack(p_branch);
+                            }
+                            else
+                                assert(0);
+
                             p_assign->get_type()->reset(TypeEnum::VecI32);
 
                             auto list_ = val->get_user_list();
@@ -365,7 +424,6 @@ void loopFFF::Unroll(Loop *loop)
                                     list_->erase(it);
                                 }
                             }
-                            instrMap_.insert({instr, p_assign});
                         }
                     }
                     p_b->get_type()->reset(TypeEnum::VecI32);
@@ -377,7 +435,32 @@ void loopFFF::Unroll(Loop *loop)
                         Value *val = p_b->get_src2();
                         if (val->get_type()->get_type() != TypeEnum::VecI32)
                         {
-                            Assign *p_assign = new Assign(InstrutionEnum::Assign, val, cheader, true);
+                            BasicBlock *TBB = earlyBB(loop->get_parent());
+
+                            Assign *p_assign = nullptr;
+
+                            if (TBB == nullptr)
+                                p_assign = new Assign(InstrutionEnum::Assign, val, newBB, false);
+                            else if (TBB->get_last_instrution()->isBranch())
+                            {
+                                Instrution *p_branch = TBB->get_last_instrution();
+                                TBB->Ins_popBack();
+                                Instrution *p_cmp = TBB->get_last_instrution();
+                                TBB->Ins_popBack();
+                                p_assign = new Assign(InstrutionEnum::Assign, val, TBB, false);
+                                TBB->Ins_pushBack(p_cmp);
+                                TBB->Ins_pushBack(p_branch);
+                            }
+                            else if (TBB->get_last_instrution()->isJmp())
+                            {
+                                Instrution *p_branch = TBB->get_last_instrution();
+                                TBB->Ins_popBack();
+                                p_assign = new Assign(InstrutionEnum::Assign, val, TBB, false);
+                                TBB->Ins_pushBack(p_branch);
+                            }
+                            else
+                                assert(0);
+
                             p_assign->get_type()->reset(TypeEnum::VecI32);
 
                             auto list_ = val->get_user_list();
@@ -389,7 +472,6 @@ void loopFFF::Unroll(Loop *loop)
                                     list_->erase(it);
                                 }
                             }
-                            instrMap_.insert({instr, p_assign});
                         }
                     }
                     p_b->get_type()->reset(TypeEnum::VecI32);

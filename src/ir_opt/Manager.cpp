@@ -2,31 +2,25 @@
 
 void Manager::Yi(int YYY)
 {
-    return;
+    // return;
     FuncRun<SCCP>();
     FuncRun<DCE>();
     FuncRun<SimplifyCFG>();
 
     if (YYY == 1)
     {
-        // run<loopYYY>();
+        run<loopYYY>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
-        // run<LoopDrop>();
+        run<LoopDrop>();
     }
 
     if (YYY == 2)
     {
-        puts("AAAAAA");
-        printModule();
-        puts("BBB");
-        // run<loopFFF>();
-        printModule();
-        puts("CCCCC");
+        run<loopFFF>();
         FuncRun<SCCP>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
-        printModule();
     }
 
     if (YYY == 7)
@@ -107,8 +101,8 @@ void Manager::PassManager(bool is_opt)
 
         Yi(i);
 
-        // if (i > 3 && i % 2 == 0)
-        //     run<Inline>();
+        if (i > 3 && i % 2 == 0)
+            run<Inline>();
     }
 
     Finish();

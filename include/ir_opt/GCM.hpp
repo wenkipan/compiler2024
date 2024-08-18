@@ -16,6 +16,8 @@ class GCM
     std::unordered_map<Function *, bool> sideeffect_func;
     std::unordered_map<BasicBlock *, bool> if_call_bb;
 
+    std::unordered_map<BasicBlock *, bool> hasCall;
+
 public:
     ~GCM();
     void init_visit_with_pinned();
@@ -30,4 +32,5 @@ public:
     void schedule_to_block(Instrution *instr, BasicBlock *b);
     void move_instr_to_best();
     void maintain_branch_cond();
+    void buildHasCall(BasicBlock *BB);
 };

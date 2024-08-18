@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
     manager->run<immeFloatToLoad>();
     manager->run<LargeToGlobal>();
     manager->FuncRun<GVtoA>();
+    printf("lirbegin---\n");
+    manager->printModule();
 
     manager->FuncRun<GEPToALU>();
     manager->FuncRun<modTosubmul>();
@@ -68,9 +70,11 @@ int main(int argc, char *argv[])
     manager->FuncRun<DCE>();
     manager->FuncRun<SimplifyCFG>();
     manager->FuncRun<ARMMLA>();
-    //   manager->FuncRun<GCM>();
-    //   manager->FuncRun<DCE>();
-    //   manager->FuncRun<SimplifyCFG>();
+    printf("before_arm\n");
+    manager->printModule();
+    manager->FuncRun<GCM>();
+    manager->FuncRun<DCE>();
+    manager->FuncRun<SimplifyCFG>();
     manager->run<immeIntTomove>();
     fflush(stdout);
 

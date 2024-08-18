@@ -121,10 +121,10 @@ void GVN::visit_instr(Instrution *instr)
     {
         return;
     }
-    // else if (instr->isVecI32type())
-    // {
-    //     return;
-    // }
+    else if (instr->isVecI32type())
+    {
+        return;
+    }
     else
         deal = const_fold(instr);
 

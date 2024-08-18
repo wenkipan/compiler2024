@@ -867,6 +867,8 @@ void Triple::print()
         printf(" + ");
     else if (get_Instrtype() == InstrutionEnum::MLS || get_Instrtype() == InstrutionEnum::FMLS || get_Instrtype() == InstrutionEnum::SUBlsl)
         printf(" - ");
+    else if (get_Instrtype() == InstrutionEnum::VMLA)
+        printf("vec+");
     else
         assert(0);
 
@@ -875,6 +877,8 @@ void Triple::print()
         printf(" * ");
     else if (get_Instrtype() == InstrutionEnum::ADDlsl || get_Instrtype() == InstrutionEnum::SUBlsl)
         printf(" << ");
+    else if (get_Instrtype() == InstrutionEnum::VMLA)
+        printf(" vec* ");
     else
         assert(0);
     get_operand_at(2)->print_ID();

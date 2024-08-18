@@ -21,6 +21,28 @@ void GCM::init_visit_with_pinned()
             visited.emplace(instr);
     }
 }
+
+void GCM::buildHasCall(BasicBlock *BB)
+{
+    auto node = domtree->get_BBDom()->find(BB)->second;
+    auto list_ = node->get_idoms();
+    bool flag = false;
+    for (auto it : *list_)
+    {
+        buildHasCall(it->get_BB());
+        flag = flag | (hasCall.find(it->get_BB())->second);
+    }
+    if (!flag)
+        for (auto instr : *BB->get_instrs())
+            if (instr->isCall())
+            {
+                flag = true;
+                break;
+            }
+
+    hasCall.insert({BB, flag});
+}
+
 void GCM::init(Function *func)
 {
     f = func;
@@ -71,16 +93,13 @@ void GCM::init(Function *func)
     //     std::cout << kv.first->get_name();
     //     std::cout << kv.second << std::endl;
     // }
-    for (auto BB : *f->get_blocks())
-    {
-        for (auto instr : *BB->get_instrs())
-            if (instr->isCall())
-                if_call_bb.emplace(BB, 1);
-    }
+    hasCall.clear();
+    buildHasCall(func->get_entryBB());
 }
 void GCM::run(Function *func)
 {
     init(func);
+
     if (debug)
         printf("EARLY\n");
     // schedule_early
@@ -147,8 +166,8 @@ static inline bool mem_use(Function *f)
 }
 bool GCM::ispinned(Instrution *instr)
 {
-    // if (instr->isVecI32type())
-    //     return true;
+    if (instr->isVecI32type())
+        return true;
     if (instr->isPHINode() || instr->isReturn() || instr->isBranch() || instr->isJmp() || instr->isAlloca())
         return true;
     if (instr->isLoad() || instr->isStore()) // TODO need memery info
@@ -256,23 +275,44 @@ void GCM::schedule_late(Instrution *instr)
     assert(instr->get_type()->get_type() != TypeEnum::VecI32);
     if (instr->get_type()->get_type() == TypeEnum::VecI32)
     {
+        puts("SSSSSSS");
+        instr->get_parent()->get_func()->print();
+        instr->print();
         // assert(0);
         while (lca != get_scheduleBB(instr))
         {
             if (getnestdepth(lca, nesttree) < getnestdepth(best, nesttree))
             {
+                printf("nest %d\n", getnestdepth(lca, nesttree));
+                lca->print();
+
                 bool flag = true;
                 if (getnestdepth(lca, nesttree) != 0)
                 {
                     LoopNode *node = nesttree->get_BBmap()->find(lca)->second;
                     Loop *loop = node->get_loop();
-                    if (loop->hasCall())
-                        flag = false;
+                    // if (loop->hasCall())
+                    //     flag = false;
+                    for (BasicBlock *BB : *loop->get_BBs())
+                    {
+                        auto instrs = BB->get_instrs();
+                        for (auto instr : *instrs)
+                            if (instr->isCall())
+                            {
+                                flag = false;
+                                break;
+                            }
+                        if (!flag)
+                            break;
+                    }
                 }
                 else
                     flag = false;
+
                 if (flag)
                     best = lca;
+                else
+                    break;
             }
             lca = domtree->get_idom(lca);
         }
@@ -299,6 +339,12 @@ void GCM::schedule_late(Instrution *instr)
             printf("latemove:");
             instr->print();
         }
+    }
+    if (1)
+    {
+        printf("LCA:BBbest");
+        best->print_ID();
+        printf("\n");
     }
     set_scheduleBB(instr, best);
 }

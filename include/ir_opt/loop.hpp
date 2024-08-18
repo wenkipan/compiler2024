@@ -37,6 +37,7 @@ public:
     void SetVal(Instrution *instr, IRCopy &copyer, Loop *loop);
 
     bool analysis(Loop *loop);
+    BasicBlock *earlyBB(Loop *loop);
 
     void Unroll(Loop *loop);
     void searchFunc(Loop *loop, Function *func);

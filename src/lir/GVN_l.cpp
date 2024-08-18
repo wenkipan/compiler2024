@@ -53,6 +53,10 @@ void GVN_l::visit_instr(Instrution *instr)
     {
         return;
     }
+    else if (instr->isVecI32type())
+    {
+        return;
+    }
 
     Instrution *hit = check_hash(instr);
     if (!hit)

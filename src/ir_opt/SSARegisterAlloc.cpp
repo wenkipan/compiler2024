@@ -1834,6 +1834,11 @@ void SSARegisterAlloc::AnalysisTriple(Function *p_func)
                 ins->get_Instype() == InstrutionEnum::VMLA ||
                 ins->get_Instype() == InstrutionEnum::VMLS)
             {
+                if (LA.ValueIdMap.find(ins->get_operand_at(0)) == LA.ValueIdMap.end())
+                {
+                    ins->print();
+                    fflush(stdout);
+                }
                 assert(LA.ValueIdMap.find(ins->get_operand_at(0)) != LA.ValueIdMap.end());
                 assert(LA.ValueIdMap.find(ins) != LA.ValueIdMap.end());
                 LA.combine(LA.ValueIdMap.at(ins), LA.ValueIdMap.at(ins->get_operand_at(0)));

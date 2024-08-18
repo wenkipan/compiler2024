@@ -67,7 +67,7 @@ public:
     bool is_simple();
     bool is_BBinLoop(BasicBlock *_BB);
 
-    void orhasCall(bool flag) { hasCall_ = hasCall_ | flag; }
+    void orhasCall(bool flag) { hasCall_ = flag ? true : hasCall_; }
     bool hasCall() { return hasCall_; }
 
     void set_header(BasicBlock *_header) { header = _header; }

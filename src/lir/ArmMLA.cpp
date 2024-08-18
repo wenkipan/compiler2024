@@ -11,6 +11,8 @@ void ARMMLA::int_mla(Function *f)
                 {
                     assert(is_a<Instrution>(i->get_user_list()->at(0)->get_user()));
                     Instrution *use = (Instrution *)i->get_user_list()->at(0)->get_user();
+                    if (use->get_parent() != BB)
+                        continue;
                     if (use->get_Instrtype() == InstrutionEnum::IADD)
                     {
                         if (i == use->get_operand_at(0) && !is_a<ConstantI32>(use->get_operand_at(1)))
@@ -101,7 +103,7 @@ void ARMMLA::run(Function *f)
 {
     int_mla(f);
     float_mla(f);
-    // vec_mla(f);
+    vec_mla(f);
 }
 
 void ARMMLA::float_mla(Function *f)
@@ -114,6 +116,8 @@ void ARMMLA::float_mla(Function *f)
                 {
                     assert(is_a<Instrution>(i->get_user_list()->at(0)->get_user()));
                     Instrution *use = (Instrution *)i->get_user_list()->at(0)->get_user();
+                    if (use->get_parent() != BB)
+                        continue;
                     if (use->get_Instrtype() == InstrutionEnum::FADD)
                     {
                         if (i == use->get_operand_at(0) && use->get_operand_at(1)->get_user_list()->size() == 1)
@@ -179,11 +183,13 @@ void ARMMLA::vec_mla(Function *f)
     std::vector<Instrution *> work;
     for (auto BB : *f->get_blocks())
         for (auto i : *BB->get_instrs())
-            if (i->get_Instrtype() == InstrutionEnum::VMLA)
+            if (i->isVecI32type() && i->get_Instrtype() == InstrutionEnum::IMUL)
                 if (i->get_user_list()->size() == 1)
                 {
                     assert(is_a<Instrution>(i->get_user_list()->at(0)->get_user()));
                     Instrution *use = (Instrution *)i->get_user_list()->at(0)->get_user();
+                    if (use->get_parent() != BB)
+                        continue;
                     if (use->get_Instrtype() == InstrutionEnum::IADD)
                     {
                         if (i == use->get_operand_at(0) && use->get_operand_at(1)->get_user_list()->size() == 1)

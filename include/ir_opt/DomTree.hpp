@@ -25,7 +25,9 @@ public:
     ~DomTreeNode();
     friend class DomTree;
 
+    BasicBlock *get_BB() { return parent; }
     bool is_Dom(DomTreeNode *BB) { return doms->find(BB) != doms->end(); }
+    std::unordered_set<DomTreeNode *> *get_idoms() { return idoms; }
 };
 
 class DomTree
