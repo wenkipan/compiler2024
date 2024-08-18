@@ -363,7 +363,17 @@ void MAD::ARD()
             Instrution *user = (Instrution *)edge->get_user();
             if (user->isCall())
             {
-                assert(0);
+                Call *_call = (Call *)user;
+                if (((Function *)_call->get_func())->get_name() == "memset")
+                {
+                    if (p_call == nullptr)
+                    {
+                        p_call = _call;
+                        continue;
+                    }
+                    else
+                        flag = false;
+                }
             }
             else if (user->isGEP())
                 flag = flag & _findST((GEP *)user, func, 1, p_call);
@@ -468,7 +478,24 @@ void MAD::SMO()
         for (Edge *edge : *users)
         {
             Instrution *user = (Instrution *)edge->get_user();
-            assert(user->isGEP());
+            assert(user->isGEP() || user->isCall());
+            if (user->isCall())
+            {
+                Call *p_call = (Call *)user;
+                if (((Function *)p_call->get_func())->get_name() == "memset")
+                {
+                    if (p_call == nullptr)
+                    {
+                        call = p_call;
+                    }
+                    else
+                        flag = -1;
+                }
+                else
+                    flag = -1;
+            }
+            if (flag == -1)
+                break;
             flag = _getMAs((GEP *)user, STs, LDs, GEPs, call, true);
             if (flag == -1)
                 break;

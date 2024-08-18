@@ -46,7 +46,6 @@ void Manager::LoopOpt(int YYY)
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
         printModule();
-        exit(0);
     }
 
     if (YYY >= 5 && YYY & 1)
@@ -57,12 +56,18 @@ void Manager::LoopOpt(int YYY)
         FuncRun<SimplifyCFG>();
     }
 
-    if (YYY >= 6 && YYY % 2 == 0)
+    if (YYY == 3 || YYY == 4)
     {
-        // run<loopUnroll>();
+        return;
+        printModule();
+        run<loopUnroll>();
+
+        printModule();
         FuncRun<SCCP>();
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
+        printModule();
+        // exit(0);
     }
 }
 
@@ -108,6 +113,9 @@ void Manager::PassManager(bool is_opt)
             run<MAD>();
             FuncRun<DCE>();
             FuncRun<SimplifyCFG>();
+            run<ALS>();
+            FuncRun<DCE>();
+            FuncRun<SimplifyCFG>();
         }
 
         Yi(i);
@@ -122,7 +130,6 @@ void Manager::PassManager(bool is_opt)
 void Manager::Finish()
 {
     printModule();
-    exit(0);
     FuncRun<SCCP>();
     FuncRun<DCE>();
     FuncRun<SimplifyCFG>();

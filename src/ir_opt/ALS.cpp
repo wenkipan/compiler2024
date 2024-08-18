@@ -448,14 +448,14 @@ void ALS::PassRun(Module *_module)
     {
         if (p_func->get_blocks()->empty())
             continue;
-        FuncDealer(p_func);
+        // FuncDealer(p_func);
         DIVCombine(p_func);
         MODCombine(p_func);
-        DomTree tree(p_func);
-        tree.Run();
-        Vs::domtree = &tree;
-        FuncCSS(p_func);
-        Vs::domtree = nullptr;
+        // DomTree tree(p_func);
+        // tree.Run();
+        // Vs::domtree = &tree;
+        // FuncCSS(p_func);
+        // Vs::domtree = nullptr;
     }
     puts("            ALS  END              ");
 }
