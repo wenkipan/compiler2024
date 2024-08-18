@@ -11,7 +11,7 @@ class SSARegisterAlloc
     LivenessAnalysis LA;
     int vregNum;
     std::vector<Value *> Register;
-    std::unordered_map<int, int> color;
+    std::unordered_map<int, int> color, color_root;
     std::unordered_set<int> spilledNodes;
     std::unordered_set<Value *> spilledVals;
     std::vector<std::vector<int>> G;
@@ -40,6 +40,7 @@ class SSARegisterAlloc
     void ReSortForPhi(BasicBlock *bb);
     void ReLoad(BasicBlock *bb);
     void ReplaceNullToTmp(Function *p_func);
+    void AddTripleX(Function *p_func);
     void AnalysisTriple(Function *p_func);
     void DoTripleX(Function *p_func);
 

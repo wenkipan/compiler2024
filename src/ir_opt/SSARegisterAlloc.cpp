@@ -167,7 +167,7 @@ void SSARegisterAlloc::run(Function *p_func)
     // gvtoa.run(p_func);
     p_func->ResetID(false);
     LA.run(p_func);
-    AnalysisTriple(p_func);
+    AddTripleX(p_func);
 
     AddBB(p_func);
     p_func->ResetID(false);
@@ -180,6 +180,7 @@ void SSARegisterAlloc::run(Function *p_func)
 
     RewriteProgram(p_func);
     MakeGraph(p_func);
+    AnalysisTriple(p_func);
     AssignColor_R(p_func);
     AssignColor_Q(p_func);
     AssignColor_S(p_func);
@@ -749,12 +750,22 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
         for (auto tmp : G[id_R[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 3; i >= 0; i--)
-            if (color_set.find(i) == color_set.end())
+        int root = LA.get_father(id_R[x]);
+        if (color_root.find(root) != color_root.end())
+        {
+            int best = color_root.at(root);
+            if (color_set.find(best) == color_set.end())
             {
-                color[id_R[x]] = i;
-                break;
+                color[id_R[x]] = best;
             }
+        }
+        if (color[id_R[x]] == -1)
+            for (int i = 3; i >= 0; i--)
+                if (color_set.find(i) == color_set.end())
+                {
+                    color[id_R[x]] = i;
+                    break;
+                }
         if (color[id_R[x]] == -1)
             for (int i = 4; i < K_R; i++)
                 if (color_set.find(i) == color_set.end())
@@ -766,6 +777,8 @@ void SSARegisterAlloc::AssignColor_R(Function *p_func)
         {
             assert(0);
         }
+        if (color_root.find(root) == color_root.end())
+            color_root.insert(std::make_pair(root, color[id_R[x]]));
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -816,16 +829,28 @@ void SSARegisterAlloc::AssignColor_Q(Function *p_func)
         for (auto tmp : G[id_Q[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 0; i < 8; i++)
-            if (color_set.find(i) == color_set.end())
+        int root = LA.get_father(id_Q[x]);
+        if (color_root.find(root) != color_root.end())
+        {
+            int best = color_root.at(root);
+            if (color_set.find(best) == color_set.end())
             {
-                color[id_Q[x]] = i;
-                break;
+                color[id_Q[x]] = best;
             }
+        }
+        if (color[id_Q[x]] == -1)
+            for (int i = 0; i < 8; i++)
+                if (color_set.find(i) == color_set.end())
+                {
+                    color[id_Q[x]] = i;
+                    break;
+                }
         if (color[id_Q[x]] == -1)
         {
             assert(0);
         }
+        if (color_root.find(root) == color_root.end())
+            color_root.insert(std::make_pair(root, color[id_Q[x]]));
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -876,12 +901,22 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
         for (auto tmp : G[id_S[x]])
             if (color[tmp] != -1)
                 color_set.insert(color[tmp]);
-        for (int i = 15; i >= 0; i--)
-            if (color_set.find(i) == color_set.end())
+        int root = LA.get_father(id_S[x]);
+        if (color_root.find(root) != color_root.end())
+        {
+            int best = color_root.at(root);
+            if (color_set.find(best) == color_set.end())
             {
-                color[id_S[x]] = i;
-                break;
+                color[id_S[x]] = best;
             }
+        }
+        if (color[id_S[x]] == -1)
+            for (int i = 15; i >= 0; i--)
+                if (color_set.find(i) == color_set.end())
+                {
+                    color[id_S[x]] = i;
+                    break;
+                }
         if (color[id_S[x]] == -1)
             for (int i = 16; i < K_S; i++)
                 if (color_set.find(i) == color_set.end())
@@ -893,6 +928,8 @@ void SSARegisterAlloc::AssignColor_S(Function *p_func)
         {
             assert(0);
         }
+        if (color_root.find(root) == color_root.end())
+            color_root.insert(std::make_pair(root, color[id_S[x]]));
         pre[next[x]] = pre[x];
         next[pre[x]] = next[x];
         q[k] = x;
@@ -1762,7 +1799,7 @@ void SSARegisterAlloc::RewriteProgram(Function *p_func)
     }
 }
 
-void SSARegisterAlloc::AnalysisTriple(Function *p_func)
+void SSARegisterAlloc::AddTripleX(Function *p_func)
 {
     std::vector<Triple *> Triples_todo;
     for (auto bb : *(p_func->get_blocks()))
@@ -1773,9 +1810,6 @@ void SSARegisterAlloc::AnalysisTriple(Function *p_func)
                 ins->get_Instype() == InstrutionEnum::VMLA ||
                 ins->get_Instype() == InstrutionEnum::VMLS)
             {
-                assert(LA.ValueIdMap.find(ins->get_operand_at(0)) != LA.ValueIdMap.end());
-                assert(LA.ValueIdMap.find(ins) != LA.ValueIdMap.end());
-                LA.combine(LA.ValueIdMap.at(ins), LA.ValueIdMap.at(ins->get_operand_at(0)));
                 Triples_todo.push_back(dynamic_cast<Triple *>(ins));
             }
         }
@@ -1790,7 +1824,7 @@ void SSARegisterAlloc::AnalysisTriple(Function *p_func)
     }
 }
 
-void SSARegisterAlloc::DoTripleX(Function *p_func)
+void SSARegisterAlloc::AnalysisTriple(Function *p_func)
 {
     for (auto bb : *(p_func->get_blocks()))
         for (auto ins : *(bb->get_instrs()))
@@ -1799,8 +1833,16 @@ void SSARegisterAlloc::DoTripleX(Function *p_func)
                 ins->get_Instype() == InstrutionEnum::FMLS ||
                 ins->get_Instype() == InstrutionEnum::VMLA ||
                 ins->get_Instype() == InstrutionEnum::VMLS)
-                color[LA.ValueIdMap[ins->get_operand_at(0)]] = color[LA.ValueIdMap[ins]];
+            {
+                assert(LA.ValueIdMap.find(ins->get_operand_at(0)) != LA.ValueIdMap.end());
+                assert(LA.ValueIdMap.find(ins) != LA.ValueIdMap.end());
+                LA.combine(LA.ValueIdMap.at(ins), LA.ValueIdMap.at(ins->get_operand_at(0)));
+            }
         }
+}
+
+void SSARegisterAlloc::DoTripleX(Function *p_func)
+{
     std::vector<TripleX *> removeList;
     for (auto bb : *(p_func->get_blocks()))
     {

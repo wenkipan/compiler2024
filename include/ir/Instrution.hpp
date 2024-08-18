@@ -316,4 +316,5 @@ class TripleX : public Instrution
 {
 public:
     TripleX(InstrutionEnum type, Value *src1, Value *src2, Value *src3, BasicBlock *parent);
+    void print();
 };

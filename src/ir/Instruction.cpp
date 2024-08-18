@@ -888,3 +888,9 @@ TripleX::TripleX(InstrutionEnum type, Value *src1, Value *src2, Value *src3, Bas
     new Edge(this, src2);
     new Edge(this, src3);
 }
+
+void TripleX::print()
+{
+    printf("    TripleX %d %d %d", get_operand_at(0)->get_ID(), get_operand_at(1)->get_ID(), get_operand_at(2)->get_ID());
+    printf("\n");
+}

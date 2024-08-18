@@ -111,7 +111,10 @@ void GCM::run(Function *func)
     init_visit_with_pinned();
     for (auto BB : *f->get_blocks())
     {
-        for (auto instr : *BB->get_instrs())
+        auto instrs = *BB->get_instrs();
+        for (auto it = instrs.rbegin(); it != instrs.rend(); it++)
+        {
+            auto instr = *it;
             if (ispinned(instr))
                 for (auto useredge : *instr->get_user_list())
                 {
@@ -120,6 +123,8 @@ void GCM::run(Function *func)
                 }
             else
                 schedule_late(instr);
+        }
+        // for (auto instr : *BB->get_instrs())
         for (auto phi : *BB->get_phinodes())
             for (auto useredge : *phi->get_user_list())
             {

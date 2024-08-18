@@ -8,6 +8,7 @@ void LivenessAnalysis::init()
     is_float.clear();
     is_vector.clear();
     is_int.clear();
+    Father.clear();
     for (auto arg : *(parent->get_params()))
     {
         Value *val = dynamic_cast<Value *>(arg);

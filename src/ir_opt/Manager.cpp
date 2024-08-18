@@ -105,7 +105,7 @@ void Manager::PassManager(bool is_opt)
         FuncRun<SimplifyCFG>();
         run<DeadParamElimate>();
 
-        // Yi(i);
+        Yi(i);
 
         // if (i > 3 && i % 2 == 0)
         //     run<Inline>();
