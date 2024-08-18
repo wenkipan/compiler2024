@@ -61,6 +61,9 @@ src/ir_opt/BitVector.cpp \
 src/ir_opt/GlobalVariableopt.cpp \
 src/ir_opt/Mem2Reg.cpp \
 src/ir_opt/Loop.cpp \
+src/ir_opt/loop.cpp \
+src/ir_opt/GAD.cpp \
+src/ir_opt/DFE.cpp \
 src/ir_opt/loopFullunroll.cpp \
 src/ir_opt/loopunswitch.cpp \
 src/ir_opt/loopArgDrop.cpp \

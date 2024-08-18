@@ -227,7 +227,6 @@ BasicBlock *loopFFF::earlyBB(Loop *loop)
 
 void loopFFF::Unroll(Loop *loop)
 {
-
     assert(loop->get_BBs()->size() == 1);
     Function *p_func = loop->get_header()->get_func();
     IRCopy copyer;
@@ -667,6 +666,28 @@ static Value *ptrFind(GEP *gep)
         return ptrFind(src);
 }
 
+bool loopFFF::checkOffset(GEP *gep, Loop *loop)
+{
+    Value *offset = gep->get_offset();
+    if (is_a<ConstantI32>(offset))
+        assert(0);
+    SCEVEXP *p_exp = _SCEV->find_exp(offset);
+    if (p_exp == nullptr)
+        return true;
+
+    auto dims = p_exp->get_dims();
+
+    if ((*dims)[1].size() != 1 || (*dims)[2].size() != 0)
+        return true;
+    if (!is_a<ConstantI32>((*dims)[1][0].first))
+        return true;
+    ConstantI32 *c1 = (ConstantI32 *)(*dims)[1][0].first;
+    if (c1->get_32_at(0) != 1)
+        return true;
+
+    return false;
+}
+
 bool loopFFF::analysis(Loop *loop)
 {
     BasicBlock *BB = loop->get_header();
@@ -749,6 +770,8 @@ bool loopFFF::analysis(Loop *loop)
                 if (ptrSet.find(ptr) != ptrSet.end())
                     return false;
                 ptrSet.insert(ptr);
+                if (checkOffset((GEP *)it, loop))
+                    return false;
                 break;
             case InstrutionEnum::Store:
                 if (src != nullptr)

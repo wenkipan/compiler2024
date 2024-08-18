@@ -1,6 +1,5 @@
 #include <unordered_map>
 #include <iostream>
-#include <algorithm>
 
 #include "../../include/ir_opt/loopunswitch.hpp"
 
@@ -241,7 +240,7 @@ void loopunswitch::Unswitch(Loop *loop, Function *p_func, BasicBlock *workBB, Do
         for (auto edge : *edges)
         {
             Value *value = edge->get_val();
-            if (is_a<GlobalValue>(value))
+            if (is_a<GlobalVariable>(value) || is_a<Function>(value))
             {
                 auto users = value->get_user_list();
                 for (auto it = users->begin(); it != users->end(); ++it)
@@ -290,26 +289,8 @@ BasicBlock *loopunswitch::checkIF(Loop *loop)
         cnt += BB->get_instrs()->size();
         cnt += BB->get_phinodes()->size();
     }
-    if (cnt >= 1000)
+    if (cnt >= 81)
         re = nullptr;
-    else if (cnt >= 500)
-    {
-        if (codesize > 3000)
-            re = nullptr;
-        else
-            codesize += cnt;
-    }
-    else if (cnt >= 150)
-    {
-        if (codesize > 4500)
-            re = nullptr;
-        else
-            codesize += cnt;
-    }
-    else if (codesize > 7000)
-        re = nullptr;
-    else
-        codesize += cnt;
     return re;
 }
 
@@ -326,6 +307,7 @@ void loopunswitch::searchFunc(Loop *loop, Function *func, DomTree &domtree, bool
     Unswitch(loop, func, BB, domtree);
 }
 
+/*
 static inline void _checkVal(Value *val, Loop *loop)
 {
 
@@ -372,6 +354,7 @@ static void _checkloop(Loop *loop)
             _checkVal(p_instr, loop);
     }
 }
+*/
 
 void loopunswitch::FuncDealer(Function *p_func)
 {
@@ -380,7 +363,7 @@ void loopunswitch::FuncDealer(Function *p_func)
     std::cout << p_func->get_name() << std::endl;
     LCSSA worker(p_func, _Loop);
     worker.run();
-    _checkloop(loop);
+    //_checkloop(loop);
     DomTree domtree(p_func);
     domtree.Run();
     bool flag = false;

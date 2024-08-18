@@ -4,7 +4,7 @@
 
 static inline Value *trace_back_to(Instrution *i)
 {
-    assert(i->isStore() || i->isGEP());
+    assert(i->isStore() || i->isGEP() || i->isLoad());
     Value *addr = i->get_operand_at(0);
     if (is_a<GEP>(addr))
         return trace_back_to((Instrution *)addr);

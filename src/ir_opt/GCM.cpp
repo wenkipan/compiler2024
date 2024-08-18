@@ -272,7 +272,7 @@ void GCM::schedule_late(Instrution *instr)
         get_scheduleBB(instr)->print_ID();
         printf("\n");
     }
-    assert(instr->get_type()->get_type() != TypeEnum::VecI32);
+
     if (instr->get_type()->get_type() == TypeEnum::VecI32)
     {
         puts("SSSSSSS");
