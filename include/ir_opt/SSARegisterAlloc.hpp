@@ -5,6 +5,7 @@
 #include "../../include/ir/ir.hpp"
 #include "../../include/ir_opt/Manager.hpp"
 #include "../../include/util/hash_pair.hpp"
+#include "../../include/ir_opt/Loop.hpp"
 
 class SSARegisterAlloc
 {
@@ -23,6 +24,7 @@ class SSARegisterAlloc
     std::unordered_map<Call *, Move *> firstMoveofCall;
     std::unordered_set<Alloca *> spillAllocs;
     std::unordered_map<Alloca *, Value *> spillAllocMap;
+    NestT nest_tree;
     void Spill(Function *p_func);
     void SpillBB_R(BasicBlock *bb);
     void SpillBB_Q(BasicBlock *bb);
@@ -43,6 +45,7 @@ class SSARegisterAlloc
     void AddTripleX(Function *p_func);
     void AnalysisTriple(Function *p_func);
     void DoTripleX(Function *p_func);
+    int CalcLoop(int id);
 
 public:
     std::unordered_map<Value *, std::unordered_set<Value *>> G_set;

@@ -1,4 +1,5 @@
 #include "../../include/ir_opt/SSARegisterAlloc.hpp"
+#include "ir/Instrution.hpp"
 
 #include <vector>
 
@@ -173,9 +174,18 @@ void SSARegisterAlloc::run(Function *p_func)
     LA.run(p_func);
 
     vregNum = LA.Vals.size();
+
+    nest_tree.FuncAnalysis(p_func);
     Spill(p_func);
     for (auto it : spilledNodes)
         spilledVals.insert(LA.Vals[it]);
+
+    for (auto val : spilledVals)
+    {
+        puts("spilled");
+        val->print();
+        printf("%d\n", CalcLoop(LA.ValueIdMap[val]));
+    }
 
     RewriteProgram(p_func);
     MakeGraph(p_func);
@@ -1082,10 +1092,10 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
     std::set<std::pair<int, int>> I_B;
     for (int i = 0; i < vregNum; i++)
         if (LA.InSet[bb].at(i) && LA.is_int[i] == 1)
-            I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+            I_B.insert(std::make_pair(LA.InDis[bb][i] + CalcLoop(i), i));
     for (auto phi : *(bb->get_phinodes()))
         if (LA.is_int[LA.ValueIdMap[phi]] == 1)
-            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
+            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]] + CalcLoop(LA.ValueIdMap[phi]), LA.ValueIdMap[phi]));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
     for (auto it : I_B)
@@ -1158,6 +1168,7 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                         break;
                     }
                 }
+                tmp += CalcLoop(op);
                 Regs.insert(std::make_pair(-tmp, op));
                 inReg.insert(op);
             }
@@ -1222,6 +1233,7 @@ void SSARegisterAlloc::SpillBB_R(BasicBlock *bb)
                     break;
                 }
             }
+            tmp += CalcLoop(result);
             Regs.insert(std::make_pair(-tmp, result));
             inReg.insert(result);
         }
@@ -1233,10 +1245,10 @@ void SSARegisterAlloc::SpillBB_Q(BasicBlock *bb)
     std::set<std::pair<int, int>> I_B;
     for (int i = 0; i < vregNum; i++)
         if (LA.InSet[bb].at(i) && LA.is_vector[i] == 1)
-            I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+            I_B.insert(std::make_pair(LA.InDis[bb][i] + CalcLoop(i), i));
     for (auto phi : *(bb->get_phinodes()))
         if (LA.is_vector[LA.ValueIdMap[phi]] == 1)
-            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
+            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]] + CalcLoop(LA.ValueIdMap[phi]), LA.ValueIdMap[phi]));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
     for (auto it : I_B)
@@ -1298,6 +1310,7 @@ void SSARegisterAlloc::SpillBB_Q(BasicBlock *bb)
                         break;
                     }
                 }
+                tmp += CalcLoop(op);
                 Regs.insert(std::make_pair(-tmp, op));
                 inReg.insert(op);
             }
@@ -1358,6 +1371,7 @@ void SSARegisterAlloc::SpillBB_Q(BasicBlock *bb)
                     break;
                 }
             }
+            tmp += CalcLoop(result);
             Regs.insert(std::make_pair(-tmp, result));
             inReg.insert(result);
         }
@@ -1369,10 +1383,10 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
     std::set<std::pair<int, int>> I_B;
     for (int i = 0; i < vregNum; i++)
         if (LA.InSet[bb].at(i) && LA.is_float[i] == 1)
-            I_B.insert(std::make_pair(LA.InDis[bb][i], i));
+            I_B.insert(std::make_pair(LA.InDis[bb][i] + CalcLoop(i), i));
     for (auto phi : *(bb->get_phinodes()))
         if (LA.is_float[LA.ValueIdMap[phi]] == 1)
-            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]], LA.ValueIdMap[phi]));
+            I_B.insert(std::make_pair(LA.InDis[bb][LA.ValueIdMap[phi]] + CalcLoop(LA.ValueIdMap[phi]), LA.ValueIdMap[phi]));
     std::set<std::pair<int, int>> Regs;
     std::unordered_set<int> inReg;
     for (auto it : I_B)
@@ -1444,6 +1458,7 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
                         break;
                     }
                 }
+                tmp += CalcLoop(op);
                 Regs.insert(std::make_pair(-tmp, op));
                 inReg.insert(op);
             }
@@ -1503,6 +1518,7 @@ void SSARegisterAlloc::SpillBB_S(BasicBlock *bb)
                     break;
                 }
             }
+            tmp += CalcLoop(result);
             Regs.insert(std::make_pair(-tmp, result));
             inReg.insert(result);
         }
@@ -1860,4 +1876,27 @@ void SSARegisterAlloc::DoTripleX(Function *p_func)
     }
     for (auto ins : removeList)
         ins->drop();
+}
+
+int SSARegisterAlloc::CalcLoop(int id)
+{
+    int res = 0;
+    for (auto edge : *(LA.Vals[id]->get_user_list()))
+    {
+        auto use = dynamic_cast<Instrution *>(edge->get_user());
+        auto it = nest_tree.get_BBmap()->find(use->get_parent());
+        if (it == nest_tree.get_BBmap()->end())
+        {
+            res++;
+        }
+        else
+        {
+            int deep = it->second->get_depth();
+            int s = 1;
+            while (deep--)
+                s = std::max(200000000, s * 5);
+            res = std::max(1000000000, res + s);
+        }
+    }
+    return -res;
 }
