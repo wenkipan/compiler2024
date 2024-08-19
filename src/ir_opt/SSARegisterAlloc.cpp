@@ -1,6 +1,5 @@
 #include "../../include/ir_opt/SSARegisterAlloc.hpp"
-#include "ir/Instrution.hpp"
-#include <any>
+
 #include <vector>
 
 std::vector<int> SSARegisterAlloc::regsStillAliveAfterCall(Call *call)
@@ -684,6 +683,7 @@ void SSARegisterAlloc::MakeGraph(Function *p_func)
                 if (LA.ValueIdMap.find(use) != LA.ValueIdMap.end())
                     live.insert(LA.ValueIdMap.at(use));
             }
+            assert(cnt_Q >= 0);
         }
         for (auto it : *(bb->get_phinodes()))
         {
@@ -1330,6 +1330,7 @@ void SSARegisterAlloc::SpillBB_Q(BasicBlock *bb)
                 del_reg.insert(reg);
             }
         }
+        assert(cnt_Q >= 0);
         for (auto reg : del_reg)
             Regs.erase(reg);
         if (dynamic_cast<Call *>(ins) != nullptr)

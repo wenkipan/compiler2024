@@ -1,5 +1,4 @@
 #include "../../include/lir/ARMMLA.hpp"
-#include "ir/Function.hpp"
 
 void ARMMLA::int_mla(Function *f)
 {

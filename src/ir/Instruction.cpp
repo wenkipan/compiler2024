@@ -4,8 +4,6 @@
 #include "../../include/ir/Instrution.hpp"
 #include "../../include/ir/BasicBlock.hpp"
 #include "../../include/ir/Constant.hpp"
-#include "ir/Edge.hpp"
-#include "ir/Type.hpp"
 
 std::unordered_map<InstrutionEnum, std::string> *Instrution::_symbol_map =
     new std::unordered_map<InstrutionEnum, std::string>{

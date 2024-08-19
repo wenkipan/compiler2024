@@ -1,44 +1,31 @@
 #pragma once
 
-#include "../../include/ir/ir.hpp"
 #include "../../include/ir_opt/SCEV.hpp"
 #include "../../include/ir_opt/IRCopy.hpp"
+#include "../../include/ir_opt/LCSSA.hpp"
 
-class loopYYY
+class loopUnroll
 {
-    SCEV *scev;
-    Loop_Analysis *LA;
-    Value *p_set;
 
-public:
-    loopYYY();
-    ~loopYYY();
-
-    void W1(Loop *loop);
-    void W2(Loop *loop);
-    void W3(Loop *loop);
-
-    void FuncAnalysis(Function *func);
-    void PassRun(Module *p_module);
-};
-
-class loopFFF
-{
     SCEV *_SCEV;
     Loop_Analysis *_Loop;
 
+    int codesize;
+    bool flag = false;
+
     const int times = 4;
 
+    static std::set<BasicBlock *> *BBmap;
+
 public:
-    loopFFF();
-    ~loopFFF();
+    loopUnroll();
+    ~loopUnroll();
 
     void SetVal(PHINode *phi, IRCopy &copyer, Loop *loop);
     void SetVal(Instrution *instr, IRCopy &copyer, Loop *loop);
+    void SetUser(Instrution *instr, IRCopy &copyer, Loop *loop);
 
-    bool checkOffset(GEP *gep, Loop *loop);
     bool analysis(Loop *loop);
-    BasicBlock *earlyBB(Loop *loop);
 
     void Unroll(Loop *loop);
     void searchFunc(Loop *loop, Function *func);

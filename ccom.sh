@@ -38,6 +38,7 @@ src/lir/LargeToGlobal.cpp \
 src/lir/modTosubmul.cpp \
 src/lir/GVN_l.cpp \
 src/lir/Peekhole_s.cpp \
+src/lir/ArmMLA.cpp \
 src/ir_opt/SCEV.cpp \
 src/ir_opt/loopVarReduce.cpp \
 src/ir_opt/LivenessAnalysis.cpp \
@@ -61,18 +62,23 @@ src/ir_opt/BitVector.cpp \
 src/ir_opt/GlobalVariableopt.cpp \
 src/ir_opt/Mem2Reg.cpp \
 src/ir_opt/Loop.cpp \
+src/ir_opt/loop.cpp \
+src/ir_opt/GAD.cpp \
+src/ir_opt/DFE.cpp \
 src/ir_opt/loopFullunroll.cpp \
 src/ir_opt/loopunswitch.cpp \
 src/ir_opt/loopArgDrop.cpp \
 src/ir_opt/LCSSA.cpp \
 src/ir_opt/MAD.cpp \
 src/ir_opt/ALS.cpp \
+src/ir_opt/SideEffect.cpp \
 src/grammar/SysY.tab.cpp \
 src/grammar/SysY.yy.cpp \
 src/program/program.cpp \
 src/backend/arm/ArmGen.cpp \
 src/backend/arm/BlockMerge.cpp \
 src/backend/arm/arm.cpp \
+src/backend/arm/DeadALU.cpp \
 -I include/program \
 -I include/ir \
 -I include/util \

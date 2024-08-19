@@ -1,5 +1,6 @@
 #include "../../include/ir_opt/MAD.hpp"
 #include "../../include/ir_opt/DCE.hpp"
+#include "../../include/ir_opt/SSARegisterAlloc.hpp"
 
 static inline bool check_ptr(Value *ptr1, Value *ptr2)
 {
@@ -31,27 +32,94 @@ static inline bool check_ptr(Value *ptr1, Value *ptr2)
 
 void MAD::LDD()
 {
+    func->print();
     for (BasicBlock *BB : *func->get_blocks())
     {
-        auto instrs = BB->get_instrs();
-        for (auto it = instrs->begin(); it != instrs->end(); ++it)
+        // auto instrs = BB->get_instrs();
+        bool flag = false;
+        if (BBmap_.find(BB) != BBmap_.end())
+            flag = BBmap_.find(BB)->second;
+        for (auto it = BB->get_instrs()->begin(); it != BB->get_instrs()->end(); ++it)
         {
             if ((*it)->isStore())
             {
                 Store *ST = (Store *)(*it);
-                for (auto jt = it + 1; jt != instrs->end(); ++jt)
+                if (flag)
                 {
-                    if ((*jt)->isCall())
-                        break;
-                    else if ((*jt)->isStore())
+                    SSARegisterAlloc graph;
+                    graph.graphBuilder(func);
+                    it = BB->get_instrs()->begin();
+                    while (it != BB->get_instrs()->end() && (*it) != ST)
+                        ++it;
+                    ST->get_src()->print();
+                    ST->get_src()->get_type()->print();
+                    puts("SSS");
+                    int nw = 0;
+                    std::vector<Value *> vals;
+                    if (graph.G_set.find(ST->get_src()) == graph.G_set.end())
+                        nw = -1;
+                    else
                     {
-                        Store *NST = (Store *)(*jt);
-                        if (NST->get_addr() == ST->get_addr())
-                            break;
-                        if (check_ptr(ST->get_addr(), NST->get_addr()))
-                            break;
+                        nw = graph.G_set.find(ST->get_src())->second.size();
+                        vals.emplace_back(ST->get_src());
                     }
-                    else if ((*jt)->isLoad())
+
+                    if (nw > 13)
+                        continue;
+                    for (auto jt = it + 1; jt != BB->get_instrs()->end(); ++jt)
+                    {
+                        if ((*jt)->isBinary() || (*jt)->isLoad() || (*jt)->isUnary())
+                        {
+                            if (graph.G_set.find((*jt)) != graph.G_set.end())
+                            {
+                                auto map_ = graph.G_set.find((*jt))->second;
+                                bool isExit = false;
+                                for (Value *val : vals)
+                                    if (map_.find(val) != map_.end())
+                                    {
+                                        isExit = true;
+                                        break;
+                                    }
+                                int add = 1;
+                                if (isExit)
+                                    add = 0;
+                                if (nw != -1)
+                                    nw = nw > (map_.size() + add) ? nw : (map_.size() + add);
+                                if (nw > 13)
+                                    break;
+                            }
+                        }
+
+                        if ((*jt)->isCall())
+                            break;
+                        else if ((*jt)->isStore())
+                        {
+                            Store *NST = (Store *)(*jt);
+                            if (NST->get_addr() == ST->get_addr())
+                                break;
+                            if (check_ptr(ST->get_addr(), NST->get_addr()))
+                                break;
+                        }
+                        else if ((*jt)->isLoad())
+                        {
+                            Load *LD = (Load *)(*jt);
+                            if (ST->get_addr() == LD->get_addr())
+                            {
+                                auto _list = LD->get_user_list();
+                                for (Edge *edge : *_list)
+                                    edge->set_val(ST->get_src());
+                                _list->clear();
+                                vals.emplace_back(LD);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    auto jt = it + 1;
+                    if (jt == BB->get_instrs()->end())
+                        continue;
+                    if ((*jt)->isLoad())
                     {
                         Load *LD = (Load *)(*jt);
                         if (ST->get_addr() == LD->get_addr())
@@ -93,6 +161,14 @@ void MAD::SSD()
                         Del.emplace_back(ST1);
                         break;
                     }
+                }
+                else if ((*jt)->isLoad())
+                {
+                    Load *LD = (Load *)*jt;
+                    if (ST1->get_addr() == LD->get_addr())
+                        break;
+                    else if (check_ptr(ST1->get_addr(), LD->get_addr()))
+                        break;
                 }
             }
         }
@@ -287,7 +363,17 @@ void MAD::ARD()
             Instrution *user = (Instrution *)edge->get_user();
             if (user->isCall())
             {
-                assert(0);
+                Call *_call = (Call *)user;
+                if (((Function *)_call->get_func())->get_name() == "memset")
+                {
+                    if (p_call == nullptr)
+                    {
+                        p_call = _call;
+                        continue;
+                    }
+                    else
+                        flag = false;
+                }
             }
             else if (user->isGEP())
                 flag = flag & _findST((GEP *)user, func, 1, p_call);
@@ -392,7 +478,24 @@ void MAD::SMO()
         for (Edge *edge : *users)
         {
             Instrution *user = (Instrution *)edge->get_user();
-            assert(user->isGEP());
+            assert(user->isGEP() || user->isCall());
+            if (user->isCall())
+            {
+                Call *p_call = (Call *)user;
+                if (((Function *)p_call->get_func())->get_name() == "memset")
+                {
+                    if (p_call == nullptr)
+                    {
+                        call = p_call;
+                    }
+                    else
+                        flag = -1;
+                }
+                else
+                    flag = -1;
+            }
+            if (flag == -1)
+                break;
             flag = _getMAs((GEP *)user, STs, LDs, GEPs, call, true);
             if (flag == -1)
                 break;
@@ -491,20 +594,58 @@ void MAD::FuncDealer()
     LDD(); // stroe a A; b = load A -> b = a;
     SSD(); // store a A; no load A ; store b A -> store b A
     UAD(); // only store del
-    ARD(); // no load array del
+    ARD(); // no load local array del
 
     SMO(); // store dom all load move to top
 }
 
+void MAD::BBFilter(Loop *loop)
+{
+    for (Loop *son : *loop->get_lpsons())
+        BBFilter(son);
+    bool flag = false;
+    if (loop->get_header() != nullptr && loop->get_lpsons()->empty())
+    {
+        int size = 0;
+        for (BasicBlock *BB : *loop->get_BBs())
+            size += BB->get_instrs()->size();
+        if (loop->get_BBs()->size() == 1 && size <= 100)
+            flag = true;
+        else if (loop->get_BBs()->size() <= 5 && size <= 50)
+            flag = true;
+        else
+            flag = false;
+    }
+    else
+        flag = false;
+    for (BasicBlock *BB : *loop->get_nwBBs())
+        BBmap_.insert({BB, flag});
+}
+
 void MAD::PassRun(Module *p_module)
 {
+    Loop_ = new Loop_Analysis();
+    Loop_->PassRun(p_module);
+
     puts("     MAD BEGIN");
+
     for (Function *p_func : *p_module->get_funcs())
     {
         if (p_func->get_blocks()->empty())
             continue;
         func = p_func;
+        BBmap_.clear();
+        BBFilter(Loop_->get_LoopInfo()->find(func)->second);
         FuncDealer();
     }
     puts("     MAD END");
+}
+
+MAD::MAD()
+{
+}
+
+MAD::~MAD()
+{
+    delete Loop_;
 }

@@ -2,7 +2,6 @@
 #include "../../include/ir/Value.hpp"
 #include "../../include/ir_opt/IRCopy.hpp"
 #include "../../include/util/RPO.hpp"
-#include "ir/Type.hpp"
 
 Value *IRCopy::get_mapval(Value *a)
 {

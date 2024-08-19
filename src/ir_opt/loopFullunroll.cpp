@@ -321,19 +321,6 @@ void loopFullunroll::FullUnroll(Loop *loop, int times, Function *p_func)
         delete func[i];
 }
 
-static bool _checkLoop(Loop *loop)
-{
-    bool re = true;
-    for (Loop *son : *loop->get_lpsons())
-    {
-        re = re & _checkLoop(son);
-    }
-    if (loop->get_exitings()->size() == 1 && loop->get_latchs()->size() == 1 && (*loop->get_exitings()->begin()) == (*loop->get_latchs()->begin()))
-        return re;
-    else
-        return false;
-}
-
 static inline int _checkFull(Loop *loop, SCEV *scev)
 {
 
@@ -408,44 +395,26 @@ static inline int _checkFull(Loop *loop, SCEV *scev)
 
 static inline bool _Strategy(Loop *loop, int times, int &codesize)
 {
-    if (times > 100 || times == 1)
+    if (times > 120 || times == 1)
         return false;
     int cnt = 0;
     for (BasicBlock *BB : *loop->get_BBs())
         cnt += BB->get_phinodes()->size() + BB->get_instrs()->size();
-    cnt *= times;
-
-    if (cnt > 2000)
+    if (cnt >= 50)
         return false;
-    else if (cnt > 1000)
+    else if (cnt >= 30)
     {
-        if (codesize < 1000)
-        {
-            codesize += cnt;
+        if (times <= 16)
             return true;
-        }
     }
-    else if (cnt > 500)
+    else if (cnt > 12)
     {
-        if (codesize < 2000)
-        {
-            codesize += cnt;
+        if (times <= 32)
             return true;
-        }
     }
-    else if (cnt > 200)
-    {
-        if (codesize < 5000)
-        {
-            codesize += cnt;
-            return true;
-        }
-    }
-    else if (codesize <= 8000)
-    {
-        codesize += cnt;
+    else
         return true;
-    }
+
     return false;
 }
 
@@ -458,13 +427,10 @@ bool loopFullunroll::Finder(Loop *loop, Function *func)
     }
     if (flag == true)
         return true;
-    if (loop->get_exitings()->size() != 1 || loop->get_latchs()->size() != 1)
+    if (loop->get_exitings()->size() != 1 || loop->get_latchs()->size() != 1 || !loop->get_lpsons()->empty())
         return false;
     if (*loop->get_exitings()->begin() != *loop->get_latchs()->begin() || !loop->is_stepSet())
         return false;
-    if (_checkLoop(loop)) //???
-    {
-    }
     int times = _checkFull(loop, _SCEV);
     if (times != -1 && _Strategy(loop, times, codesize))
     {
