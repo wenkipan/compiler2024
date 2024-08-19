@@ -123,7 +123,7 @@ public:
     Loop_Analysis();
     ~Loop_Analysis();
 
-    void loop_addprevBB(Loop *nwloop);
+    virtual void loop_addprevBB(Loop *nwloop);
     void loop_BBsAdd(Loop *nwloop);
     void buildnest(Loop *nwloop, int nwlevel, std::unordered_map<BasicBlock *, Loop *> &_map);
     void FuncAnalysis(Function *p_func);
@@ -131,4 +131,12 @@ public:
 
     std::unordered_map<Function *, Loop *> *get_LoopInfo() { return LoopInfo; }
     std::unordered_map<BasicBlock *, LoopNode *> *get_BBmap() { return BBmap; }
+};
+
+class NestT : public Loop_Analysis
+{
+    virtual void loop_addprevBB(Loop *nwloop)
+    {
+        return;
+    }
 };
