@@ -187,7 +187,7 @@ void Loop_Analysis::loop_BBsAdd(Loop *nwloop)
             }
         }
     }
-    // return;
+    return;
     printf("HEAD b%d:", nwloop->get_header()->get_ID());
     printf("\nenters: ");
     for (BasicBlock *_BB : *nwloop->get_enters())

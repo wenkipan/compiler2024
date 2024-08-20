@@ -15,7 +15,7 @@ void Manager::Yi(int YYY)
         run<LoopDrop>();
     }
 
-    if (YYY == 2)
+    if (YYY == 5)
     {
         run<loopFFF>();
         FuncRun<SCCP>();
@@ -73,7 +73,7 @@ void Manager::PassManager(bool is_opt)
     int n = 8;
     for (int i = 0; i < n; i++)
     {
-        if (i == 0 || (i >= 3 && i & 1))
+        if (i % 2 == 0)
         {
             run<GlobalVariableopt>();
             FuncRun<SimplifyCFG>();
@@ -87,9 +87,6 @@ void Manager::PassManager(bool is_opt)
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
         // LoopOpt(i);
-        FuncRun<THBalancing>();
-        FuncRun<DCE>();
-        FuncRun<SimplifyCFG>();
 
         FuncRun<GVN>();
         FuncRun<DCE>();
@@ -99,6 +96,8 @@ void Manager::PassManager(bool is_opt)
         FuncRun<DCE>();
         FuncRun<SimplifyCFG>();
         run<DeadParamElimate>();
+
+        Yi(i);
 
         if (i >= 5 && i & 1)
         {
@@ -110,9 +109,10 @@ void Manager::PassManager(bool is_opt)
             FuncRun<SimplifyCFG>();
         }
 
-        Yi(i);
-
-        if (i > 3 && i % 2 == 0)
+        FuncRun<THBalancing>();
+        FuncRun<DCE>();
+        FuncRun<SimplifyCFG>();
+        if (i % 2 == 0)
             run<Inline>();
     }
 
@@ -121,11 +121,9 @@ void Manager::PassManager(bool is_opt)
 
 void Manager::Finish()
 {
-    printModule();
     FuncRun<SCCP>();
     FuncRun<DCE>();
     FuncRun<SimplifyCFG>();
-    printModule();
     FuncRun<GVN>();
     FuncRun<DFE>();
     FuncRun<DCE>();

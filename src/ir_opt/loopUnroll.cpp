@@ -351,7 +351,6 @@ void loopUnroll::Unroll(Loop *loop)
     assert(loop->get_BBs()->size() == 1);
     Function *p_func = loop->get_header()->get_func();
     puts("SSSSSSSSSSS");
-    loop->get_header()->print();
     std::vector<IRCopy> copyer(times);
     std::vector<Function *> cFunc(times);
     for (int i = 0; i < times; ++i)

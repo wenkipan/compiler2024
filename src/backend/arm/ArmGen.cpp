@@ -60,8 +60,6 @@ void ArmGen::run(Module *m)
     bm.run(arm_module);
     DeadALU da;
     da.run(arm_module);
-    printf("--total arm\n");
-    arm_module->print(1);
 }
 void ArmGen::init(Module *m)
 {

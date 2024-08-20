@@ -172,8 +172,6 @@ struct Vs
                 for (auto it : *Users)
                     it->set_val(val);
                 Users->clear();
-                val->print();
-                puts("replace");
                 return true;
             }
             else if (is_a<Instrution>(val))
@@ -186,8 +184,6 @@ struct Vs
                     for (auto it : *Users)
                         it->set_val(val);
                     Users->clear();
-                    val->print();
-                    puts("replace");
                     return true;
                 }
             }

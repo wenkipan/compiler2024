@@ -275,9 +275,6 @@ void GCM::schedule_late(Instrution *instr)
 
     if (instr->get_type()->get_type() == TypeEnum::VecI32)
     {
-        puts("SSSSSSS");
-        instr->get_parent()->get_func()->print();
-        instr->print();
         // assert(0);
         while (lca != get_scheduleBB(instr))
         {

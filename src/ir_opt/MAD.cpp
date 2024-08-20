@@ -32,7 +32,6 @@ static inline bool check_ptr(Value *ptr1, Value *ptr2)
 
 void MAD::LDD()
 {
-    func->print();
     for (BasicBlock *BB : *func->get_blocks())
     {
         // auto instrs = BB->get_instrs();
@@ -51,9 +50,7 @@ void MAD::LDD()
                     it = BB->get_instrs()->begin();
                     while (it != BB->get_instrs()->end() && (*it) != ST)
                         ++it;
-                    ST->get_src()->print();
-                    ST->get_src()->get_type()->print();
-                    puts("SSS");
+
                     int nw = 0;
                     std::vector<Value *> vals;
                     if (graph.G_set.find(ST->get_src()) == graph.G_set.end())
@@ -226,8 +223,7 @@ static inline Store *_IF_1ST(GEP *gep, Function *func)
         Instrution *user = (Instrution *)edge->get_user();
         if (user->isStore() || user->get_parent() != func->get_entryBB())
             continue;
-        user->print();
-        puts("");
+
         assert(is_a<Load>(user));
         auto instrs = func->get_entryBB()->get_instrs();
         for (Instrution *instr : *instrs)
@@ -294,7 +290,6 @@ void MAD::UAD()
                                 Instrution *user = (Instrution *)edge->get_user();
                                 if (user->isLoad())
                                 {
-                                    user->print();
                                     user->replaceAllUses(ST->get_src());
                                 }
                             }
